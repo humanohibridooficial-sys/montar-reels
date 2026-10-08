@@ -48,6 +48,14 @@ entorno: `{{REPO}}\.venv\Scripts\python.exe`. Las rutas (trabajo, CapCut, fuente
   del vídeo (una frase por línea; si usa un panel de contenido, puede descargarlo desde allí), `CORTE.txt` trae
   "CONTRA EL GUION": las líneas dichas varias veces (propón quedarse con la última toma), las frases que se salen
   del guion (posibles sobrantes o arranques fallidos) y las líneas que no se han dicho. Propónlo, no lo apliques solo.
+- **Además, léelo tú.** Las listas de `cortes.py` solo ven repeticiones casi literales (medido en 4 tomas reales:
+  encuentra el 27 % de lo que el usuario quitó a mano). Tras lanzarlo, lee tú la transcripción de medium palabra a
+  palabra con sus segundos (`<transcripciones>/tx/<toma>.json`, y el guion si lo hay) y marca los rangos que sobran
+  para quedarse con UNA pasada limpia de cada idea, normalmente la ÚLTIMA vez que la dice entera: arranques
+  fallidos, frases repetidas aunque sea con otras palabras, "me he liado". Nunca quites algo que solo se dice una
+  vez. Medido con las mismas 4 tomas, leer así encontró el 83 % de lo quitado a mano, pero también propuso quitar
+  algo bueno (21 s de 135 s que se quedaban): por eso SIEMPRE se enseña como propuesta en el vídeo de revisión,
+  con `--fuera`, y decide el usuario.
 - "Quita de X a Y" usa siempre segundos del ORIGINAL (los que se ven en la esquina del CORTE), no del vídeo cortado.
 - Mira tú la hoja de fotogramas (`Read` sobre el `.jpg`) antes de decir que está bien: nada importante por encima de
   la raya roja de arriba (y 288), por debajo de la de abajo (y 1267) ni a la derecha de la amarilla (x 930).
