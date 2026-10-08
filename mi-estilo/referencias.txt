@@ -1,0 +1,3 @@
+# Cuenta fantasma: pega aquí enlaces de reels que quieras imitar (uno por línea).
+# Se descargan SOLO para analizarlos en tu ordenador (python scripts/referencias.py). No se republican.
+# Las líneas que empiezan por # se ignoran.

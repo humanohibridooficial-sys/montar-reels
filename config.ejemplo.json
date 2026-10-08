@@ -1,0 +1,14 @@
+{
+  "carpeta_trabajo": "trabajo",
+  "carpeta_transcripciones": "trabajo/transcripciones",
+  "carpeta_piezas": "trabajo/piezas",
+  "carpeta_capcut": "%LOCALAPPDATA%\\CapCut\\User Data\\Projects\\com.lveditor.draft",
+  "plantilla_capcut": "PLANTILLA-REELS",
+  "carpeta_fuentes": "fuentes",
+  "carpeta_modelos": "modelos",
+  "fuente_subtitulos": "Anton-Regular.ttf",
+  "color_clave": "#E0B83C",
+  "color_marca": "#0E1F3A",
+  "codificador": "x264",
+  "whisper_dispositivo": "auto"
+}

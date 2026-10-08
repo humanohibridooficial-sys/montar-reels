@@ -1,0 +1,20 @@
+node_modules
+.next
+.env*
+!.env.ejemplo
+.vercel
+# Local de cada uno: no se sube
+config.json
+.venv/
+vendor/
+modelos/
+fuentes/
+trabajo/
+mi-estilo/referencias/
+mi-estilo/mis-reels/*
+!mi-estilo/mis-reels/.gitkeep
+mi-estilo/*.json
+__pycache__/
+*.pyc
+*.mp4
+*.jpg
