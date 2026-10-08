@@ -73,6 +73,35 @@ def repeticiones(nombre):
                 out.append((s["ini"], s["fin"], t["ini"], s["texto"][:60])); break
     return out
 
+def buscar_guion(toma):
+    """El guion de la toma, si está al lado del vídeo: toma1.guion.txt (o el de la toma sin '-limpia').
+    Lo descarga Negocio desde Crear ("Descargar guion para el editor"): una frase por línea."""
+    base = os.path.splitext(toma)[0]
+    for c in (base + ".guion.txt", re.sub(r"-limpia$", "", base) + ".guion.txt"):
+        if os.path.exists(c):
+            return [l.strip() for l in open(c, encoding="utf-8") if l.strip()]
+    return None
+
+def contra_guion(nombre, lineas):
+    """Compara cada frase transcrita (medium, que conserva repeticiones) con el guion. Devuelve:
+    repetidas: la misma línea del guion dicha varias veces (se propone quedarse con la ÚLTIMA);
+    fuera: frases que no se parecen a ninguna línea (posible sobrante o arranque fallido);
+    sin_decir: líneas del guion que no aparecen. Son SOLO propuestas: decide el usuario."""
+    frases = leer(nombre, "tx")
+    gl = [set(_norm(l)) for l in lineas]
+    asign, fuera = {}, []
+    for s_ in frases:
+        w = _norm(s_["texto"])
+        if len(w) < 3: continue
+        ws = set(w)
+        puntos = [(len(ws & g) / max(1, min(len(ws), len(g))), i) for i, g in enumerate(gl) if g]
+        mejor, i = max(puntos) if puntos else (0, -1)
+        if mejor >= 0.6: asign.setdefault(i, []).append(s_)
+        elif mejor < 0.3 and len(w) >= 4: fuera.append(s_)
+    repetidas = [(lineas[i], [(x["ini"], x["fin"]) for x in xs[:-1]], (xs[-1]["ini"], xs[-1]["fin"])) for i, xs in sorted(asign.items()) if len(xs) > 1]
+    sin_decir = [lineas[i] for i in range(len(lineas)) if i not in asign]
+    return repetidas, [(x["ini"], x["fin"], x["texto"][:60]) for x in fuera], sin_decir
+
 def _rangos(txt):
     return [[float(a), float(b)] for a, b in (x.split("-") for x in txt.split(",") if x.strip())] if txt else []
 
@@ -91,10 +120,21 @@ if __name__ == "__main__":
     r = subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "cortar.py"), toma, json.dumps(tr), os.path.join(D, "CORTE.mp4"), nombre[:12]],
                        capture_output=True, text=True)
     rep = repeticiones(nombre)
+    guion = buscar_guion(toma)
+    cg = contra_guion(nombre, guion) if guion else None
     with open(os.path.join(D, "CORTE.txt"), "w", encoding="utf-8") as f:
         f.write(f"{nombre} · corte: {origen}\nDura {sum(b - a for a, b in tr):.1f} s. Arriba a la izquierda ves el segundo ORIGINAL de la toma;\n"
                 f"la raya roja arriba marca cada corte. Para corregir: 'quita de X a Y', 'devuelve el corte de X'.\n\nTRAMOS QUE SE QUEDAN:\n")
         f.writelines(f"  {x:6.2f} - {y:6.2f}\n" for x, y in tr)
         f.write("\nPOSIBLES TOMAS REPETIDAS (propuesta, no se han quitado):\n" +
                 ("".join(f"  {i:6.2f}-{j:6.2f} se repite en {k:6.2f}: \"{t}\"\n" for i, j, k, t in rep) if rep else "  ninguna detectada\n"))
-    print(r.stdout.strip() or r.stderr[-600:], f"| {len(tr)} tramos | {len(rep)} posibles repeticiones | {D}")
+        if cg:
+            repetidas, fuera_g, sin_decir = cg
+            f.write("\nCONTRA EL GUION (propuesta, no se ha quitado nada):\n")
+            f.writelines(f"  dicha {len(prev) + 1} veces: \"{l[:60]}\" -> quitar " + ", ".join(f"{a:.2f}-{b:.2f}" for a, b in prev)
+                         + f" y quedarse con {ult[0]:.2f}-{ult[1]:.2f}\n" for l, prev, ult in repetidas)
+            f.writelines(f"  fuera del guion: {a:6.2f}-{b:6.2f} \"{t}\"\n" for a, b, t in fuera_g)
+            f.writelines(f"  no se ha dicho: \"{l[:70]}\"\n" for l in sin_decir)
+            if not (repetidas or fuera_g or sin_decir): f.write("  todo cuadra con el guion\n")
+    extra = f" | guion: {len(cg[0])} repetidas, {len(cg[1])} fuera" if cg else " | sin guion al lado del vídeo"
+    print(r.stdout.strip() or r.stderr[-600:], f"| {len(tr)} tramos | {len(rep)} posibles repeticiones{extra} | {D}")
