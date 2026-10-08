@@ -82,25 +82,69 @@ def buscar_guion(toma):
             return [l.strip() for l in open(c, encoding="utf-8") if l.strip()]
     return None
 
+N_GUION = 4  # palabras seguidas que tienen que coincidir con el guion
+
+def _rangos_de(idx, ws, hueco=0.6):
+    out = []
+    for i in sorted(idx):
+        a, b = ws[i][0], ws[i][1]
+        if out and a - out[-1][1] <= hueco: out[-1][1] = max(out[-1][1], b)
+        else: out.append([a, b])
+    return [(round(a, 2), round(b, 2)) for a, b in out]
+
 def contra_guion(nombre, lineas):
-    """Compara cada frase transcrita (medium, que conserva repeticiones) con el guion. Devuelve:
-    repetidas: la misma línea del guion dicha varias veces (se propone quedarse con la ÚLTIMA);
-    fuera: frases que no se parecen a ninguna línea (posible sobrante o arranque fallido);
-    sin_decir: líneas del guion que no aparecen. Son SOLO propuestas: decide el usuario."""
-    frases = leer(nombre, "tx")
-    gl = [set(_norm(l)) for l in lineas]
-    asign, fuera = {}, []
-    for s_ in frases:
-        w = _norm(s_["texto"])
-        if len(w) < 3: continue
-        ws = set(w)
-        puntos = [(len(ws & g) / max(1, min(len(ws), len(g))), i) for i, g in enumerate(gl) if g]
-        mejor, i = max(puntos) if puntos else (0, -1)
-        if mejor >= 0.6: asign.setdefault(i, []).append(s_)
-        elif mejor < 0.3 and len(w) >= 4: fuera.append(s_)
-    repetidas = [(lineas[i], [(x["ini"], x["fin"]) for x in xs[:-1]], (xs[-1]["ini"], xs[-1]["fin"])) for i, xs in sorted(asign.items()) if len(xs) > 1]
-    sin_decir = [lineas[i] for i in range(len(lineas)) if i not in asign]
-    return repetidas, [(x["ini"], x["fin"], x["texto"][:60]) for x in fuera], sin_decir
+    """Compara la toma con el guion PALABRA A PALABRA (medium, que conserva las repeticiones): cada grupo de
+    N_GUION palabras seguidas se busca en el guion. Devuelve:
+    repetidas: tramos donde se dijo un trozo del guion que se vuelve a decir después (se propone quedarse con la
+               ÚLTIMA vez, que suele ser la buena);
+    fuera: tramos de 4 palabras o más que no están en el guion (posible sobrante o arranque fallido);
+    sin_decir: líneas del guion de las que no se ha dicho nada. Son SOLO propuestas: decide el usuario.
+    (08-10: la versión por frases enteras fallaba con una toma real, porque Whisper junta varias frases en una.)"""
+    ws = [(p[0], p[1], t) for r in leer(nombre, "tx") for p in r["palabras"] if p[1] - p[0] <= 1.2 for t in _norm(p[2])[:1]]
+    w = [x[2] for x in ws]
+    g, linea_de = [], []
+    for k, l in enumerate(lineas):
+        for t in _norm(l): g.append(t); linea_de.append(k)
+    n = N_GUION
+    pos = {}
+    for j in range(len(g) - n + 1): pos.setdefault(tuple(g[j:j + n]), []).append(j)
+    usos, cubiertas = {}, set()
+    for i in range(len(w) - n + 1):
+        for j in pos.get(tuple(w[i:i + n]), []):
+            usos.setdefault(j, []).append(i); cubiertas.update(range(i, i + n))
+    # Dónde va cada palabra en el guion. Si más adelante se vuelve atrás en el guion (se repite desde un
+    # punto anterior), lo dicho antes de esa vuelta es una toma fallida: se queda la última pasada.
+    m = {}
+    for j, occ in usos.items():
+        for i in occ:
+            for k in range(n): m[i + k] = j + k
+    repetidas = set()
+    marcadas = sorted(m)
+    minimo = float("inf")
+    resto = {}
+    for i in reversed(marcadas):
+        resto[i] = minimo
+        minimo = min(minimo, m[i])
+    for i in marcadas:
+        if resto[i] < m[i] - n: repetidas.add(i)
+    # Lo suelto entre dos palabras de la misma toma fallida también sobra (una muletilla, un titubeo).
+    rep = sorted(repetidas)
+    for x, y in zip(rep, rep[1:]):
+        if 1 < y - x <= 8 and ws[y][0] - ws[x][1] <= 3.0: repetidas.update(range(x + 1, y))
+    sueltas = [i for i in range(len(w)) if i not in cubiertas]
+    fuera, run = set(), []
+    for i in sueltas + [None]:
+        if run and (i is None or i != run[-1] + 1):
+            if len(run) >= 4: fuera.update(run)
+            run = []
+        if i is not None: run.append(i)
+    fuera -= repetidas
+    dichas = {linea_de[j + k] for j in usos for k in range(n)}
+    sin_decir = [lineas[k] for k in range(len(lineas)) if k not in dichas]
+    texto = lambda a, b: " ".join(x[2] for x in ws if a <= x[0] <= b)[:60]
+    return ([("", [r], None) for r in _rangos_de(repetidas, ws)],
+            [(a, b, texto(a, b)) for a, b in _rangos_de(fuera, ws)],
+            sin_decir)
 
 def _rangos(txt):
     return [[float(a), float(b)] for a, b in (x.split("-") for x in txt.split(",") if x.strip())] if txt else []
@@ -131,8 +175,7 @@ if __name__ == "__main__":
         if cg:
             repetidas, fuera_g, sin_decir = cg
             f.write("\nCONTRA EL GUION (propuesta, no se ha quitado nada):\n")
-            f.writelines(f"  dicha {len(prev) + 1} veces: \"{l[:60]}\" -> quitar " + ", ".join(f"{a:.2f}-{b:.2f}" for a, b in prev)
-                         + f" y quedarse con {ult[0]:.2f}-{ult[1]:.2f}\n" for l, prev, ult in repetidas)
+            f.writelines(f"  repetido (se dice otra vez después): {a:6.2f}-{b:6.2f}\n" for _, prev, _u in repetidas for a, b in prev)
             f.writelines(f"  fuera del guion: {a:6.2f}-{b:6.2f} \"{t}\"\n" for a, b, t in fuera_g)
             f.writelines(f"  no se ha dicho: \"{l[:70]}\"\n" for l in sin_decir)
             if not (repetidas or fuera_g or sin_decir): f.write("  todo cuadra con el guion\n")
