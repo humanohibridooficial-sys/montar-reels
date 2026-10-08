@@ -44,6 +44,10 @@ entorno: `{{REPO}}\.venv\Scripts\python.exe`. Las rutas (trabajo, CapCut, fuente
 
 - En el paso 3, lee `CORTE.txt`: lista **posibles repeticiones** (frases dichas dos veces). Propón quitar la
   primera versión con `--fuera`, pero que decida el usuario mirando el vídeo.
+- **Con guion es mucho mejor.** Antes de cortar, pregunta si tiene el guion. Si existe `<toma>.guion.txt` al lado
+  del vídeo (una frase por línea; si usa un panel de contenido, puede descargarlo desde allí), `CORTE.txt` trae
+  "CONTRA EL GUION": las líneas dichas varias veces (propón quedarse con la última toma), las frases que se salen
+  del guion (posibles sobrantes o arranques fallidos) y las líneas que no se han dicho. Propónlo, no lo apliques solo.
 - "Quita de X a Y" usa siempre segundos del ORIGINAL (los que se ven en la esquina del CORTE), no del vídeo cortado.
 - Mira tú la hoja de fotogramas (`Read` sobre el `.jpg`) antes de decir que está bien: nada importante por encima de
   la raya roja de arriba (y 288), por debajo de la de abajo (y 1267) ni a la derecha de la amarilla (x 930).
