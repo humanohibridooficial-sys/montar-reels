@@ -255,6 +255,12 @@
         ["—Si me lo preguntas cada día, nunca lo vas a saber tú.", 1], ["—Ya, pero para eso te pago."], ["—El problema no es que me preguntes."]]);
       sketch("sk-fin", 66, 70, [["—¿Y el domingo qué como?"], ["—Tú sabrás.", 1], ["(abre la app)"], ["—…Arroz."]]);
 
+      // En el render final, los hijos ANIMADOS de un clip siguen visibles cuando el clip acaba
+      // (en snapshot no pasa). Se ocultan a mano al final de su tramo y no se fía del runtime.
+      tl.set("#penalti-img", { opacity: 0 }, 0); tl.set("#penalti-img", { opacity: 1 }, 10); tl.set("#penalti-img", { opacity: 0 }, 14);
+      tl.set("#sk-ini p, #sk-ini .rotulo", { opacity: 0 }, 10);
+      tl.set("#sk-fin .rotulo", { opacity: 0 }, 0); tl.set("#sk-fin .rotulo", { opacity: 1 }, 66);
+
       // Palabra del centro en foto y vídeo.
       const caps = document.getElementById("captions");
       PALABRAS.forEach(([a, b, w]) => {
