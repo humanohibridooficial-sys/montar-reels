@@ -74,6 +74,7 @@ Claude trabaja **una pieza cada vez** y espera tu OK antes de pasar a la siguien
 | `herramientas/` | Búsqueda de B-roll en Pexels |
 | `mi-estilo/` | Tu estilo y lo que Claude aprende de ti |
 | `skill/` | La skill de Claude Code (el instalador la copia) |
+| `plantillas/pared-azul/` | Reel con gráficos de pared azul y cámara 3D hecho con HyperFrames (ver su README) |
 
 No se suben a GitHub: `config.json`, `.env`, `.venv/`, `vendor/`, `modelos/`, `fuentes/`, `trabajo/` ni tus vídeos.
 
