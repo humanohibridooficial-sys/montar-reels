@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>FF360 · Cómo se trabaja en FF360</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 600; src: url("assets/fonts/inter-600.woff2") format("woff2"); }
+      @font-face { font-family: "Inter"; font-weight: 700; src: url("assets/fonts/inter-700.woff2") format("woff2"); }
+      @font-face { font-family: "Inter"; font-weight: 800; src: url("assets/fonts/inter-800.woff2") format("woff2"); }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #050b18; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; font-family: "Inter", sans-serif; }
+
+      /* La pared: un mundo 3D por el que se mueve la cámara */
+      #wall { position: absolute; inset: 0; z-index: 0; perspective: 1500px; perspective-origin: 540px 960px; overflow: hidden; background: #050b18; }
+      #cam { position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: 540px 960px; }
+      #world { position: absolute; left: 0; top: 0; width: 3500px; height: 9300px; transform-style: preserve-3d;
+               background: url("assets/img/pared.jpg") 0 0 / 3500px 9300px no-repeat; }
+      .el { position: absolute; transform-style: preserve-3d; }
+      .print img { display: block; filter: drop-shadow(10px 16px 14px rgba(0, 0, 0, 0.45)); }
+      .marco { border: 4px solid #ecf2ff; padding: 14px; }
+      .marco.fino { border-width: 3px; padding: 10px; }
+      .txt { font-weight: 700; color: #ecf2ff; line-height: 1.16; letter-spacing: -0.01em; }
+      .txt span { display: inline-block; margin-right: 0.26em; }
+      .rojo { color: #eb524c; }
+      .num { font-weight: 800; color: #eb524c; font-size: 72px; }
+      .hueco { border: 4px solid #ecf2ff; display: flex; align-items: center; justify-content: center;
+               color: rgba(236, 242, 255, 0.6); font-weight: 700; letter-spacing: 0.04em; text-align: center; }
+      .cita { color: rgba(220, 230, 250, 0.9); font-weight: 600; font-size: 34px; line-height: 1.5; width: 880px; }
+      .cita b { display: block; color: #ecf2ff; font-size: 30px; border-bottom: 2px solid #ecf2ff; padding-bottom: 8px; margin-bottom: 14px; }
+
+      /* Vídeo real y foto a pantalla completa, en blanco y negro */
+      .full { position: absolute; inset: 0; z-index: 2; width: 1080px; height: 1920px; object-fit: cover;
+              filter: grayscale(1) contrast(1.18) brightness(0.92); }
+      .full-foto { position: absolute; inset: 0; z-index: 2; overflow: hidden; }
+      .full-foto img { display: block; width: 1080px; height: 1920px; object-fit: cover; filter: grayscale(1) contrast(1.15); }
+
+      /* Tarjetas del sketch (lo graba Luismi) */
+      .card { position: absolute; inset: 0; z-index: 3; background: radial-gradient(ellipse at 50% 40%, #12274f 0%, #050b18 75%);
+              display: flex; flex-direction: column; align-items: center; padding-top: 330px; }
+      .card .rotulo { color: #78a5ff; font-weight: 700; font-size: 34px; letter-spacing: 0.08em; margin-bottom: 70px; }
+      .card p { color: #ecf2ff; font-weight: 700; font-size: 50px; line-height: 1.3; text-align: center; width: 900px; margin-bottom: 26px; }
+      .card p.rojo { color: #eb524c; }
+
+      /* viñeta por encima de todo lo visual */
+      #vineta { position: absolute; inset: 0; z-index: 4; pointer-events: none;
+                background: radial-gradient(ellipse 80% 62% at 50% 46%, rgba(0,0,0,0) 45%, rgba(3,8,22,0.82) 100%); }
+      /* una sola palabra en el centro durante vídeo y foto, como la referencia */
+      #captions { position: absolute; inset: 0; z-index: 5; }
+      .cap { position: absolute; left: 0; right: 0; top: 925px; text-align: center; color: #fff; font-weight: 700;
+             font-size: 54px; text-shadow: 0 3px 8px rgba(0, 0, 0, 0.75); opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="70" data-width="1080" data-height="1920">
+      <section id="wall" class="clip" data-start="0" data-duration="70" data-track-index="0" data-layout-allow-overlap data-layout-allow-occlusion>
+        <div id="cam"><div id="world"></div></div>
+      </section>
+
+      <section id="sk-ini" class="clip card" data-layout-allow-overlap data-layout-allow-occlusion data-start="0" data-duration="10" data-track-index="2">
+        <div class="rotulo">SKETCH · LO GRABAS TÚ</div>
+      </section>
+      <section id="foto-penalti" class="clip full-foto" data-start="10" data-duration="4" data-track-index="1">
+        <img id="penalti-img" src="assets/img/penalti-foto.jpg" alt="" />
+      </section>
+      <video id="v-cocina" class="clip full" data-start="29" data-duration="5" data-media-start="0" data-track-index="1" src="assets/video/cocina.mp4" muted playsinline></video>
+      <video id="v-fuerza" class="clip full" data-start="40" data-duration="3" data-media-start="0" data-track-index="1" src="assets/video/fuerza.mp4" muted playsinline></video>
+      <video id="v-dormir" class="clip full" data-start="46" data-duration="2.5" data-media-start="0" data-track-index="1" src="assets/video/dormir.mp4" muted playsinline></video>
+      <video id="v-decide" class="clip full" data-start="55" data-duration="3" data-media-start="0" data-track-index="1" src="assets/video/decide.mp4" muted playsinline></video>
+      <section id="sk-fin" class="clip card" data-layout-allow-overlap data-layout-allow-occlusion data-start="66" data-duration="4" data-track-index="2">
+        <div class="rotulo">SKETCH · REMATE</div>
+      </section>
+
+      <div id="vineta" data-layout-allow-occlusion data-layout-allow-overlap></div>
+      <section id="captions" data-layout-allow-overlap data-layout-allow-occlusion class="clip" data-start="0" data-duration="70" data-track-index="3"></section>
+    </div>
+
+    <script>
+      // La voz (sin grabar todavía): cada palabra dura según su longitud dentro de su frase.
+      const FRASES = [
+        [10.0, 14.0, "Ningún entrenador baja al campo a tirar el penalti."],
+        [14.0, 20.0, "Lo que hace es preparar la semana: lo que entrenas, lo que comes y lo que descansas."],
+        [20.0, 26.0, "Y el domingo, el que decide eres tú. No el entrenador."],
+        [26.0, 29.0, "En FF360 trabajamos igual, en cuatro fases."],
+        [29.0, 34.0, "Primero, comer para jugar: la víspera, el día y el día después del partido, con lo que ya se cocina en tu casa."],
+        [34.0, 40.0, "La UEFA lo dejó por escrito en 2021: la víspera y el día del partido, entre 6 y 8 gramos de hidratos por kilo."],
+        [40.0, 46.0, "Segundo, fuerza para tu fútbol: ganar duelos y arrancar, sin ponerte grande."],
+        [46.0, 51.0, "Tercero, recuperar para el siguiente: sueño y respiración entre partido y partido."],
+        [51.0, 58.0, "Y cuarto, lo que más me importa: que aguante sin mí. Te enseño a llevarlo tú toda la temporada."],
+        [58.0, 66.0, "¿Cómo? Tu plan en el móvil en 48 horas, un check-in cada lunes, y yo en tu WhatsApp todos los días."],
+      ];
+      const PALABRAS = [];
+      for (const [a, b, txt] of FRASES) {
+        const ws = txt.split(" "), pesos = ws.map((w) => w.length + 2), total = pesos.reduce((x, y) => x + y, 0);
+        let t = a;
+        ws.forEach((w, i) => { const d = ((b - a) * pesos[i]) / total; PALABRAS.push([t, t + d, w]); t += d; });
+      }
+      // Tramos a pantalla completa (foto y vídeo): ahí va la palabra blanca del centro.
+      const LLENOS = [[10, 14], [29, 34], [40, 43], [46, 48.5], [55, 58]];
+
+      // El mundo: celdas de 1080 x 1920 en 2 columnas.
+      const CEL = (c, f) => [600 + c * 1220, 600 + f * 2060];
+      const world = document.getElementById("world");
+      const tl = gsap.timeline({ paused: true });
+      const entra = (el, t) =>
+        tl.fromTo(el, { opacity: 0, z: 260, rotationX: -16, y: 50 }, { opacity: 1, z: 0, rotationX: 0, y: 0, duration: 0.75, ease: "power3.out" }, t);
+
+      function print(cel, x, y, src, w, h, giro, t, fino) {
+        const [ox, oy] = CEL(...cel);
+        const el = document.createElement("div");
+        el.className = "el print";
+        el.style.left = ox + x + "px"; el.style.top = oy + y + "px";
+        el.innerHTML = `<div class="marco${fino ? " fino" : ""}" style="transform: rotate(${giro}deg)"><img src="${src}" width="${w}" height="${h}" alt="" /></div>`;
+        world.appendChild(el); entra(el, t); return el;
+      }
+      // texto: partes = [[texto, clase]]; las palabras se revelan de t0 a t1
+      function texto(cel, x, y, partes, tam, ancho, t0, t1) {
+        const [ox, oy] = CEL(...cel);
+        const el = document.createElement("div");
+        el.className = "el txt";
+        el.style.left = ox + x + "px"; el.style.top = oy + y + "px"; el.style.width = ancho + "px"; el.style.fontSize = tam + "px";
+        const spans = [];
+        partes.forEach(([txt, cls]) => {
+          const linea = document.createElement("div");
+          txt.split(" ").forEach((w) => { const s = document.createElement("span"); s.textContent = w; if (cls) s.className = cls; linea.appendChild(s); spans.push(s); });
+          el.appendChild(linea);
+        });
+        world.appendChild(el);
+        spans.forEach((s, i) => tl.fromTo(s, { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, t0 + ((t1 - t0) * i) / spans.length));
+        return el;
+      }
+      function bloque(cel, x, y, html, cls, t, w, h) {
+        const [ox, oy] = CEL(...cel);
+        const el = document.createElement("div");
+        el.className = "el " + (cls || "");
+        el.style.left = ox + x + "px"; el.style.top = oy + y + "px";
+        if (w) el.style.width = w + "px";
+        if (h) el.style.height = h + "px";
+        el.innerHTML = html; world.appendChild(el); entra(el, t); return el;
+      }
+
+      // 1 · El entrenador prepara la semana (14-20)
+      print([0, 0], 70, 360, "assets/img/michels.png", 900, 640, -3, 14.0);
+      texto([0, 0], 90, 1130, [["Prepara la semana:", ""]], 74, 920, 14.6, 16.4);
+      texto([0, 0], 90, 1240, [["Lo que", ""], ["entrenas.", "rojo"]], 66, 920, 16.6, 17.6);
+      texto([0, 0], 90, 1400, [["Lo que", ""], ["comes.", "rojo"]], 66, 920, 17.8, 18.6);
+      texto([0, 0], 90, 1560, [["Lo que", ""], ["descansas.", "rojo"]], 66, 920, 18.8, 19.7);
+      // 2 · El domingo decides tú (20-26)
+      print([1, 0], 60, 400, "assets/img/keeper.png", 900, 600, 3, 20.0);
+      texto([1, 0], 90, 1150, [["El domingo", ""], ["decides tú.", ""]], 84, 920, 20.4, 24.6);
+      texto([1, 0], 90, 1400, [["No el entrenador.", "rojo"]], 84, 920, 24.7, 25.8);
+      // 3 · Cuatro fases (26-29)
+      texto([0, 1], 90, 400, [["En FF360 trabajamos igual,", ""], ["en cuatro fases.", "rojo"]], 62, 940, 26.0, 28.4);
+      ["comida", "kopbal", "masaje", "keeper-mini"].forEach((n, i) => {
+        const x = 90 + (i % 2) * 480, y = 760 + Math.floor(i / 2) * 460;
+        print([0, 1], x, y, `assets/img/${n}.png`, 440, 330, i % 2 ? 1.5 : -1.5, 26.3 + i * 0.4, true);
+        bloque([0, 1], x + 6, y - 96, `<span class="num">${i + 1}</span>`, "", 26.3 + i * 0.4);
+      });
+      // 4 · El dato de la UEFA (34-40)
+      texto([1, 1], 110, 420, [["La UEFA, 2021", ""]], 76, 900, 34.0, 35.4);
+      bloque([1, 1], 0, 600, `
+        <svg width="1000" height="560" viewBox="0 0 1000 560" font-family="Inter" font-weight="700">
+          <line x1="150" y1="360" x2="850" y2="360" stroke="#ecf2ff" stroke-width="5"/>
+          <g fill="#ecf2ff"><circle cx="150" cy="360" r="16"/><circle cx="500" cy="360" r="16"/><circle cx="850" cy="360" r="16"/></g>
+          <g fill="#ecf2ff" font-size="42" text-anchor="middle"><text x="150" y="450">VÍSPERA</text><text x="500" y="450">PARTIDO</text><text x="850" y="450">DÍA DESPUÉS</text></g>
+          <g stroke="#5cd678" stroke-width="5"><line x1="150" y1="340" x2="150" y2="150"/><line x1="500" y1="340" x2="500" y2="150"/></g>
+          <g fill="#5cd678" font-size="58" text-anchor="middle"><text x="150" y="120">6-8 g/kg</text><text x="500" y="120">6-8 g/kg</text></g>
+        </svg>`, "", 35.4);
+      bloque([1, 1], 100, 1260, `<div class="cita"><b>Statement</b>Collins J, et al. UEFA expert group statement on nutrition in elite football. Current evidence to inform practical recommendations and guide future research. Br J Sports Med 2021;55:416 · PMID 33097528</div>`, "", 37.4);
+      // 5 · Fuerza (43-46)
+      print([0, 2], 70, 380, "assets/img/kopbal-grande.png", 820, 620, -2, 43.0);
+      print([0, 2], 160, 1060, "assets/img/carrera.png", 760, 300, 1.5, 43.4, true);
+      texto([0, 2], 100, 1460, [["Ganar duelos y arrancar,", ""]], 66, 900, 43.2, 44.8);
+      texto([0, 2], 100, 1640, [["sin ponerte grande.", "rojo"]], 66, 900, 44.8, 45.9);
+      // 6 · Recuperar (48.5-51)
+      print([1, 2], 110, 420, "assets/img/masaje-grande.png", 820, 620, 2, 48.5);
+      texto([1, 2], 110, 1200, [["Sueño y respiración", ""]], 70, 900, 48.7, 50.0);
+      texto([1, 2], 110, 1310, [["entre partido y partido.", "rojo"]], 70, 900, 50.0, 50.9);
+      // 7 · Que aguante sin mí: tu foto tachada, el gesto del médico de la referencia (51-55)
+      texto([0, 3], 240, 400, [["Que aguante", ""], ["SIN MÍ", "rojo"]], 92, 900, 51.0, 53.2);
+      bloque([0, 3], 240, 700, "TU FOTO", "hueco", 51.5, 600, 760).style.fontSize = "58px";
+      bloque([0, 3], 340, 880, `
+        <svg width="400" height="400" viewBox="0 0 400 400" fill="none" stroke="#eb524c" stroke-linecap="round">
+          <path id="x-arco" d="M 330 90 A 170 170 0 1 0 352 160" stroke-width="18"/>
+          <path id="x-a" d="M 125 125 L 275 275" stroke-width="24"/><path id="x-b" d="M 275 125 L 125 275" stroke-width="24"/>
+        </svg>`, "", 53.4);
+      // 8 · ¿Cómo? (58-66)
+      texto([1, 3], 90, 380, [["¿Cómo?", ""]], 104, 900, 58.0, 58.5);
+      const movil = bloque([1, 3], 70, 620, "CAPTURA<br/>DE LA APP", "hueco", 58.4, 380, 640);
+      movil.style.borderRadius = "46px"; movil.style.fontSize = "40px";
+      texto([1, 3], 500, 650, [["Tu plan en el móvil", ""], ["en 48 horas", "rojo"]], 50, 540, 58.8, 61.2);
+      texto([1, 3], 500, 880, [["Check-in", ""], ["cada lunes", "rojo"]], 50, 540, 61.2, 63.0);
+      texto([1, 3], 500, 1050, [["Yo en tu WhatsApp", ""], ["todos los días", "rojo"]], 50, 540, 63.0, 65.4);
+      texto([1, 3], 90, 1420, [["ff360.es", ""]], 96, 900, 64.8, 65.6);
+
+      // La X se dibuja con el trazo (stroke-dashoffset), seek-safe.
+      ["#x-arco", "#x-a", "#x-b"].forEach((sel, i) => {
+        const p = document.querySelector(sel), L = p.getTotalLength();
+        p.style.strokeDasharray = String(L);
+        tl.fromTo(p, { strokeDashoffset: L }, { strokeDashoffset: 0, duration: i ? 0.25 : 0.55, ease: "power2.inOut" }, 53.6 + (i ? 0.45 + 0.2 * i : 0));
+      });
+
+      // La cámara: pose = centro de la celda + giro y profundidad.
+      const cam = document.getElementById("cam");
+      const pose = (cel, dy, z, rx, ry, rz) => { const [ox, oy] = CEL(...cel); return { x: -ox, y: -(oy + 40 + dy), z, rx, ry, rz }; };
+      function fija(p, t) {
+        tl.set(world, { x: p.x, y: p.y }, t);
+        tl.set(cam, { z: p.z, rotationX: p.rx, rotationY: p.ry, rotation: p.rz }, t);
+      }
+      function deriva(p, t, d) {
+        tl.to(world, { x: p.x, y: p.y, duration: d, ease: "sine.inOut" }, t);
+        tl.to(cam, { z: p.z, rotationX: p.rx, rotationY: p.ry, rotation: p.rz, duration: d, ease: "sine.inOut" }, t);
+      }
+      // Barrido rápido de una celda a otra, con desenfoque de movimiento.
+      function barrido(p, t, d = 0.6) {
+        tl.to(world, { x: p.x, y: p.y, duration: d, ease: "power3.inOut" }, t);
+        tl.to(cam, { z: p.z - 140, rotationX: p.rx, rotationY: p.ry, rotation: p.rz, duration: d / 2, ease: "power2.in" }, t);
+        tl.to(cam, { z: p.z, duration: d / 2, ease: "power2.out" }, t + d / 2);
+        tl.fromTo(world, { filter: "blur(0px)" }, { filter: "blur(9px)", duration: d / 2, ease: "power2.in", immediateRender: false }, t);
+        tl.to(world, { filter: "blur(0px)", duration: d / 2, ease: "power2.out" }, t + d / 2);
+      }
+      const P = {
+        semanaA: pose([0, 0], -40, 0, 5, -4, -2), semanaB: pose([0, 0], 60, 110, 2, 3, 1),
+        decideA: pose([1, 0], -30, 0, 4, 4, 2), decideB: pose([1, 0], 60, 120, 1, -3, -1),
+        fasesA: pose([0, 1], -40, 0, 5, -3, -1), fasesB: pose([0, 1], 40, 90, 2, 2, 1),
+        uefaA: pose([1, 1], -40, 0, 4, 4, 2), uefaB: pose([1, 1], 80, 100, 1, -2, -1),
+        fuerzaA: pose([0, 2], -30, 0, 5, -4, -2), fuerzaB: pose([0, 2], 60, 100, 2, 2, 0),
+        recuA: pose([1, 2], -30, 0, 4, 4, 2), recuB: pose([1, 2], 40, 90, 2, -2, 0),
+        sinmiA: pose([0, 3], -40, 0, 5, -3, -2), sinmiB: pose([0, 3], 60, 140, 1, 2, 1),
+        comoA: pose([1, 3], -50, 0, 4, 3, 1), comoB: pose([1, 3], 60, 90, 1, -2, -1),
+      };
+      fija(P.semanaA, 0); deriva(P.semanaB, 14.0, 6.0);
+      barrido(P.decideA, 20.0); deriva(P.decideB, 20.6, 5.4);
+      barrido(P.fasesA, 26.0); deriva(P.fasesB, 26.6, 2.4);
+      fija(P.uefaA, 34.0); deriva(P.uefaB, 34.0, 6.0);
+      fija(P.fuerzaA, 43.0); deriva(P.fuerzaB, 43.0, 3.0);
+      fija(P.recuA, 48.5); deriva(P.recuB, 48.5, 2.5);
+      barrido(P.sinmiA, 51.0); deriva(P.sinmiB, 51.6, 3.4);
+      fija(P.comoA, 58.0); deriva(P.comoB, 58.0, 8.0);
+
+      // Foto del penalti: Ken Burns.
+      tl.fromTo("#penalti-img", { scale: 1.0 }, { scale: 1.09, duration: 4, ease: "none" }, 10);
+
+      // Sketch: las frases van apareciendo.
+      function sketch(id, t0, t1, lineas) {
+        const card = document.getElementById(id);
+        lineas.forEach(([txt, rojo], i) => {
+          const p = document.createElement("p"); p.textContent = txt; if (rojo) p.className = "rojo"; card.appendChild(p);
+          tl.fromTo(p, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, t0 + 0.2 + ((t1 - t0 - 0.8) * i) / lineas.length);
+        });
+      }
+      sketch("sk-ini", 0, 10, [["—Luismi, ¿qué ceno hoy?"], ["—Pasta."], ["—¿Y mañana?"], ["—Pasta, que hay partido."], ["—¿Y el domingo?"],
+        ["—Si me lo preguntas cada día, nunca lo vas a saber tú.", 1], ["—Ya, pero para eso te pago."], ["—El problema no es que me preguntes."]]);
+      sketch("sk-fin", 66, 70, [["—¿Y el domingo qué como?"], ["—Tú sabrás.", 1], ["(abre la app)"], ["—…Arroz."]]);
+
+      // Palabra del centro en foto y vídeo.
+      const caps = document.getElementById("captions");
+      PALABRAS.forEach(([a, b, w]) => {
+        if (!LLENOS.some(([x0, x1]) => a >= x0 && a < x1)) return;
+        const s = document.createElement("div"); s.className = "cap"; s.textContent = w.replace(/[.,:¿?]/g, ""); caps.appendChild(s);
+        tl.set(s, { opacity: 1 }, a); tl.set(s, { opacity: 0 }, b);
+      });
+
+      // La pared queda debajo de vídeo, sketch y viñeta a propósito (mismo patrón que la referencia).
+      world.querySelectorAll(".el").forEach((e) => { e.setAttribute("data-layout-allow-occlusion", ""); e.setAttribute("data-layout-allow-overlap", ""); });
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
