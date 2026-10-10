@@ -227,7 +227,10 @@ UNION = {"y", "que", "de", "el", "la", "lo", "los", "las", "es", "a", "en", "por
 bloques, cur = [], []
 for i, (a, b, w) in enumerate(vivas):
     MAXL = SPEC.get("subt_max_letras", 16)
-    if SPEC.get("subt_modo") == "marca" and cur and sum(len(x[2].strip()) + 1 for x in cur) + len(w.strip()) > MAXL:
+    # En subt_rotulo la clave va en su propia línea debajo: no cuenta para el ancho y se queda con su frase
+    # (medido el 10-10 en la T42: cortaba "año de | juvenil" y la clave salía sola, como subtítulo normal).
+    clave_aparte = SPEC.get("subt_rotulo") and limpio(w) in clave
+    if SPEC.get("subt_modo") == "marca" and cur and not clave_aparte and sum(len(x[2].strip()) + 1 for x in cur) + len(w.strip()) > MAXL:
         bloques.append(cur); cur = []          # no cabe: cierra antes de meterla
     cur.append((a, b, w))
     sig = vivas[i + 1] if i + 1 < len(vivas) else None
@@ -286,7 +289,8 @@ for j, bl in enumerate(bloques):
                                  shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
                                  clip_settings=d.Clip_settings(transform_y=sy + ga))
             seg.add_animation(d.CapCut_Text_intro.Fade_In, "0.12s"); script.add_segment(seg, "subtitulos")
-            sk = d.Text_segment(" ".join(claves), trange(f"{tk:.3f}s", f"{max(0.3, t1 - tk):.3f}s"),
+            # hasta el siguiente bloque, nunca más: si no, pisa la clave siguiente en su pista (T42, "puerta"/"juntos")
+            sk = d.Text_segment(" ".join(claves), trange(f"{tk:.3f}s", f"{max(0.05, t1 - tk):.3f}s"),
                                 style=d.Text_style(size=tam * kf, color=(224 / 255, 184 / 255, 60 / 255), align=1, bold=True),
                                 border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
                                 shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
@@ -294,6 +298,16 @@ for j, bl in enumerate(bloques):
             entrada = _azar.choice([d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up])
             sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave")
             USADOS.append([f"subt_rotulo:{entrada.name}", round(tk, 2)]); continue
+        if ROT and ks and all(ks):  # la clave sola (tras una pausa): grande y en dorado, como "BRUTAL" en la referencia
+            # (va en la pista de claves: no se apunta en MARCA_INFO, que se empareja con la de subtítulos)
+            sk =d.Text_segment(" ".join(x.upper() for x in pal), trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"),
+                                style=d.Text_style(size=tam * kf, color=(224 / 255, 184 / 255, 60 / 255), align=1, bold=True),
+                                border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
+                                shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
+                                clip_settings=d.Clip_settings(transform_y=sy + gb - 0.02))
+            entrada = _azar.choice([d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up])
+            sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave")
+            USADOS.append([f"subt_rotulo:{entrada.name}", round(t0, 2)]); continue
         if SPEC.get("subt_jerarquia") and any(ks) and not all(ks):
             # jerarquia en DOS textos separados (un tamano por texto: CapCut no descoloca nada)
             antes = [x for x, k in zip(pal, ks) if not k]; claves = [x for x, k in zip(pal, ks) if k]
@@ -447,6 +461,28 @@ meta = os.path.join(destino, "draft_meta_info.json")
 if os.path.exists(meta):
     mj = json.load(open(meta, encoding="utf-8")); mj["draft_name"] = SPEC["nombre"]; mj["draft_fold_path"] = destino.replace("\\", "/")
     json.dump(mj, open(meta, "w", encoding="utf-8"), ensure_ascii=False)
+# El proyecto copia la plantilla y hereda su fecha y su portada: en la lista de CapCut saldría abajo y con otra
+# imagen (visto el 09-10). Fecha de ahora, duración real, portada con un fotograma tuyo y arriba del índice.
+import time
+_now = int(time.time() * 1e6); _dur = json.load(open(os.path.join(destino, "draft_content.json"), encoding="utf-8"))["duration"]
+subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(tramos[0][0] + 1.2), "-i", SPEC["video"], "-frames:v", "1", "-vf", "scale=360:-1",
+                os.path.join(destino, "draft_cover.jpg")])
+def _fija(e):
+    for k in ("tm_draft_create", "tm_draft_modified"):
+        if k in e: e[k] = _now
+    e["tm_duration"] = _dur
+_root = os.path.join(CAPCUT, "root_meta_info.json")
+if os.path.exists(_root) and os.path.exists(meta):
+    rj = json.load(open(_root, encoding="utf-8")); st = rj.get("all_draft_store", []); dm = json.load(open(meta, encoding="utf-8"))
+    e = next((x for x in st if x.get("draft_name") == SPEC["nombre"]), None)
+    if e is None and st:  # el índice solo lo rellena CapCut al arrancar: se clona otra entrada con los datos de este
+        e = dict(st[0], draft_name=SPEC["nombre"], draft_id=dm.get("draft_id", ""), draft_fold_path=destino.replace("\\", "/"),
+                 draft_cover=destino.replace("\\", "/") + "\\draft_cover.jpg", draft_json_file=destino.replace("\\", "/") + "\\draft_content.json")
+    elif e is not None: st.remove(e)
+    if e is not None:
+        _fija(e); st.insert(0, e); json.dump(rj, open(_root, "w", encoding="utf-8"), ensure_ascii=False)
+    _fija(dm); json.dump(dm, open(meta, "w", encoding="utf-8"), ensure_ascii=False)
+
 print(f"ok {destino}\n  {len(tramos)} tramos, {TOTAL:.1f} s, {len(bloques)} subtitulos")
 
 # ---------- registro de lo usado ----------
