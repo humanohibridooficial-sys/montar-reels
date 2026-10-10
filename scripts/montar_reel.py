@@ -173,6 +173,38 @@ for r in SPEC.get("rotulos_png", []):
         script.add_track(d.Track_type.video, pista, relative_index=6 + len(_pistas_png)); _pistas_png.append(pista)
     script.add_segment(seg, pista)
     if SPEC.get("sfx_auto", True): sfx("whoosh", max(0, t0 - 0.1), 0.25)
+# 5c. destellos (pasar de bloque) y tintes de color (la otra voz, "red flag"), como capas PNG de color liso
+# en su pista. Variados (Luismi, 10-10: "no sota, caballo y rey"): si la spec no fija el color, se elige al
+# azar entre los de la marca, con semilla por pieza para que regenerar dé lo mismo.
+import random
+from PIL import Image
+_azar = random.Random(SPEC.get("nombre", "reel"))
+_solidos = os.path.join(config.RAIZ, "trabajo", "_solidos"); os.makedirs(_solidos, exist_ok=True)
+def solido(hexcol, alfa):
+    p = os.path.join(_solidos, f"{hexcol.strip('#')}-{int(alfa * 100)}.png")
+    if not os.path.exists(p): Image.new("RGBA", (1080, 1920), tuple(int(hexcol[i:i + 2], 16) for i in (1, 3, 5)) + (int(255 * alfa),)).save(p)
+    return p
+# Colores de FF360 (Luismi, 10-10: "mete mi branding, no el de Carla"): dorado del resaltado, azul de la
+# marca, marino de los rótulos y el blanco azulado; nada de crema ni verde (el verde es el antiguo).
+DESTELLO = ["#E0B83C", "#2E6BFF", "#E6F0FF"]
+TINTE = {"rojo": "#C62828", "azul": "#2E6BFF", "marino": "#1E3A5F", "dorado": "#E0B83C"}  # rojo solo para el "red flag"
+if SPEC.get("tintes"): script.add_track(d.Track_type.video, "tintes", relative_index=20)
+if SPEC.get("destellos"): script.add_track(d.Track_type.video, "efectos", relative_index=21)  # el destello, por encima
+for f in SPEC.get("destellos", []):
+    f = f if isinstance(f, dict) else {"t": f}
+    col = f.get("color") or _azar.choice(DESTELLO); du = f.get("dur", _azar.choice([0.16, 0.2, 0.26]))
+    mm = d.Video_material("photo", path=solido(col, 0.9), material_name="destello", width=1080, height=1920)
+    t0 = max(0.0, T(f["t"]) - du / 2)
+    seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{du:.3f}s"))
+    seg.add_animation(d.CapCut_Intro_type.Fade_In, f"{du / 2:.3f}s"); seg.add_animation(d.CapCut_Outro_type.Fade_Out, f"{du / 2:.3f}s")
+    script.add_segment(seg, "efectos")
+for c in SPEC.get("tintes", []):
+    col = TINTE.get(c.get("color"), c.get("color")) or _azar.choice(list(TINTE.values()))
+    t0, t1 = T(c["ini"]), T(c["fin"])
+    mm = d.Video_material("photo", path=solido(col, c.get("fuerza", 0.28)), material_name="tinte", width=1080, height=1920)
+    seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"))
+    seg.add_animation(d.CapCut_Intro_type.Fade_In, "0.12s"); seg.add_animation(d.CapCut_Outro_type.Fade_Out, "0.12s")
+    script.add_segment(seg, "tintes")
 # 5b. rotulos de texto de CapCut (sistema antiguo, solo si la spec los pide)
 for r in SPEC.get("rotulos", []):
     oro = r.get("oro", False)
@@ -201,7 +233,7 @@ for i, (a, b, w) in enumerate(vivas):
     pausa = sig and sig[0] - b > 0.35
     llena = len(cur) >= 3 or chars >= SPEC.get("subt_max_letras", 16)
     es_k = SPEC.get("subt_modo") != "marca" and (limpio(w) in clave or (sig and limpio(sig[2]) in clave))
-    jer = SPEC.get("subt_jerarquia") and limpio(w) in clave
+    jer = (SPEC.get("subt_jerarquia") or SPEC.get("subt_rotulo")) and limpio(w) in clave
     if not sig or fin_frase or pausa or es_k or jer or (llena and limpio(w) not in UNION) or len(cur) >= 4:
         bloques.append(cur); cur = []
 ESTILO_CLONADO = bool(SPEC.get("subt_estilo_de"))
@@ -233,10 +265,31 @@ for j, bl in enumerate(bloques):
     if any(t0 < b and t1 > a for a, b, tapa in RIVALES if tapa): continue  # la capa ocupa tambien la franja baja
     if pisa and SPEC.get("subt_y_bajo") is None: continue
     if SPEC.get("subt_modo") == "marca":
-        pal = [re.sub(r"[.,;:!]", "", w.strip()).upper() for _, _, w in bl]
+        ROT = SPEC.get("subt_rotulo")  # la palabra clave "vestida de rótulo" (técnica de @carlabalasc, marca FF360)
+        mayus = not (ROT and SPEC.get("subt_minusculas"))
+        pal = [re.sub(r"[.,;:!]", "", w.strip()).upper() if mayus else re.sub(r"[.,;:]", "", w.strip()) for _, _, w in bl]
         ks = [limpio(w) in clave for _, _, w in bl]
         tam = SPEC.get("subt_size", 16); sy = SPEC["subt_y_bajo"] if pisa else SPEC.get("subt_y", -0.23)
-        kf = SPEC.get("subt_clave_factor", 1.75); ga, gb = SPEC.get("subt_jer_sep", [0.045, -0.035])
+        kf = SPEC.get("subt_clave_factor", 2.5 if ROT else 1.75); ga, gb = SPEC.get("subt_jer_sep", [0.045, -0.035])
+        if ROT and any(ks) and not all(ks):
+            # La frase pequeña entra con el bloque; la clave, DEBAJO y grande, entra cuando se dice y las dos
+            # se quedan juntas como un rótulo hasta el siguiente bloque. La entrada de la clave varía.
+            antes = [x for x, k in zip(pal, ks) if not k]; claves = [x.upper() for x, k in zip(pal, ks) if k]
+            tk = T(next(a for (a, _, _), k in zip(bl, ks) if k))
+            MARCA_INFO.append([(x, False) for x in antes])
+            seg = d.Text_segment(" ".join(antes), trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"),
+                                 style=d.Text_style(size=tam * 0.8, color=(1, 1, 1), align=1, bold=True),
+                                 border=d.Text_border(color=(0, 0, 0), width=30, alpha=1.0),
+                                 shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
+                                 clip_settings=d.Clip_settings(transform_y=sy + ga))
+            seg.add_animation(d.CapCut_Text_intro.Fade_In, "0.12s"); script.add_segment(seg, "subtitulos")
+            sk = d.Text_segment(" ".join(claves), trange(f"{tk:.3f}s", f"{max(0.3, t1 - tk):.3f}s"),
+                                style=d.Text_style(size=tam * kf, color=(224 / 255, 184 / 255, 60 / 255), align=1, bold=True),
+                                border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
+                                shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
+                                clip_settings=d.Clip_settings(transform_y=sy + gb - 0.02))
+            entrada = _azar.choice([d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up])
+            sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave"); continue
         if SPEC.get("subt_jerarquia") and any(ks) and not all(ks):
             # jerarquia en DOS textos separados (un tamano por texto: CapCut no descoloca nada)
             antes = [x for x, k in zip(pal, ks) if not k]; claves = [x for x, k in zip(pal, ks) if k]
