@@ -233,7 +233,7 @@ for i, (a, b, w) in enumerate(vivas):
     pausa = sig and sig[0] - b > 0.35
     llena = len(cur) >= 3 or chars >= SPEC.get("subt_max_letras", 16)
     es_k = SPEC.get("subt_modo") != "marca" and (limpio(w) in clave or (sig and limpio(sig[2]) in clave))
-    jer = SPEC.get("subt_jerarquia") and limpio(w) in clave
+    jer = (SPEC.get("subt_jerarquia") or SPEC.get("subt_rotulo")) and limpio(w) in clave
     if not sig or fin_frase or pausa or es_k or jer or (llena and limpio(w) not in UNION) or len(cur) >= 4:
         bloques.append(cur); cur = []
 ESTILO_CLONADO = bool(SPEC.get("subt_estilo_de"))
@@ -265,10 +265,31 @@ for j, bl in enumerate(bloques):
     if any(t0 < b and t1 > a for a, b, tapa in RIVALES if tapa): continue  # la capa ocupa tambien la franja baja
     if pisa and SPEC.get("subt_y_bajo") is None: continue
     if SPEC.get("subt_modo") == "marca":
-        pal = [re.sub(r"[.,;:!]", "", w.strip()).upper() for _, _, w in bl]
+        ROT = SPEC.get("subt_rotulo")  # la palabra clave "vestida de rótulo" (técnica de @carlabalasc, marca FF360)
+        mayus = not (ROT and SPEC.get("subt_minusculas"))
+        pal = [re.sub(r"[.,;:!]", "", w.strip()).upper() if mayus else re.sub(r"[.,;:]", "", w.strip()) for _, _, w in bl]
         ks = [limpio(w) in clave for _, _, w in bl]
         tam = SPEC.get("subt_size", 16); sy = SPEC["subt_y_bajo"] if pisa else SPEC.get("subt_y", -0.23)
-        kf = SPEC.get("subt_clave_factor", 1.75); ga, gb = SPEC.get("subt_jer_sep", [0.045, -0.035])
+        kf = SPEC.get("subt_clave_factor", 2.5 if ROT else 1.75); ga, gb = SPEC.get("subt_jer_sep", [0.045, -0.035])
+        if ROT and any(ks) and not all(ks):
+            # La frase pequeña entra con el bloque; la clave, DEBAJO y grande, entra cuando se dice y las dos
+            # se quedan juntas como un rótulo hasta el siguiente bloque. La entrada de la clave varía.
+            antes = [x for x, k in zip(pal, ks) if not k]; claves = [x.upper() for x, k in zip(pal, ks) if k]
+            tk = T(next(a for (a, _, _), k in zip(bl, ks) if k))
+            MARCA_INFO.append([(x, False) for x in antes])
+            seg = d.Text_segment(" ".join(antes), trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"),
+                                 style=d.Text_style(size=tam * 0.8, color=(1, 1, 1), align=1, bold=True),
+                                 border=d.Text_border(color=(0, 0, 0), width=30, alpha=1.0),
+                                 shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
+                                 clip_settings=d.Clip_settings(transform_y=sy + ga))
+            seg.add_animation(d.CapCut_Text_intro.Fade_In, "0.12s"); script.add_segment(seg, "subtitulos")
+            sk = d.Text_segment(" ".join(claves), trange(f"{tk:.3f}s", f"{max(0.3, t1 - tk):.3f}s"),
+                                style=d.Text_style(size=tam * kf, color=(224 / 255, 184 / 255, 60 / 255), align=1, bold=True),
+                                border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
+                                shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
+                                clip_settings=d.Clip_settings(transform_y=sy + gb - 0.02))
+            entrada = _azar.choice([d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up])
+            sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave"); continue
         if SPEC.get("subt_jerarquia") and any(ks) and not all(ks):
             # jerarquia en DOS textos separados (un tamano por texto: CapCut no descoloca nada)
             antes = [x for x, k in zip(pal, ks) if not k]; claves = [x for x, k in zip(pal, ks) if k]
