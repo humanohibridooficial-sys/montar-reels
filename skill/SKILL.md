@@ -23,6 +23,11 @@ entorno: `{{REPO}}\.venv\Scripts\python.exe`. Las rutas (trabajo, CapCut, fuente
    la siguiente. Nunca despaches varias de golpe.
 2. **Cada pieza pide sus recursos.** El lenguaje es común (colores, tipografía, subtítulos); los recursos (rótulos,
    B-roll, zooms, palabra detrás) se deciden por frase. No repitas el mismo truco en dos piezas seguidas.
+   Antes de proponer el montaje lee `mi-estilo/recursos.md` (qué formas hay para cada función: gancho, lista,
+   dato, objeción, pasar de bloque, cierre) y las últimas 5 entradas de `mi-estilo/usados.json` (lo que llevó
+   cada reel, y su gancho): elige formas DISTINTAS de las recientes, sobre todo en el gancho, y varía color, lado
+   y entrada dentro del recurso. El contenido decide la función; la forma rota. `montar_reel.py` apunta cada
+   montaje en `usados.json` solo.
 3. **Reaprovecha lo que ya gustó.** Si una pieza estaba bien, déjala igual y retócala solo en lo repetido o en lo roto.
 4. **Fallo de diseño que veas, avísalo.** No des nada por bueno sin mirar el export.
 

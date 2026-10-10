@@ -8,6 +8,9 @@ from pyJianYingDraft import trange, tim, Keyframe_property as KP
 from draft_profiles import get_draft_profile
 
 SPEC = json.load(open(sys.argv[1], encoding="utf-8"))
+# Lo que lleva cada reel queda en mi-estilo/usados.json para que el siguiente elija distinto
+# (Luismi, 10-10: "no sota, caballo y rey"). [recurso, segundo en el reel montado]
+USADOS = []
 CAPCUT = config.CAPCUT
 PLANTILLA = config.PLANTILLA  # un proyecto (vacío) que tu CapCut ya abrió bien: se copia y se rellena
 if not os.path.isdir(PLANTILLA):
@@ -289,7 +292,8 @@ for j, bl in enumerate(bloques):
                                 shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
                                 clip_settings=d.Clip_settings(transform_y=sy + gb - 0.02))
             entrada = _azar.choice([d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up])
-            sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave"); continue
+            sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave")
+            USADOS.append([f"subt_rotulo:{entrada.name}", round(tk, 2)]); continue
         if SPEC.get("subt_jerarquia") and any(ks) and not all(ks):
             # jerarquia en DOS textos separados (un tamano por texto: CapCut no descoloca nada)
             antes = [x for x, k in zip(pal, ks) if not k]; claves = [x for x, k in zip(pal, ks) if k]
@@ -444,3 +448,20 @@ if os.path.exists(meta):
     mj = json.load(open(meta, encoding="utf-8")); mj["draft_name"] = SPEC["nombre"]; mj["draft_fold_path"] = destino.replace("\\", "/")
     json.dump(mj, open(meta, "w", encoding="utf-8"), ensure_ascii=False)
 print(f"ok {destino}\n  {len(tramos)} tramos, {TOTAL:.1f} s, {len(bloques)} subtitulos")
+
+# ---------- registro de lo usado ----------
+for p in SPEC.get("palabra_detras", []): USADOS.append(["palabra_detras", round(T(p["ini"]), 2)])
+for b in SPEC.get("broll", []): USADOS.append([f"broll:{b.get('modo', 'pantalla')}" + (f":{b.get('lado', 'arriba')}" if b.get("modo") == "media" else ""), round(T(b["ini"]), 2)])
+for r in SPEC.get("rotulos_png", []): USADOS.append([f"rotulo:{os.path.splitext(os.path.basename(r['png']))[0]}", round(T(r["ini"]), 2)])
+for f in SPEC.get("destellos", []): USADOS.append(["destello", round(T(f["t"] if isinstance(f, dict) else f), 2)])
+for c in SPEC.get("tintes", []): USADOS.append([f"tinte:{c.get('color', 'azar')}", round(T(c["ini"]), 2)])
+for a, _ in SPEC.get("byn", []): USADOS.append(["byn", round(T(a), 2)])
+for a, _ in SPEC.get("zooms", []): USADOS.append(["zoom", round(T(a), 2)])
+from datetime import date
+reg = os.path.join(config.RAIZ, "mi-estilo", "usados.json")
+historial = json.load(open(reg, encoding="utf-8")) if os.path.exists(reg) else []
+historial = [h for h in historial if h.get("nombre") != SPEC["nombre"]]
+historial.append({"nombre": SPEC["nombre"], "fecha": date.today().isoformat(), "duracion_s": round(TOTAL, 1),
+                  "gancho": sorted({u for u, t in USADOS if t < 2.0}), "recursos": sorted(USADOS, key=lambda x: x[1])})
+json.dump(historial, open(reg, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+print(f"  apuntado en mi-estilo/usados.json: {len(USADOS)} recursos, gancho = {', '.join(historial[-1]['gancho']) or 'sin recurso'}")
