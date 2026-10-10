@@ -35,4 +35,6 @@ def codec_video(calidad="normal"):
     return ["-c:v", "libx264", "-preset", "medium", "-crf", "18" if calidad == "alta" else "22"]
 
 if os.path.isdir(VENDOR) and VENDOR not in sys.path:
-    sys.path.insert(0, VENDOR)
+    # Al final, no al principio: VectCutAPI solo hace falta para pyJianYingDraft, y si trae ficheros con el mismo
+    # nombre que los de scripts/ (rotulos_lib, composicion...) tienen que ganar siempre los de aquí.
+    sys.path.append(VENDOR)
