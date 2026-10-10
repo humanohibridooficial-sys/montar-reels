@@ -85,6 +85,45 @@ def jornada(encendido=None, tachado=None, titulo=None):
             d.line([cx + 18, y + 14, cx + cw - 18, y + ch - 14], fill=ROJO, width=14); d.line([cx + cw - 18, y + 14, cx + 18, y + ch - 14], fill=ROJO, width=14)
     return capa
 
+_FINA = r"C:\Windows\Fonts\segoeuil.ttf"; _SEGOE = r"C:\Windows\Fonts\segoeui.ttf"; _SEGOE_B = r"C:\Windows\Fonts\segoeuib.ttf"
+_existe = lambda p, otra: p if os.path.exists(p) else otra
+
+def tres_pesos(lineas, y=330, alinear="centro"):
+    """Gancho de texto arriba con TRES pesos (referencia @carlabalasc): cada línea es [texto, peso] con
+    peso "negrita" (pequeña), "fina" (grande y ligera) o "clave" (grande, en el color de la marca).
+    Ej.: [["¿Que yo", "negrita"], ["voy a comer", "fina"], ["PASTA", "clave"]]."""
+    capa = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(capa)
+    fuentes = {"negrita": f(64), "fina": f(118, _existe(_FINA, BEBAS)), "clave": f(150)}
+    for texto, peso in lineas:
+        fo = fuentes[peso]; tw, th, ox, oy = medir(d, texto, fo)
+        x = 110 if alinear == "izq" else CENTRO_X - tw // 2
+        d.text((x - ox + 5, y - oy + 7), texto, font=fo, fill=(0, 0, 0, 170))
+        d.text((x - ox, y - oy), texto, font=fo, fill=ORO if peso == "clave" else BLANCO,
+               stroke_width=2 if peso != "fina" else 0, stroke_fill=(0, 0, 0))
+        y += th + (18 if peso == "negrita" else 26)
+    return capa
+
+def tuit(nombre, usuario, texto, y=360):
+    """Tarjeta de tuit falsa en blanco para citar "la otra voz" (referencia @carlabalasc). Nunca con el
+    nombre ni la foto de una persona real: usuario genérico ("@entrenador_random")."""
+    capa = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(capa)
+    fn, fu, ft = f(40, _existe(_SEGOE_B, BEBAS)), f(34, _existe(_SEGOE, BEBAS)), f(44, _existe(_SEGOE, BEBAS))
+    ancho = ANCHO_MAX; lineas, actual = [], ""
+    for p in texto.split():
+        prueba = (actual + " " + p).strip()
+        if d.textlength(prueba, font=ft) > ancho - 80: lineas.append(actual); actual = p
+        else: actual = prueba
+    lineas.append(actual)
+    alto = 150 + len(lineas) * 58 + 30; x0 = CENTRO_X - ancho // 2
+    sombra = Image.new("RGBA", (W, H), (0, 0, 0, 0)); ImageDraw.Draw(sombra).rounded_rectangle([x0 + 10, y + 16, x0 + ancho + 10, y + alto + 16], 34, fill=(0, 0, 0, 120))
+    capa.alpha_composite(sombra.filter(ImageFilter.GaussianBlur(16)))
+    d.rounded_rectangle([x0, y, x0 + ancho, y + alto], 34, fill=(255, 255, 255, 250))
+    d.ellipse([x0 + 36, y + 36, x0 + 120, y + 120], fill=(205, 210, 218))
+    d.text((x0 + 140, y + 40), nombre, font=fn, fill=(15, 20, 25))
+    d.text((x0 + 140, y + 86), usuario, font=fu, fill=(110, 118, 125))
+    for i, l in enumerate(lineas): d.text((x0 + 40, y + 150 + i * 58), l, font=ft, fill=(15, 20, 25))
+    return capa
+
 def encajar(img):
     """Ajusta a la zona util: ancho max 760, centrado en x=490 (columna de botones a la derecha)."""
     bb = img.getbbox(); p = img.crop(bb); w, h = p.size
@@ -93,7 +132,7 @@ def encajar(img):
 
 if __name__ == "__main__":
     out = sys.argv[1]; os.makedirs(out, exist_ok=True)
-    TIPOS = {"palabras": palabras, "dato": dato, "cartel": cartel_cambio, "jornada": jornada}
+    TIPOS = {"palabras": palabras, "dato": dato, "cartel": cartel_cambio, "jornada": jornada, "tres_pesos": tres_pesos, "tuit": tuit}
     for nombre, tipo, args in json.loads(sys.argv[2]):
         img0 = TIPOS[tipo](**args)
         img, bb = (img0, img0.getbbox()) if (args.get("cx") or tipo == "palabras") else encajar(img0)
