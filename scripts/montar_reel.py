@@ -184,8 +184,10 @@ def solido(hexcol, alfa):
     p = os.path.join(_solidos, f"{hexcol.strip('#')}-{int(alfa * 100)}.png")
     if not os.path.exists(p): Image.new("RGBA", (1080, 1920), tuple(int(hexcol[i:i + 2], 16) for i in (1, 3, 5)) + (int(255 * alfa),)).save(p)
     return p
-DESTELLO = ["#FFF4D6", "#E0B83C", "#1E3A5F", "#FFFFFF"]  # crema, dorado, azul de la marca, blanco
-TINTE = {"rojo": "#C62828", "verde": "#2E7D32", "azul": "#1E3A5F", "dorado": "#E0B83C"}
+# Colores de FF360 (Luismi, 10-10: "mete mi branding, no el de Carla"): dorado del resaltado, azul de la
+# marca, marino de los rótulos y el blanco azulado; nada de crema ni verde (el verde es el antiguo).
+DESTELLO = ["#E0B83C", "#2E6BFF", "#E6F0FF"]
+TINTE = {"rojo": "#C62828", "azul": "#2E6BFF", "marino": "#1E3A5F", "dorado": "#E0B83C"}  # rojo solo para el "red flag"
 if SPEC.get("tintes"): script.add_track(d.Track_type.video, "tintes", relative_index=20)
 if SPEC.get("destellos"): script.add_track(d.Track_type.video, "efectos", relative_index=21)  # el destello, por encima
 for f in SPEC.get("destellos", []):

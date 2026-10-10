@@ -85,43 +85,47 @@ def jornada(encendido=None, tachado=None, titulo=None):
             d.line([cx + 18, y + 14, cx + cw - 18, y + ch - 14], fill=ROJO, width=14); d.line([cx + cw - 18, y + 14, cx + 18, y + ch - 14], fill=ROJO, width=14)
     return capa
 
-_FINA = r"C:\Windows\Fonts\segoeuil.ttf"; _SEGOE = r"C:\Windows\Fonts\segoeui.ttf"; _SEGOE_B = r"C:\Windows\Fonts\segoeuib.ttf"
-_existe = lambda p, otra: p if os.path.exists(p) else otra
+AZUL_NOCHE = (7, 13, 22); AZUL_ACC = (46, 107, 255); TEXTO = (230, 240, 255); SUAVE = (170, 190, 214)
 
 def tres_pesos(lineas, y=330, alinear="centro"):
-    """Gancho de texto arriba con TRES pesos (referencia @carlabalasc): cada línea es [texto, peso] con
-    peso "negrita" (pequeña), "fina" (grande y ligera) o "clave" (grande, en el color de la marca).
-    Ej.: [["¿Que yo", "negrita"], ["voy a comer", "fina"], ["PASTA", "clave"]]."""
+    """Gancho de texto arriba con tres pesos (la TÉCNICA de @carlabalasc, con la marca de FF360: Anton y
+    Bebas, la palabra que golpea en dorado y la estructura en bloque azul marino). Cada línea es
+    [texto, peso]: "negrita" (Anton pequeña), "ligera" (Bebas grande), "clave" (Anton grande en dorado) o
+    "bloque" (Bebas en blanco sobre bloque azul marino, como la etiqueta de pilares de sus piezas).
+    Ej.: [["¿QUE YO", "negrita"], ["VOY A COMER", "ligera"], ["PASTA", "clave"], ["ANTES DEL PARTIDO?", "bloque"]]."""
     capa = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(capa)
-    fuentes = {"negrita": f(64), "fina": f(118, _existe(_FINA, BEBAS)), "clave": f(150)}
+    fuentes = {"negrita": f(66), "ligera": f(122, BEBAS), "clave": f(156), "bloque": f(70, BEBAS)}
     for texto, peso in lineas:
         fo = fuentes[peso]; tw, th, ox, oy = medir(d, texto, fo)
         x = 110 if alinear == "izq" else CENTRO_X - tw // 2
-        d.text((x - ox + 5, y - oy + 7), texto, font=fo, fill=(0, 0, 0, 170))
-        d.text((x - ox, y - oy), texto, font=fo, fill=ORO if peso == "clave" else BLANCO,
-               stroke_width=2 if peso != "fina" else 0, stroke_fill=(0, 0, 0))
-        y += th + (18 if peso == "negrita" else 26)
+        if peso == "bloque":
+            d.rectangle([x - 24, y - 14, x + tw + 24, y + th + 16], fill=AZUL)
+            d.text((x - ox, y - oy), texto, font=fo, fill=BLANCO)
+        else:
+            d.text((x - ox + 6, y - oy + 8), texto, font=fo, fill=(0, 0, 0, 190))
+            d.text((x - ox, y - oy), texto, font=fo, fill=ORO if peso == "clave" else BLANCO, stroke_width=3, stroke_fill=(0, 0, 0))
+        y += th + (22 if peso in ("negrita", "bloque") else 28)
     return capa
 
 def tuit(nombre, usuario, texto, y=360):
-    """Tarjeta de tuit falsa en blanco para citar "la otra voz" (referencia @carlabalasc). Nunca con el
-    nombre ni la foto de una persona real: usuario genérico ("@entrenador_random")."""
+    """Tarjeta de "lo que dice el otro" (la TÉCNICA de @carlabalasc, con la marca de FF360: azul noche, filo
+    azul, Anton y Bebas). Nunca con el nombre ni la foto de una persona real: usuario genérico."""
     capa = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(capa)
-    fn, fu, ft = f(40, _existe(_SEGOE_B, BEBAS)), f(34, _existe(_SEGOE, BEBAS)), f(44, _existe(_SEGOE, BEBAS))
+    fn, fu, ft = f(44), f(36, BEBAS), f(58, BEBAS)
     ancho = ANCHO_MAX; lineas, actual = [], ""
-    for p in texto.split():
+    for p in texto.upper().split():
         prueba = (actual + " " + p).strip()
-        if d.textlength(prueba, font=ft) > ancho - 80: lineas.append(actual); actual = p
+        if d.textlength(prueba, font=ft) > ancho - 90: lineas.append(actual); actual = p
         else: actual = prueba
     lineas.append(actual)
-    alto = 150 + len(lineas) * 58 + 30; x0 = CENTRO_X - ancho // 2
-    sombra = Image.new("RGBA", (W, H), (0, 0, 0, 0)); ImageDraw.Draw(sombra).rounded_rectangle([x0 + 10, y + 16, x0 + ancho + 10, y + alto + 16], 34, fill=(0, 0, 0, 120))
+    alto = 160 + len(lineas) * 64 + 34; x0 = CENTRO_X - ancho // 2
+    sombra = Image.new("RGBA", (W, H), (0, 0, 0, 0)); ImageDraw.Draw(sombra).rounded_rectangle([x0 + 10, y + 16, x0 + ancho + 10, y + alto + 16], 28, fill=(0, 0, 0, 140))
     capa.alpha_composite(sombra.filter(ImageFilter.GaussianBlur(16)))
-    d.rounded_rectangle([x0, y, x0 + ancho, y + alto], 34, fill=(255, 255, 255, 250))
-    d.ellipse([x0 + 36, y + 36, x0 + 120, y + 120], fill=(205, 210, 218))
-    d.text((x0 + 140, y + 40), nombre, font=fn, fill=(15, 20, 25))
-    d.text((x0 + 140, y + 86), usuario, font=fu, fill=(110, 118, 125))
-    for i, l in enumerate(lineas): d.text((x0 + 40, y + 150 + i * 58), l, font=ft, fill=(15, 20, 25))
+    d.rounded_rectangle([x0, y, x0 + ancho, y + alto], 28, fill=AZUL_NOCHE + (245,), outline=AZUL_ACC, width=5)
+    d.ellipse([x0 + 36, y + 38, x0 + 122, y + 124], fill=(40, 52, 70), outline=AZUL_ACC, width=3)
+    d.text((x0 + 144, y + 40), nombre.upper(), font=fn, fill=BLANCO)
+    d.text((x0 + 144, y + 94), usuario, font=fu, fill=SUAVE)
+    for i, l in enumerate(lineas): d.text((x0 + 40, y + 156 + i * 64), l, font=ft, fill=TEXTO)
     return capa
 
 def encajar(img):
