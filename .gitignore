@@ -14,6 +14,8 @@ mi-estilo/referencias/
 mi-estilo/mis-reels/*
 !mi-estilo/mis-reels/.gitkeep
 mi-estilo/*.json
+# El catálogo de cada uno nombra las cuentas de su fantasma: no se sube
+mi-estilo/recursos.md
 __pycache__/
 *.pyc
 *.mp4

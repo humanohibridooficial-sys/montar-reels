@@ -42,11 +42,23 @@ def hoja(p):
                     "-frames:v", "1", out], capture_output=True)
     return out
 
+def hoja_completa(p):
+    """El reel entero, 1 fotograma por segundo, en hojas de 6x4 (24 s cada una): para ver los recursos
+    de edición, que salen a lo largo de todo el vídeo. Hoja k, casilla i (de izquierda a derecha y de
+    arriba abajo, desde 0) = segundo 24*k + i."""
+    base = p.rsplit(".", 1)[0] + "-entero-%02d.jpg"
+    for f in glob.glob(p.rsplit(".", 1)[0] + "-entero-*.jpg"): os.remove(f)
+    subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", p, "-vf",
+                    "fps=1,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,scale=270:480,tile=6x4:padding=6:color=black",
+                    base], capture_output=True)
+    return sorted(os.path.basename(f) for f in glob.glob(p.rsplit(".", 1)[0] + "-entero-*.jpg"))
+
 res = []
 for p in sorted(glob.glob(os.path.join(CARP, "*.mp4"))):
     d = dur_de(p); cs = cortes_de_plano(p)
     fila = {"video": os.path.basename(p), "duracion_s": round(d, 1), "cortes_de_plano": len(cs),
-            "segundos_por_plano": round(d / (len(cs) + 1), 2) if d else None, "lufs": lufs(p), **habla(p), "hoja": os.path.basename(hoja(p))}
+            "segundos_por_plano": round(d / (len(cs) + 1), 2) if d else None, "lufs": lufs(p), **habla(p), "hoja": os.path.basename(hoja(p)),
+            "hojas_enteras": hoja_completa(p)}
     res.append(fila); print(json.dumps(fila, ensure_ascii=False))
 if not res: raise SystemExit(f"No hay vídeos .mp4 en {CARP}")
 n = len(res); med = lambda k: round(sorted(x[k] for x in res if isinstance(x.get(k), (int, float)))[n // 2], 2) if any(isinstance(x.get(k), (int, float)) for x in res) else None
