@@ -130,6 +130,19 @@ for b in SPEC.get("broll", []):
         seg.add_mask(script, d.CapCut_Mask_type.Rectangle, size=1.0, rect_width=1.0, round_corner=45)
         seg.add_animation(d.CapCut_Intro_type.Slide_Up, "0.3s")
         script.add_segment(seg, "tarjeta")
+    elif b["modo"] == "media":
+        # Media pantalla con máscara LINEAL de CapCut (editable): tu toma sigue debajo y el clip se funde con
+        # ella en la línea de corte (Luismi, 10-10: "como la máscara de CapCut de media pantalla").
+        # "corte" = altura de la línea en pantalla (0 arriba, 1 abajo): por defecto, arriba acaba sobre tu
+        # cabeza y abajo empieza en tus hombros (medido en la toma 38). Si en CapCut se ve el lado contrario,
+        # cambia "invertir" en la spec.
+        arriba = b.get("lado", "arriba") == "arriba"
+        corte = b.get("corte", 0.31 if arriba else 0.66)
+        seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{du:.3f}s"), source_timerange=trange(f"{src0:.3f}s", f"{du:.3f}s"), volume=0)
+        seg.add_mask(script, d.CapCut_Mask_type.Split, center_y=(0.5 - corte) * script.height,
+                     rotation=0 if arriba else 180, feather=b.get("difuminado", 35), invert=b.get("invertir", False))
+        seg.add_animation(d.CapCut_Intro_type.Fade_In, "0.15s"); seg.add_animation(d.CapCut_Outro_type.Fade_Out, "0.15s")
+        script.add_segment(seg, "broll")
     else:
         seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{du:.3f}s"), source_timerange=trange(f"{src0:.3f}s", f"{du:.3f}s"), volume=0)
         seg.add_animation(d.CapCut_Intro_type.Fade_In, "0.15s"); seg.add_animation(d.CapCut_Outro_type.Fade_Out, "0.15s")
