@@ -30,10 +30,17 @@ def a_vertical(fr):
 pw, ph = int(W * k), int(H * k)
 px = {"izq": 0, "der": W - pw}.get(lado, (W - pw) // 2)
 py = H - ph  # pegado abajo: la cabeza queda en el centro de la pantalla
-# Degradado oscuro abajo: separa tu silueta del clip y deja leer los subtítulos.
+# Degradado desde la mitad de la pantalla: el clip se va oscureciendo hacia abajo, separa tu silueta y
+# deja leer los subtítulos (Luismi, 10-10).
 grad = np.ones((H, W, 1), np.float32)
-g0 = int(H * 0.55)
-grad[g0:] = np.linspace(1.0, 0.55, H - g0)[:, None, None]
+g0 = H // 2
+grad[g0:] = np.linspace(1.0, 0.35, H - g0)[:, None, None] ** 1.3
+NUCLEO = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+# Los hombros llegan al borde del encuadre original: sin esto, a los lados queda un corte vertical recto.
+LADOS = np.ones((ph, pw, 1), np.float32)
+r = int(pw * 0.18)
+LADOS[:, :r] *= np.linspace(0, 1, r)[None, :, None] ** 1.5
+LADOS[:, pw - r:] *= np.linspace(1, 0, r)[None, :, None] ** 1.5
 
 ff = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{W}x{H}", "-r", str(fps), "-i", "-",
                        *config.codec_video("alta"), "-pix_fmt", "yuv420p", out], stdin=subprocess.PIPE)
@@ -49,13 +56,20 @@ while n < total:
     fr = a_vertical(fr)
     res = seg.segment_for_video(mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(fr, cv2.COLOR_BGR2RGB)), int((ini + n / fps) * 1000))
     m = res.confidence_masks[0].numpy_view().copy()
-    m = cv2.GaussianBlur(np.clip((m - 0.35) / 0.3, 0, 1), (0, 0), 2.0)
+    # Sin halo de croma: más exigente con lo que es persona y el borde encogido 2 px, para que no se cuele
+    # la pared de detrás (con 0,35 y sin encoger quedaba un halo gris en la cabeza y las orejas).
+    m = cv2.erode(np.clip((m - 0.5) / 0.25, 0, 1), NUCLEO)
+    m = cv2.GaussianBlur(m, (0, 0), 1.5)
     if prev is not None: m = 0.6 * m + 0.4 * prev  # suaviza el parpadeo del borde
     prev = m
     yo = cv2.resize(fr, (pw, ph), interpolation=cv2.INTER_AREA).astype(np.float32)
-    mk = cv2.resize(m, (pw, ph))[..., None] * min(1.0, (n / fps) / 0.12)  # entra en 0,12 s
+    mk = cv2.resize(m, (pw, ph))[..., None] * LADOS * min(1.0, (n / fps) / 0.12)  # entra en 0,12 s
     fondo = b.astype(np.float32) * grad
     zona = fondo[py:py + ph, px:px + pw]
+    # Light wrap: en el borde, la luz del clip de detrás se mete un poco en la silueta y la funde con él.
+    borde = (4 * mk * (1 - mk)) * 0.55
+    luz = cv2.GaussianBlur(zona, (0, 0), 10)
+    yo = yo * (1 - borde) + luz * borde
     fondo[py:py + ph, px:px + pw] = zona * (1 - mk) + yo * mk
     ff.stdin.write(np.clip(fondo, 0, 255).astype(np.uint8).tobytes())
     n += 1
