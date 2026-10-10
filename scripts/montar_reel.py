@@ -173,6 +173,36 @@ for r in SPEC.get("rotulos_png", []):
         script.add_track(d.Track_type.video, pista, relative_index=6 + len(_pistas_png)); _pistas_png.append(pista)
     script.add_segment(seg, pista)
     if SPEC.get("sfx_auto", True): sfx("whoosh", max(0, t0 - 0.1), 0.25)
+# 5c. destellos (pasar de bloque) y tintes de color (la otra voz, "red flag"), como capas PNG de color liso
+# en su pista. Variados (Luismi, 10-10: "no sota, caballo y rey"): si la spec no fija el color, se elige al
+# azar entre los de la marca, con semilla por pieza para que regenerar dé lo mismo.
+import random
+from PIL import Image
+_azar = random.Random(SPEC.get("nombre", "reel"))
+_solidos = os.path.join(config.RAIZ, "trabajo", "_solidos"); os.makedirs(_solidos, exist_ok=True)
+def solido(hexcol, alfa):
+    p = os.path.join(_solidos, f"{hexcol.strip('#')}-{int(alfa * 100)}.png")
+    if not os.path.exists(p): Image.new("RGBA", (1080, 1920), tuple(int(hexcol[i:i + 2], 16) for i in (1, 3, 5)) + (int(255 * alfa),)).save(p)
+    return p
+DESTELLO = ["#FFF4D6", "#E0B83C", "#1E3A5F", "#FFFFFF"]  # crema, dorado, azul de la marca, blanco
+TINTE = {"rojo": "#C62828", "verde": "#2E7D32", "azul": "#1E3A5F", "dorado": "#E0B83C"}
+if SPEC.get("tintes"): script.add_track(d.Track_type.video, "tintes", relative_index=20)
+if SPEC.get("destellos"): script.add_track(d.Track_type.video, "efectos", relative_index=21)  # el destello, por encima
+for f in SPEC.get("destellos", []):
+    f = f if isinstance(f, dict) else {"t": f}
+    col = f.get("color") or _azar.choice(DESTELLO); du = f.get("dur", _azar.choice([0.16, 0.2, 0.26]))
+    mm = d.Video_material("photo", path=solido(col, 0.9), material_name="destello", width=1080, height=1920)
+    t0 = max(0.0, T(f["t"]) - du / 2)
+    seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{du:.3f}s"))
+    seg.add_animation(d.CapCut_Intro_type.Fade_In, f"{du / 2:.3f}s"); seg.add_animation(d.CapCut_Outro_type.Fade_Out, f"{du / 2:.3f}s")
+    script.add_segment(seg, "efectos")
+for c in SPEC.get("tintes", []):
+    col = TINTE.get(c.get("color"), c.get("color")) or _azar.choice(list(TINTE.values()))
+    t0, t1 = T(c["ini"]), T(c["fin"])
+    mm = d.Video_material("photo", path=solido(col, c.get("fuerza", 0.28)), material_name="tinte", width=1080, height=1920)
+    seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"))
+    seg.add_animation(d.CapCut_Intro_type.Fade_In, "0.12s"); seg.add_animation(d.CapCut_Outro_type.Fade_Out, "0.12s")
+    script.add_segment(seg, "tintes")
 # 5b. rotulos de texto de CapCut (sistema antiguo, solo si la spec los pide)
 for r in SPEC.get("rotulos", []):
     oro = r.get("oro", False)
