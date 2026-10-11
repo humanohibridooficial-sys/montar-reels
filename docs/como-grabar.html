@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cómo grabar</title>
+<style>
+  :root { --marino:#0E1F3A; --marino2:#1E3A5F; --dorado:#E0B83C; --azul:#2E6BFF; --texto:#1b2433; --suave:#5b6577; --fondo:#ffffff; --caja:#f3f5f9; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--texto); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:20px 16px 40px; }
+  h1 { font-size:26px; line-height:1.15; margin:0 0 4px; color:var(--marino); }
+  .sub { color:var(--suave); margin:0 0 20px; }
+  h2 { font-size:18px; margin:26px 0 8px; color:var(--marino); border-left:4px solid var(--dorado); padding-left:10px; }
+  p { margin:6px 0; }
+  ul { margin:6px 0; padding-left:20px; }
+  li { margin:4px 0; }
+  b { color:var(--marino); }
+  .caja { background:var(--caja); border-radius:10px; padding:12px 14px; margin:10px 0; }
+  .mal { color:#b3261e; font-weight:600; }
+  .bien { color:#1d7a3a; font-weight:600; }
+  .fila { display:flex; gap:14px; align-items:flex-start; margin:12px 0; }
+  .fila svg { flex:0 0 auto; }
+  .fila .pie { font-size:14px; color:var(--suave); }
+  .check li { list-style:none; margin-left:-20px; }
+  .check li::before { content:""; display:inline-block; width:14px; height:14px; border:2px solid var(--marino2); border-radius:3px; margin-right:8px; vertical-align:-2px; }
+  @media print { main { padding:0; } h2 { break-after:avoid; } .fila, .caja { break-inside:avoid; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Cómo grabar para que el editor pueda hacer cosas chulas</h1>
+  <p class="sub">Dos minutos. Léela antes de cada sesión de grabación.</p>
+
+  <div class="caja">
+    El editor no inventa planos: corta, recoloca y anima lo que tú le das. Con un solo plano fijo y muy cerca,
+    todo acaba encima de tu cara. Con aire alrededor y dos distancias, puede poner el texto detrás de tu cabeza,
+    las listas a la altura del pecho y cortar entre planos en lugar de hacer zoom.
+  </div>
+
+  <h2>1. Encuadre: plano medio, con aire</h2>
+  <div class="fila">
+    <svg width="120" height="213" viewBox="0 0 120 213" aria-label="Encuadre bueno">
+      <rect x="1" y="1" width="118" height="211" rx="8" fill="#eef2f8" stroke="#1E3A5F" stroke-width="2"/>
+      <rect x="2" y="2" width="116" height="40" fill="#E0B83C" opacity=".25"/>
+      <text x="60" y="26" text-anchor="middle" font-size="10" fill="#0E1F3A">texto detrás</text>
+      <circle cx="60" cy="68" r="17" fill="#1E3A5F"/>
+      <path d="M22 213 C24 120 96 120 98 213 Z" fill="#1E3A5F"/>
+      <rect x="2" y="122" width="116" height="40" fill="#2E6BFF" opacity=".18"/>
+      <text x="60" y="146" text-anchor="middle" font-size="10" fill="#0E1F3A">listas, rótulos</text>
+      <line x1="2" y1="48" x2="118" y2="48" stroke="#1d7a3a" stroke-dasharray="3 3"/>
+      <line x1="2" y1="88" x2="118" y2="88" stroke="#1d7a3a" stroke-dasharray="3 3"/>
+    </svg>
+    <div>
+      <p class="bien">Así</p>
+      <ul>
+        <li>Móvil en vertical, en trípode, a la altura de los ojos y a <b>1,5-2 m</b>.</li>
+        <li>Se te ve <b>de la cintura hacia arriba</b>.</li>
+        <li>Lo alto de la cabeza, a <b>una cuarta parte</b> de la pantalla desde arriba; la barbilla, <b>hacia el 40 %</b> de la altura.</li>
+      </ul>
+      <p class="pie">Ahora mismo la barbilla te queda al 78 % de la altura: no hay sitio para nada.</p>
+    </div>
+  </div>
+
+  <h2>2. En 4K, siempre</h2>
+  <p>Ajustes de la cámara: <b>4K a 30 fps</b>. Con 4K el editor saca un <b>primer plano de la misma toma</b>
+  recortando sin perder calidad. Así cada frase tiene dos distancias aunque solo grabes una vez.</p>
+
+  <h2>3. Dos distancias de verdad en las frases fuertes</h2>
+  <ul>
+    <li>El <b>gancho</b> y la <b>frase clave</b> de cada pieza, grábalos <b>dos veces</b>: una en plano medio y otra
+      <b>cerca</b> (a 0,6 m, como grabas ahora).</li>
+    <li>Mismas palabras, mismo tono. El editor corta entre las dos en mitad de la frase.</li>
+  </ul>
+
+  <h2>4. Una frase en movimiento</h2>
+  <p>Por pieza, <b>una frase con el móvil en la mano</b>: caminando hacia la cámara, o la cámara acercándose a ti.
+  Suele ir en el gancho. Es lo que más rompe el "plano de busto fijo".</p>
+
+  <h2>5. Si la pieza tiene una escena, grábala aparte</h2>
+  <ul>
+    <li>Un recuerdo, un miedo o un "imagina que…" se graba en <b>otro sitio u otra ropa</b> (el campo, el chándal, la grada).</li>
+    <li>El editor lo pone en blanco y negro y vuelve al color contigo. Un filtro sobre la misma toma no engaña.</li>
+  </ul>
+
+  <h2>6. Fondo y luz</h2>
+  <ul>
+    <li><b>Lejos de la pared</b> (2 m o más): que haya fondo con profundidad.</li>
+    <li>Luz de frente (ventana o foco), el fondo algo más oscuro que tú.</li>
+    <li>Nada detrás de la cabeza que la "corte" (estanterías, marcos).</li>
+  </ul>
+
+  <h2>7. Recursos propios (5 minutos por sesión)</h2>
+  <p>Los clips de stock no tienen juveniles con dorsal ni tu vida. Graba <b>3-5 planos cortos de 3-5 s</b>,
+  en 4K y sin hablar:</p>
+  <ul>
+    <li>Manos: el plato, la mochila, atarse las botas, apuntar en la libreta.</li>
+    <li>Objetos: el balón, la báscula, el móvil con el plan, la cama.</li>
+    <li>Tú de espaldas o de lado, entrando al campo o al gimnasio.</li>
+  </ul>
+  <p class="pie">Si sale algún jugador menor, solo con permiso de la familia.</p>
+
+  <h2>8. Al grabar cada frase</h2>
+  <ul>
+    <li><b>1 s callado</b> antes y después, mirando a cámara.</li>
+    <li>Si fallas, repite la frase entera; no sigas desde la palabra.</li>
+    <li>No mires el teleprompter en la palabra clave.</li>
+  </ul>
+
+  <h2>Antes de darle a grabar</h2>
+  <ul class="check">
+    <li>4K a 30 fps</li>
+    <li>Trípode a la altura de los ojos, a 1,5-2 m</li>
+    <li>De la cintura arriba; cabeza en la cuarta parte de arriba</li>
+    <li>Lejos de la pared, luz de frente</li>
+    <li>Gancho y frase clave: también de cerca</li>
+    <li>Una frase en movimiento</li>
+    <li>La escena, si la hay, en otro sitio u otra ropa</li>
+    <li>3-5 planos de recurso sin hablar</li>
+  </ul>
+</main>
+</body>
+</html>
