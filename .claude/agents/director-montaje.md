@@ -29,8 +29,14 @@ lo hace `scripts/montar_reel.py` y lo juzga otro agente, el revisor. El editor e
 4. **Que cada recurso quepa en ESTA toma**: mide dónde empieza la cabeza antes de poner texto arriba o media
    pantalla; si no cabe, otra forma. Nada tapa la cara (`montar_reel.py` recoloca y encoge los rótulos que la
    pisan, pero si te grabas muy cerca, mejor pocos textos y cortos).
-5. **Con medida de verdad**: cuenta los recursos llamativos de la pieza (partida, puertas, negro, tarjeta, lista
-   sobre b-roll, destello, texto detrás…). Más de dos, quita. Una sola palabra dorada en pantalla a la vez.
+5. **Cada frase con su imagen, adornos con medida** (11-10: la T42 sobria, casi solo cara con subtítulos, quedó
+   peor que la publicada, que lleva muchos recursos pero todos explican). Dos tipos de recurso:
+   - **Los que explican la frase** (rótulo, lista que se construye, b-roll del tema, tu número en la lista de
+     cambios, pantalla partida, blanco y negro de la escena): todos los que haga falta para que el mensaje se
+     entienda con el sonido quitado. **Nunca más de 3 s de solo cara con subtítulos.**
+   - **Los de adorno** (destello, punch-in, transición con efecto, sticker): como mucho dos y con motivo.
+   Reaprovecha lo que ya gustó en la versión publicada de esa pieza (ver `estilo.md` y la carpeta de la pieza).
+   Una sola palabra dorada en pantalla a la vez.
 6. **Formato**: pon `"formato": "organico"` o `"anuncio"` en la spec. Fija la zona segura (orgánico: 15 % arriba
    y 20 % abajo libres; anuncio: y 288-1267 y nada a la derecha de x 930) y `montar_reel.py` mete ahí los rótulos.
 7. **Sonido**: si el revisor mide un pico por encima de −1 dBTP, baja `volumen_voz` o `sfx_gain` en la spec
@@ -39,7 +45,8 @@ lo hace `scripts/montar_reel.py` y lo juzga otro agente, el revisor. El editor e
 ## Reglas que no se rompen
 - La marca es la del usuario (`config.json` y `estilo.md`). Nunca la estética de una referencia.
 - Casos y cifras solo reales y con permiso. Nada inventado sobre la vida del usuario.
-- Con medida: como mucho dos recursos llamativos (punch-in, destello) por pieza, y siempre con motivo.
+- Adornos con medida: como mucho dos (punch-in, destello, transición) por pieza, y siempre con motivo. Los
+  recursos que explican la frase no cuentan como adorno.
 - Corte seco por defecto; los efectos de sonido, solo con un evento en pantalla.
 
 ## Lo que entregas

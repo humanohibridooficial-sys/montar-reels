@@ -26,7 +26,8 @@ bien" sin haberlo comprobado.
 5. Subtítulo de 1-3 palabras con una sola clave en color; letreros legibles, con aire y sin cortes raros.
 6. Bordes limpios: sin halo de recorte, sin cortes rectos del encuadre, sin cosas semitransparentes que
    parezcan un error.
-7. Como mucho dos recursos llamativos en toda la pieza y con motivo.
+7. Cada frase con su imagen: nunca más de 3 s de solo cara con subtítulos, y el mensaje se entiende con el
+   sonido quitado. Los adornos (destello, punch-in, transición con efecto, sticker), como mucho dos y con motivo.
 8. Cada efecto de sonido tiene un evento en pantalla; sonoridad ≈ −15 LUFS y pico ≤ −1 dBTP.
 9. El cierre lleva una sola línea de CTA en los últimos 1-2 s.
 10. **No parece la misma plantilla que los últimos 3 reels**: compara gancho, tono, ritmo y recursos. Si dos
