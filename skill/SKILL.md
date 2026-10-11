@@ -28,6 +28,15 @@ entorno: `{{REPO}}\.venv\Scripts\python.exe`. Las rutas (trabajo, CapCut, fuente
    cada reel, y su gancho): elige formas DISTINTAS de las recientes, sobre todo en el gancho, y varía color, lado
    y entrada dentro del recurso. El contenido decide la función; la forma rota. `montar_reel.py` apunta cada
    montaje en `usados.json` solo.
+   **Tono de la pieza, lo primero.** Lee el guion entero y decide un tono, con su porqué en una frase:
+   `sobria` (consejo o dato que tiene que sonar a experto: pocos recursos, encuadres que apenas se mueven,
+   claves que entran con fundido; sin destellos), `intensa` (problema, reto o urgencia: un recurso cada 3-4 s,
+   zooms marcados, claves que entran de golpe, destellos entre bloques) o `emocional` (historia, miedo o
+   frustración: blanco y negro, silencios, desvanecer, claves suaves). Ponlo en la spec como `"tono"` y
+   `"tono_porque"`. No repitas el tono de la pieza anterior salvo que el guion lo pida de verdad, y dilo.
+   Además, a las palabras clave que lo pidan fíjales su entrada según la frase, no al azar:
+   `"clave_entrada": {"juvenil": "golpe", "ti": "suave"}` (golpe, zoom, suave o fundido): una frase dura entra
+   de golpe; una reflexiva, suave.
 3. **Reaprovecha lo que ya gustó.** Si una pieza estaba bien, déjala igual y retócala solo en lo repetido o en lo roto.
 4. **Fallo de diseño que veas, avísalo.** No des nada por bueno sin mirar el export.
 

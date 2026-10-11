@@ -11,6 +11,31 @@ SPEC = json.load(open(sys.argv[1], encoding="utf-8"))
 # Lo que lleva cada reel queda en mi-estilo/usados.json para que el siguiente elija distinto
 # (Luismi, 10-10: "no sota, caballo y rey"). [recurso, segundo en el reel montado]
 USADOS = []
+# Tono de la pieza (Luismi, 11-10: "lo que me preocupa es que hagas todo igual, un cerebro humano no lo haría").
+# Lo elige la IA al leer el guion ("tono" y "tono_porque" en la spec) y marca el ritmo: cuánto se acercan los
+# encuadres, con qué entran las palabras clave y si caben destellos. No se repite en piezas seguidas salvo que
+# el contenido lo pida (lo mira la skill en usados.json).
+ENTRADAS = {"golpe": d.CapCut_Text_intro.Pop_Up, "zoom": d.CapCut_Text_intro.Zoom_In,
+            "suave": d.CapCut_Text_intro.Blur, "fundido": d.CapCut_Text_intro.Fade_In}
+TONOS = {
+    "sobria":    {"alterna_escala": 1.04, "zoom_escala": 1.10, "entradas": ["fundido", "suave"], "destellos": False},
+    "intensa":   {"alterna_escala": 1.10, "zoom_escala": 1.22, "entradas": ["golpe", "zoom"], "destellos": True},
+    "emocional": {"alterna_escala": 1.03, "zoom_escala": 1.08, "entradas": ["suave", "fundido"], "destellos": False},
+}
+TONO = TONOS.get(SPEC.get("tono"))
+if TONO:  # el tono manda sobre los valores heredados de la plantilla de la tanda
+    SPEC["alterna_escala"], SPEC["zoom_escala"] = TONO["alterna_escala"], TONO["zoom_escala"]
+    if SPEC.get("destellos") and not TONO["destellos"]:
+        print(f"  aviso: tono {SPEC['tono']} y {len(SPEC['destellos'])} destellos en la spec; se quitan (no casan con el tono)")
+        SPEC["destellos"] = []
+
+def entrada_de(clave_txt):
+    """La entrada de la palabra clave: la que la spec le fija a ESA palabra según lo que dice la frase
+    ("clave_entrada": {"juvenil": "golpe"}); si no, una del tono; si no hay tono, cualquiera de las tres."""
+    fija = SPEC.get("clave_entrada", {}).get(clave_txt.strip().lower())
+    if fija in ENTRADAS: return ENTRADAS[fija]
+    opciones = [ENTRADAS[e] for e in TONO["entradas"]] if TONO else [d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up]
+    return _azar.choice(opciones)
 CAPCUT = config.CAPCUT
 PLANTILLA = config.PLANTILLA  # un proyecto (vacío) que tu CapCut ya abrió bien: se copia y se rellena
 if not os.path.isdir(PLANTILLA):
@@ -160,7 +185,9 @@ for b in SPEC.get("broll", []):
         if lado == "auto" or corte is None:
             cab = cabeza_en(SPEC["video"], b["ini"] + du / 2)
             if lado == "auto":
-                lado = "arriba" if cab >= 0.30 * 1920 else "delante"
+                # 40 %, no 30 %: con un 33 % libre (T42, s48) la franja útil quedaba muy fina entre los botones de
+                # Instagram arriba y el difuminado sobre la cabeza. Luismi lo vio mal en la prueba v3 (11-10).
+                lado = "arriba" if cab >= 0.40 * 1920 else "delante"
             if corte is None: corte = max(0.12, cab / 1920 - 0.07) if lado == "arriba" else 0.66
         if lado == "delante":
             comp = os.path.join(_compuestos, f"delante-{os.path.basename(b['clip']).rsplit('.', 1)[0]}-{b['ini']:.2f}.mp4")
@@ -328,7 +355,7 @@ for j, bl in enumerate(bloques):
                                 border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
                                 shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
                                 clip_settings=d.Clip_settings(transform_y=sy + gb - 0.02))
-            entrada = _azar.choice([d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up])
+            entrada = entrada_de(" ".join(claves))
             sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave")
             USADOS.append([f"subt_rotulo:{entrada.name}", round(tk, 2)]); continue
         if ROT and ks and all(ks):  # la clave sola (tras una pausa): grande y en dorado, como "BRUTAL" en la referencia
@@ -338,7 +365,7 @@ for j, bl in enumerate(bloques):
                                 border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
                                 shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
                                 clip_settings=d.Clip_settings(transform_y=sy + gb - 0.02))
-            entrada = _azar.choice([d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up])
+            entrada = entrada_de(" ".join(pal))
             sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave")
             USADOS.append([f"subt_rotulo:{entrada.name}", round(t0, 2)]); continue
         if SPEC.get("subt_jerarquia") and any(ks) and not all(ks):
@@ -531,6 +558,7 @@ reg = os.path.join(config.RAIZ, "mi-estilo", "usados.json")
 historial = json.load(open(reg, encoding="utf-8")) if os.path.exists(reg) else []
 historial = [h for h in historial if h.get("nombre") != SPEC["nombre"]]
 historial.append({"nombre": SPEC["nombre"], "fecha": date.today().isoformat(), "duracion_s": round(TOTAL, 1),
+                  "tono": SPEC.get("tono"), "tono_porque": SPEC.get("tono_porque"),
                   "gancho": sorted({u for u, t in USADOS if t < 2.0}), "recursos": sorted(USADOS, key=lambda x: x[1])})
 json.dump(historial, open(reg, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print(f"  apuntado en mi-estilo/usados.json: {len(USADOS)} recursos, gancho = {', '.join(historial[-1]['gancho']) or 'sin recurso'}")
