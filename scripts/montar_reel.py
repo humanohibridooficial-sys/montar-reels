@@ -280,6 +280,7 @@ for r in SPEC.get("rotulos_png", []):
             if y1 > zb: ty += (y1 - zb) / 960; y0 -= y1 - zb; y1 = zb       # se sale por abajo: sube
             if y0 < zt: ty -= (zt - y0) / 960; y1 += zt - y0; y0 = zt       # se sale por arriba: baja
             if y1 > zb: print(f"  aviso: {os.path.basename(r['png'])} es más alto que la zona segura")
+            r["_y"] = (y0, y1)  # dónde queda de verdad: los subtítulos solo le ceden la franja si la pisa
     seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"), clip_settings=d.Clip_settings(scale_x=e, scale_y=e, transform_y=ty))
     if t0 > 0.1:  # el gancho, entero y opaco desde el fotograma 0 (v5: entraba con fundido y el 0 salía sin texto)
         seg.add_animation(d.CapCut_Intro_type.Zoom_In if r.get("anim") == "pop" else d.CapCut_Intro_type.Fade_In, "0.25s")
@@ -371,6 +372,12 @@ if ESTILO_CLONADO:  # sus subtitulos: bloques de hasta 6 palabras / 30 letras, e
 SUBT_INFO = []; MARCA_INFO = []
 # tramos en que hay un rotulo/capa en la franja de los subtitulos (los marcados "arriba": True no cuentan)
 RIVALES = [(T(r["ini"]), T(r["fin"]) if "fin" in r else TOTAL, bool(r.get("tapa"))) for r in SPEC.get("rotulos_png", []) if not r.get("arriba")]
+if SPEC.get("subt_zona", True) and SPEC.get("subt_modo") == "marca":
+    # Con subtítulos en la zona segura, solo es rival el rótulo que ocupa su franja (la T42 v2 se quedaba 8 s sin
+    # subtítulos por rótulos que iban a otra altura). Los no medidos (colocar fijo) siguen contando, por si acaso.
+    _zb = 1267 if SPEC.get("formato") == "anuncio" else 1920 * 0.80
+    RIVALES = [(T(r["ini"]), T(r["fin"]) if "fin" in r else TOTAL, bool(r.get("tapa"))) for r in SPEC.get("rotulos_png", [])
+               if not r.get("arriba") and (r.get("tapa") or "_y" not in r or (r["_y"][1] > _zb - 200 and r["_y"][0] < _zb))]
 # Cualquier rótulo en pantalla (también los de arriba): mientras está, la clave no se viste de rótulo. Una sola
 # palabra dorada a la vez (v5: "SE CIERRA" + "PUERTA" y "SÍGUEME" + "JUNTOS" a la vez).
 EN_PANTALLA = [(T(r["ini"]), T(r["fin"]) if "fin" in r else TOTAL) for r in SPEC.get("rotulos_png", [])]
