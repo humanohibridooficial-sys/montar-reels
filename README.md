@@ -6,7 +6,11 @@ revisa volumen y zona segura de anuncio. Además **aprende tu forma de editar** 
 de una cuenta que quieras imitar (tu "cuenta fantasma").
 
 Tú hablas con Claude Code en español ("edita este reel", "quita del 12 al 15", "aprende de mis reels") y él lanza
-los scripts.
+los scripts. Un agente **director** decide cómo montar cada pieza y un agente **revisor** juzga el export como un
+editor profesional.
+
+**¿Primera vez? Sigue [docs/PASO-A-PASO.md](docs/PASO-A-PASO.md)** (sin saber programar, 30-45 minutos). Y si algo
+falla, `.\comprobar.ps1` te dice qué falta y cómo arreglarlo.
 
 ## Qué necesitas
 
