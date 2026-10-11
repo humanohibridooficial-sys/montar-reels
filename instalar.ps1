@@ -85,6 +85,7 @@ Paso "4/8 Modelos de MediaPipe (recorte de la persona y detección de manos), de
 New-Item -ItemType Directory -Force (Join-Path $REPO "modelos") | Out-Null
 Descargar "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite" (Join-Path $REPO "modelos\selfie_segmenter.tflite")
 Descargar "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task" (Join-Path $REPO "modelos\hand_landmarker.task")
+Descargar "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite" (Join-Path $REPO "modelos\blaze_face_short_range.tflite")
 
 # 5. Fuentes ---------------------------------------------------------------------------------------------------
 Paso "5/8 Fuentes libres (licencia OFL): Anton, Bebas Neue y Archivo Black, de Google Fonts"
@@ -104,6 +105,7 @@ if (-not (Test-Path "config.json")) { Copy-Item "config.ejemplo.json" "config.js
 if (-not (Test-Path ".env")) { Copy-Item ".env.ejemplo" ".env"; Ok "creado .env (pon ahí tu PEXELS_API_KEY si vas a buscar B-roll)" } else { Ok ".env ya estaba: no lo toco" }
 foreach ($d in @("trabajo", "trabajo\transcripciones", "trabajo\piezas", "mi-estilo\referencias")) { New-Item -ItemType Directory -Force (Join-Path $REPO $d) | Out-Null }
 # El catálogo de recursos es de cada uno (no se sube a git): se parte del de ejemplo
+if (-not (Test-Path "mi-estilo\estilo.md")) { Copy-Item "mi-estilo\estilo.ejemplo.md" "mi-estilo\estilo.md"; Ok "creado mi-estilo\estilo.md (rellénalo con tu estilo)" } else { Ok "mi-estilo\estilo.md ya estaba: no lo toco" }
 if (-not (Test-Path "mi-estilo\recursos.md")) { Copy-Item "mi-estilo\recursos.ejemplo.md" "mi-estilo\recursos.md"; Ok "creado mi-estilo\recursos.md (tu catálogo de recursos, desde el de ejemplo)" } else { Ok "mi-estilo\recursos.md ya estaba: no lo toco" }
 Ok "carpetas de trabajo listas"
 

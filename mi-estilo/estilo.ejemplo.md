@@ -33,15 +33,3 @@ y Claude usará las reglas por defecto (las de docs/PROCESO-EDICION.md).
 ## Correcciones aprendidas
 (Claude añade aquí cada corrección que le hagas: "no cortes tan pegado", "la palabra clave siempre en amarillo"...)
 
----
-
-## EJEMPLO relleno (bórralo cuando pongas el tuyo)
-Así lo tenía la cuenta con la que se midió este sistema (FF360, nutrición y físico para futbolistas):
-
-- Tema y público: futbolistas juveniles de 16-18 años que quieren llegar a profesionales, y sus padres.
-- Orden de la tanda: primero los orgánicos, después los anuncios para el futbolista y al final los de padres.
-- B-roll: solo juveniles de 16-18 años, nunca niños pequeños. Nada de memes, TikTok ni emojis.
-- "Recuerdo a fútbol" con sonidos de grada, silbato y balón, no con himnos.
-- Subtítulos: blanco + dorado `#E0B83C`. Marca: marino `#0E1F3A` / `#1E3A5F` y dorado.
-- Portadas: fotograma real · etiqueta pequeña en dorado ("FUTBOLISTA" o "PADRE DE JUVENIL") · línea en blanco ·
-  frase clave en caja dorada con letra marino · fila de chips en caja marino con borde dorado.

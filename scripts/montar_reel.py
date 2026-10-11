@@ -11,6 +11,32 @@ SPEC = json.load(open(sys.argv[1], encoding="utf-8"))
 # Lo que lleva cada reel queda en mi-estilo/usados.json para que el siguiente elija distinto
 # (Luismi, 10-10: "no sota, caballo y rey"). [recurso, segundo en el reel montado]
 USADOS = []
+# Tono de la pieza (Luismi, 11-10: "lo que me preocupa es que hagas todo igual, un cerebro humano no lo haría").
+# Lo elige la IA al leer el guion ("tono" y "tono_porque" en la spec) y marca el ritmo: cuánto se acercan los
+# encuadres, con qué entran las palabras clave y si caben destellos. No se repite en piezas seguidas salvo que
+# el contenido lo pida (lo mira la skill en usados.json).
+ENTRADAS = {"golpe": d.CapCut_Text_intro.Pop_Up, "zoom": d.CapCut_Text_intro.Zoom_In,
+            "suave": d.CapCut_Text_intro.Blur, "fundido": d.CapCut_Text_intro.Fade_In}
+TONOS = {
+    # intensa = el "multicámara falso" que Luismi aprobó en la tanda 0710 (130 % / 138 %); los otros, por debajo.
+    "sobria":    {"alterna_escala": 1.15, "zoom_escala": 1.22, "entradas": ["fundido", "suave"], "destellos": False},
+    "intensa":   {"alterna_escala": 1.30, "zoom_escala": 1.38, "entradas": ["golpe", "zoom"], "destellos": True},
+    "emocional": {"alterna_escala": 1.08, "zoom_escala": 1.15, "entradas": ["suave", "fundido"], "destellos": False},
+}
+TONO = TONOS.get(SPEC.get("tono"))
+if TONO:  # el tono manda sobre los valores heredados de la plantilla de la tanda
+    SPEC["alterna_escala"], SPEC["zoom_escala"] = TONO["alterna_escala"], TONO["zoom_escala"]
+    if SPEC.get("destellos") and not TONO["destellos"]:
+        print(f"  aviso: tono {SPEC['tono']} y {len(SPEC['destellos'])} destellos en la spec; se quitan (no casan con el tono)")
+        SPEC["destellos"] = []
+
+def entrada_de(clave_txt):
+    """La entrada de la palabra clave: la que la spec le fija a ESA palabra según lo que dice la frase
+    ("clave_entrada": {"juvenil": "golpe"}); si no, una del tono; si no hay tono, cualquiera de las tres."""
+    fija = SPEC.get("clave_entrada", {}).get(clave_txt.strip().lower())
+    if fija in ENTRADAS: return ENTRADAS[fija]
+    opciones = [ENTRADAS[e] for e in TONO["entradas"]] if TONO else [d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up]
+    return _azar.choice(opciones)
 CAPCUT = config.CAPCUT
 PLANTILLA = config.PLANTILLA  # un proyecto (vacío) que tu CapCut ya abrió bien: se copia y se rellena
 if not os.path.isdir(PLANTILLA):
@@ -119,18 +145,34 @@ for p in SPEC.get("palabra_detras", []):
 
 # ---------- 3. b-roll ----------
 _compuestos = os.path.join(config.RAIZ, "trabajo", "_compuestos"); os.makedirs(_compuestos, exist_ok=True)
-def cabeza_en(video, t):
-    """Fila (en 1080x1920) donde empieza tu cabeza en el segundo t de la toma, con el recorte de silueta."""
+_caras = {}
+def cara_en(video, t):
+    """(arriba, barbilla) de tu cara en el segundo t de la toma, en filas de 1080x1920. Arriba sale de la silueta
+    (incluye la cabeza entera); la barbilla, del detector de caras de MediaPipe (la silueta se estrecha en la boca,
+    no en el cuello, y engañaba). Es la franja que ningún texto puede tapar (revisión de la v5, 11-10)."""
+    k = (video, round(t, 1))
+    if k in _caras: return _caras[k]
     import cv2, numpy as np, mediapipe as mp
     from mediapipe.tasks.python import vision, BaseOptions
     with vision.ImageSegmenter.create_from_options(vision.ImageSegmenterOptions(
             base_options=BaseOptions(model_asset_path=config.SELFIE), output_confidence_masks=True)) as sg:
         cap = cv2.VideoCapture(video); cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000); ok, fr = cap.read()
-        if not ok: return 0
+        if not ok: return (0, 0)
         fr = cv2.resize(fr, (1080, 1920))
         m = sg.segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(fr, cv2.COLOR_BGR2RGB))).confidence_masks[0].numpy_view() > 0.5
-        filas = np.where(m.sum(axis=1) > 40)[0]
-        return int(filas[0]) if len(filas) else 0
+    filas = np.where(m.sum(axis=1) > 40)[0]
+    if not len(filas): return (0, 0)
+    top = int(filas[0])
+    barbilla = min(1919, top + 900)  # si no se detecta la cara, una franja generosa
+    modelo = os.path.join(config.MODELOS, "blaze_face_short_range.tflite")
+    if os.path.exists(modelo):
+        with vision.FaceDetector.create_from_options(vision.FaceDetectorOptions(base_options=BaseOptions(model_asset_path=modelo))) as fd:
+            caras = fd.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(fr, cv2.COLOR_BGR2RGB))).detections
+        if caras:
+            bb = max(caras, key=lambda c: c.bounding_box.width).bounding_box
+            barbilla = int(bb.origin_y + bb.height * 1.12)  # el recuadro acaba un poco por encima del mentón
+    _caras[k] = (top, barbilla); return _caras[k]
+def cabeza_en(video, t): return cara_en(video, t)[0]
 for b in SPEC.get("broll", []):
     mm = vmat(b["clip"]); t0 = T(b["ini"]); du = b.get("dur", 2.0)
     src0 = max(0, mm.duration / 1e6 / 2 - du / 2)
@@ -160,7 +202,9 @@ for b in SPEC.get("broll", []):
         if lado == "auto" or corte is None:
             cab = cabeza_en(SPEC["video"], b["ini"] + du / 2)
             if lado == "auto":
-                lado = "arriba" if cab >= 0.30 * 1920 else "delante"
+                # 40 %, no 30 %: con un 33 % libre (T42, s48) la franja útil quedaba muy fina entre los botones de
+                # Instagram arriba y el difuminado sobre la cabeza. Luismi lo vio mal en la prueba v3 (11-10).
+                lado = "arriba" if cab >= 0.40 * 1920 else "delante"
             if corte is None: corte = max(0.12, cab / 1920 - 0.07) if lado == "arriba" else 0.66
         if lado == "delante":
             comp = os.path.join(_compuestos, f"delante-{os.path.basename(b['clip']).rsplit('.', 1)[0]}-{b['ini']:.2f}.mp4")
@@ -196,13 +240,33 @@ for p in SPEC.get("piezas", []):
 
 # ---------- 5. rotulos ----------
 # 5a. diseñados como PNG (sistema de retransmision), entran con deslizamiento y salen con fundido
+from PIL import Image
 _pistas_png = []
 for r in SPEC.get("rotulos_png", []):
     mm = d.Video_material("photo", path=r["png"], material_name=os.path.basename(r["png"]), width=1080, height=1920)
     t0 = T(r["ini"]); t1 = T(r["fin"]) if "fin" in r else TOTAL
     e = r.get("escala", 1.0 if r.get("pista") else SPEC.get("rotulos_escala", 1.0))  # rotulos de texto algo mas pequenos: respiran
-    seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"), clip_settings=d.Clip_settings(scale_x=e, scale_y=e, transform_y=r.get("y", 0.0 if r.get("pista") else SPEC.get("rotulos_y", 0.0))))
-    seg.add_animation(d.CapCut_Intro_type.Zoom_In if r.get("anim") == "pop" else d.CapCut_Intro_type.Fade_In, "0.25s")
+    ty = r.get("y", 0.0 if r.get("pista") else SPEC.get("rotulos_y", 0.0))
+    if r.get("colocar", "auto") == "auto":
+        # Nunca sobre la cara (revisión de la v5, 11-10): se mide la caja visible del rótulo; si pisa la franja
+        # cabeza-barbilla, va bajo la barbilla (al pecho) o, si no cabe, sobre la cabeza.
+        bb = Image.open(r["png"]).getchannel("A").getbbox() if os.path.exists(r["png"]) else None
+        if bb:
+            y0 = 960 + (bb[1] - 960) * e - ty * 960; y1 = 960 + (bb[3] - 960) * e - ty * 960
+            arriba, barbilla = cara_en(SPEC["video"], (r["ini"] + (r.get("fin", r["ini"] + 2))) / 2)
+            if arriba and y1 > arriba - 20 and y0 < barbilla + 20:
+                alto = y1 - y0; hueco_abajo = 1920 * 0.80 - (barbilla + 40); hueco_arriba = arriba - 30 - 1920 * 0.15
+                if alto > max(hueco_abajo, hueco_arriba) and max(hueco_abajo, hueco_arriba) >= 0.6 * alto:
+                    e *= max(hueco_abajo, hueco_arriba) / alto  # se encoge lo justo para caber sin tocar la cara
+                    # CapCut escala desde el centro de la pantalla: se vuelve a medir dónde queda
+                    y0 = 960 + (bb[1] - 960) * e - ty * 960; y1 = 960 + (bb[3] - 960) * e - ty * 960; alto = y1 - y0
+                if alto <= hueco_abajo: nuevo = barbilla + 40
+                elif alto <= hueco_arriba: nuevo = arriba - 30 - alto
+                else: nuevo = barbilla + 40; print(f"  aviso: {os.path.basename(r['png'])} no cabe sin tocar la cara; va al pecho")
+                ty -= (nuevo - y0) / 960
+    seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"), clip_settings=d.Clip_settings(scale_x=e, scale_y=e, transform_y=ty))
+    if t0 > 0.1:  # el gancho, entero y opaco desde el fotograma 0 (v5: entraba con fundido y el 0 salía sin texto)
+        seg.add_animation(d.CapCut_Intro_type.Zoom_In if r.get("anim") == "pop" else d.CapCut_Intro_type.Fade_In, "0.25s")
     if "fin" in r and t1 - t0 > 1.0: seg.add_animation(d.CapCut_Outro_type.Fade_Out, "0.2s")
     pista = r.get("pista", "rotulos_img")  # objetos que se suman: cada uno en su pista para poder solaparse
     if pista not in _pistas_png and pista != "rotulos_img":
@@ -222,14 +286,16 @@ def solido(hexcol, alfa):
     return p
 # Colores de FF360 (Luismi, 10-10: "mete mi branding, no el de Carla"): dorado del resaltado, azul de la
 # marca, marino de los rótulos y el blanco azulado; nada de crema ni verde (el verde es el antiguo).
-DESTELLO = ["#E0B83C", "#2E6BFF", "#E6F0FF"]
+# Destello: solo tonos claros, flojo y muy corto. El azul de la marca teñía un fotograma entero y parecía un
+# error (revisión de la v5, 11-10).
+DESTELLO = ["#FFFFFF", "#E6F0FF", "#E0B83C"]
 TINTE = {"rojo": "#C62828", "azul": "#2E6BFF", "marino": "#1E3A5F", "dorado": "#E0B83C"}  # rojo solo para el "red flag"
 if SPEC.get("tintes"): script.add_track(d.Track_type.video, "tintes", relative_index=20)
 if SPEC.get("destellos"): script.add_track(d.Track_type.video, "efectos", relative_index=21)  # el destello, por encima
 for f in SPEC.get("destellos", []):
     f = f if isinstance(f, dict) else {"t": f}
-    col = f.get("color") or _azar.choice(DESTELLO); du = f.get("dur", _azar.choice([0.16, 0.2, 0.26]))
-    mm = d.Video_material("photo", path=solido(col, 0.9), material_name="destello", width=1080, height=1920)
+    col = f.get("color") or _azar.choice(DESTELLO); du = f.get("dur", _azar.choice([0.1, 0.13, 0.16]))
+    mm = d.Video_material("photo", path=solido(col, 0.55), material_name="destello", width=1080, height=1920)
     t0 = max(0.0, T(f["t"]) - du / 2)
     seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{du:.3f}s"))
     seg.add_animation(d.CapCut_Intro_type.Fade_In, f"{du / 2:.3f}s"); seg.add_animation(d.CapCut_Outro_type.Fade_Out, f"{du / 2:.3f}s")
@@ -288,6 +354,9 @@ if ESTILO_CLONADO:  # sus subtitulos: bloques de hasta 6 palabras / 30 letras, e
 SUBT_INFO = []; MARCA_INFO = []
 # tramos en que hay un rotulo/capa en la franja de los subtitulos (los marcados "arriba": True no cuentan)
 RIVALES = [(T(r["ini"]), T(r["fin"]) if "fin" in r else TOTAL, bool(r.get("tapa"))) for r in SPEC.get("rotulos_png", []) if not r.get("arriba")]
+# Cualquier rótulo en pantalla (también los de arriba): mientras está, la clave no se viste de rótulo. Una sola
+# palabra dorada a la vez (v5: "SE CIERRA" + "PUERTA" y "SÍGUEME" + "JUNTOS" a la vez).
+EN_PANTALLA = [(T(r["ini"]), T(r["fin"]) if "fin" in r else TOTAL) for r in SPEC.get("rotulos_png", [])]
 for j, bl in enumerate(bloques):
     t0 = T(bl[0][0]); t1 = T(bloques[j + 1][0][0]) if j + 1 < len(bloques) else TOTAL
     if t1 - t0 < 0.12: continue
@@ -304,9 +373,10 @@ for j, bl in enumerate(bloques):
     if any(t0 < b and t1 > a for a, b, tapa in RIVALES if tapa): continue  # la capa ocupa tambien la franja baja
     if pisa and SPEC.get("subt_y_bajo") is None: continue
     if SPEC.get("subt_modo") == "marca":
-        ROT = SPEC.get("subt_rotulo")  # la palabra clave "vestida de rótulo" (técnica de @carlabalasc, marca FF360)
-        mayus = not (ROT and SPEC.get("subt_minusculas"))
-        pal = [re.sub(r"[.,;:!]", "", w.strip()).upper() if mayus else re.sub(r"[.,;:]", "", w.strip()) for _, _, w in bl]
+        ROT = SPEC.get("subt_rotulo") and not any(t0 < b and t1 > a for a, b in EN_PANTALLA)  # la clave "vestida de rótulo"
+        # Siempre en mayúsculas: la fuente de subtítulos de CapCut solo trae mayúsculas y las vocales con tilde
+        # salían en minúscula ("FúTBOLISTA", v5). Se quita el modo minúsculas.
+        pal = [re.sub(r"[.,;:!]", "", w.strip()).upper() for _, _, w in bl]
         ks = [limpio(w) in clave for _, _, w in bl]
         tam = SPEC.get("subt_size", 16); sy = SPEC["subt_y_bajo"] if pisa else SPEC.get("subt_y", -0.23)
         kf = SPEC.get("subt_clave_factor", 2.5 if ROT else 1.75); ga, gb = SPEC.get("subt_jer_sep", [0.045, -0.035])
@@ -328,7 +398,7 @@ for j, bl in enumerate(bloques):
                                 border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
                                 shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
                                 clip_settings=d.Clip_settings(transform_y=sy + gb - 0.02))
-            entrada = _azar.choice([d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up])
+            entrada = entrada_de(" ".join(claves))
             sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave")
             USADOS.append([f"subt_rotulo:{entrada.name}", round(tk, 2)]); continue
         if ROT and ks and all(ks):  # la clave sola (tras una pausa): grande y en dorado, como "BRUTAL" en la referencia
@@ -338,7 +408,7 @@ for j, bl in enumerate(bloques):
                                 border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
                                 shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
                                 clip_settings=d.Clip_settings(transform_y=sy + gb - 0.02))
-            entrada = _azar.choice([d.CapCut_Text_intro.Blur, d.CapCut_Text_intro.Zoom_In, d.CapCut_Text_intro.Pop_Up])
+            entrada = entrada_de(" ".join(pal))
             sk.add_animation(entrada, "0.25s"); script.add_segment(sk, "subtitulos_clave")
             USADOS.append([f"subt_rotulo:{entrada.name}", round(t0, 2)]); continue
         if SPEC.get("subt_jerarquia") and any(ks) and not all(ks):
@@ -531,6 +601,7 @@ reg = os.path.join(config.RAIZ, "mi-estilo", "usados.json")
 historial = json.load(open(reg, encoding="utf-8")) if os.path.exists(reg) else []
 historial = [h for h in historial if h.get("nombre") != SPEC["nombre"]]
 historial.append({"nombre": SPEC["nombre"], "fecha": date.today().isoformat(), "duracion_s": round(TOTAL, 1),
+                  "tono": SPEC.get("tono"), "tono_porque": SPEC.get("tono_porque"),
                   "gancho": sorted({u for u, t in USADOS if t < 2.0}), "recursos": sorted(USADOS, key=lambda x: x[1])})
 json.dump(historial, open(reg, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print(f"  apuntado en mi-estilo/usados.json: {len(USADOS)} recursos, gancho = {', '.join(historial[-1]['gancho']) or 'sin recurso'}")

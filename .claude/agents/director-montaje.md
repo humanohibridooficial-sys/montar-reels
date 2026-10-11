@@ -24,7 +24,12 @@ lo hace `scripts/montar_reel.py` y lo juzga otro agente, el revisor. El editor e
 3. **La entrada de cada palabra clave según su frase** (`clave_entrada`: golpe para lo duro, suave para lo
    reflexivo).
 4. **Que cada recurso quepa en ESTA toma**: mide dónde empieza la cabeza antes de poner texto arriba o media
-   pantalla; si no cabe, otra forma. Nada tapa la cara.
+   pantalla; si no cabe, otra forma. Nada tapa la cara (`montar_reel.py` recoloca y encoge los rótulos que la
+   pisan, pero si te grabas muy cerca, mejor pocos textos y cortos).
+5. **Con medida de verdad**: cuenta los recursos llamativos de la pieza (partida, puertas, negro, tarjeta, lista
+   sobre b-roll, destello, texto detrás…). Más de dos, quita. Una sola palabra dorada en pantalla a la vez.
+6. **Sonido**: si el revisor mide un pico por encima de −1 dBTP, baja `volumen_voz` o `sfx_gain` en la spec
+   (1 dB ≈ ×0,89).
 
 ## Reglas que no se rompen
 - La marca es la del usuario (`config.json` y `estilo.md`). Nunca la estética de una referencia.
