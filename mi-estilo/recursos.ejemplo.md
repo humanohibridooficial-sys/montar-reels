@@ -40,5 +40,6 @@ pieza va a llevar esos recursos, grábate más abierto.
 
 ## Reglas que no se rompen
 - Casos, cifras y testimonios: solo reales y con permiso.
-- Como mucho dos recursos llamativos por pieza, y con motivo.
+- Cada frase con su imagen: nunca más de 3 s de solo cara con subtítulos (una cabeza hablando sin imágenes
+  no aguanta). Los adornos (destello, punch-in, transición con efecto), como mucho dos y con motivo.
 - Nada tapa tu cara; todo dentro de la zona segura de Instagram.
