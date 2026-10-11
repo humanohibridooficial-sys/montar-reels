@@ -109,16 +109,25 @@ for i, n in enumerate(["rotulos", "subtitulos", "subtitulos_clave", "cta"], 1): 
 # ---------- 1. tu video ----------
 VID = SPEC["video"]; m = vmat(VID); pos = 0.0
 zooms = SPEC.get("zooms", [])
+_byn_dir = os.path.join(config.RAIZ, "trabajo", "_compuestos"); os.makedirs(_byn_dir, exist_ok=True)
+def tramo_byn(a, b):
+    """El tramo ya desaturado con ffmpeg (con su audio). La saturación por fotograma clave dentro del proyecto
+    no la aplica CapCut 9.5: la T42 del director salió en color (revisor, 11-10)."""
+    out = os.path.join(_byn_dir, f"byn-{os.path.splitext(os.path.basename(VID))[0]}-{a:.2f}-{b:.2f}.mp4")
+    if not os.path.exists(out):
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{a:.3f}", "-t", f"{b - a:.3f}", "-i", VID, "-vf", "hue=s=0",
+                        *config.codec_video("alta"), "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", out], check=True)
+    return out
 for i, (a, b) in enumerate(tramos):
     en_zoom = any(z0 <= a and b <= z1 + 1e-6 for z0, z1 in zooms)
     alterna = SPEC.get("alternar_encuadre", True) and i % 2 == 1
     s = SPEC.get("zoom_escala", 1.15) if en_zoom else (SPEC.get("alterna_escala", 1.06) if alterna else 1.0)
-    seg = d.Video_segment(m, trange(f"{pos:.3f}s", f"{b - a:.3f}s"), source_timerange=trange(f"{a:.3f}s", f"{b - a:.3f}s"),
+    en_byn = any(b0 <= a and b <= b1 + 1e-6 for b0, b1 in SPEC.get("byn", []))
+    mat, src0 = (vmat(tramo_byn(a, b)), 0.0) if en_byn else (m, a)
+    seg = d.Video_segment(mat, trange(f"{pos:.3f}s", f"{b - a:.3f}s"), source_timerange=trange(f"{src0:.3f}s", f"{b - a:.3f}s"),
                           volume=SPEC.get("volumen_voz", 1.4), clip_settings=d.Clip_settings(scale_x=s, scale_y=s, transform_y=SPEC.get("alterna_y", -0.06) if en_zoom else (SPEC.get("alterna_y", -0.02) if s > 1 else 0)))
     if any(b0 <= a and b <= b1 + 1e-6 for b0, b1 in SPEC.get("desvanecer", [])):  # se desvanece hasta negro
         seg.add_keyframe(KP.alpha, 0, 1.0); seg.add_keyframe(KP.alpha, tim(f"{b - a:.3f}s"), 0.0)
-    if any(b0 <= a and b <= b1 + 1e-6 for b0, b1 in SPEC.get("byn", [])):  # tramo en blanco y negro
-        seg.add_keyframe(KP.saturation, 0, -1.0)
     if i == 0 and not SPEC.get("palabra_detras"):  # zoom lento del gancho
         seg.add_keyframe(KP.uniform_scale, 0, 1.0); seg.add_keyframe(KP.uniform_scale, tim(f"{min(3.0, b - a):.3f}s"), 1.07)
     if i == len(tramos) - 1:  # final oscurecido
@@ -272,7 +281,8 @@ for r in SPEC.get("rotulos_png", []):
     seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"), clip_settings=d.Clip_settings(scale_x=e, scale_y=e, transform_y=ty))
     if t0 > 0.1:  # el gancho, entero y opaco desde el fotograma 0 (v5: entraba con fundido y el 0 salía sin texto)
         seg.add_animation(d.CapCut_Intro_type.Zoom_In if r.get("anim") == "pop" else d.CapCut_Intro_type.Fade_In, "0.25s")
-    if "fin" in r and t1 - t0 > 1.0: seg.add_animation(d.CapCut_Outro_type.Fade_Out, "0.2s")
+    # el gancho no se funde: su texto aguanta entero hasta el corte (T42 director: se iba 0,2 s antes)
+    if "fin" in r and t1 - t0 > 1.0 and t0 > 0.1: seg.add_animation(d.CapCut_Outro_type.Fade_Out, "0.2s")
     pista = r.get("pista", "rotulos_img")  # objetos que se suman: cada uno en su pista para poder solaparse
     if pista not in _pistas_png and pista != "rotulos_img":
         script.add_track(d.Track_type.video, pista, relative_index=6 + len(_pistas_png)); _pistas_png.append(pista)
