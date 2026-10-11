@@ -28,3 +28,7 @@ termine con el editor funcionando con SU marca y SU estilo, sin nada de Luismi d
 
 ## Bitácora
 - 11-10: spec.
+- 11-10: hecho. Control en el PC de Luismi (su Python): marca 4 faltas reales (faster_whisper en ese Python,
+  skill y 2 agentes sin instalar) y el control positivo pasa. Copia limpia clonada de GitHub: marca las 10
+  faltas de un equipo nuevo, cada una con su paso del instalador. NO probado: lanzar instalar.ps1 de principio
+  a fin en un equipo limpio (en el de Luismi sobrescribiría su skill y sus agentes con la ruta de prueba).
