@@ -61,6 +61,8 @@ def amat(p):
     return _mats[p]
 
 rgb = lambda h: tuple(int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
+# Subtítulos sin tildes (van en mayúsculas y la fuente de CapCut no trae Á, É, Í, Ó, Ú). La Ñ se queda.
+sin_tildes = lambda t: t.translate(str.maketrans("ÁÉÍÓÚÜáéíóúü", "AEIOUUaeiouu"))
 
 # ---------- tiempos: tramos que se quedan del original ----------
 palabras = SPEC["palabras"]            # [[ini, fin, texto], ...] en segundos del ORIGINAL
@@ -386,14 +388,24 @@ for j, bl in enumerate(bloques):
     # un rotulo en pantalla y el subtitulo comparten franja: o baja (subt_y_bajo) o no sale. Nunca se pisan.
     pisa = any(t0 < b and t1 > a for a, b, _ in RIVALES)
     if any(t0 < b and t1 > a for a, b, tapa in RIVALES if tapa): continue  # la capa ocupa tambien la franja baja
-    if pisa and SPEC.get("subt_y_bajo") is None: continue
+    # Subtítulos en la zona segura (Luismi, 11-10: "todo en zona de seguridad"): al borde de abajo de la zona del
+    # formato, que es lo más lejos de la cara que se puede. Ahí ya no hay "más abajo": si un rótulo ocupa la parte
+    # de abajo, el subtítulo no sale (el rótulo ya dice la idea). subt_zona: false vuelve a subt_y.
+    if SPEC.get("subt_zona", True) and SPEC.get("subt_modo") == "marca":
+        if pisa: continue
+        zb_s = 1267 if SPEC.get("formato") == "anuncio" else 1920 * 0.80
+        y_base = (960 - (zb_s - 130)) / 960  # el bloque (frase + clave debajo) acaba encima del borde
+    else:
+        y_base = None
+        if pisa and SPEC.get("subt_y_bajo") is None: continue
     if SPEC.get("subt_modo") == "marca":
         ROT = SPEC.get("subt_rotulo") and not any(t0 < b and t1 > a for a, b in EN_PANTALLA)  # la clave "vestida de rótulo"
-        # Siempre en mayúsculas: la fuente de subtítulos de CapCut solo trae mayúsculas y las vocales con tilde
-        # salían en minúscula ("FúTBOLISTA", v5). Se quita el modo minúsculas.
-        pal = [re.sub(r"[.,;:!]", "", w.strip()).upper() for _, _, w in bl]
+        # Siempre en mayúsculas y SIN tildes (Luismi, 11-10): la fuente de subtítulos de CapCut solo trae mayúsculas;
+        # en minúscula rompía las tildes ("FúTBOLISTA", v5) y en mayúscula las sacaba de otra fuente ("SÍ", "CÓMO").
+        pal = [sin_tildes(re.sub(r"[.,;:!]", "", w.strip()).upper()) for _, _, w in bl]
         ks = [limpio(w) in clave for _, _, w in bl]
-        tam = SPEC.get("subt_size", 16); sy = SPEC["subt_y_bajo"] if pisa else SPEC.get("subt_y", -0.23)
+        tam = SPEC.get("subt_size", 16)
+        sy = y_base if y_base is not None else (SPEC["subt_y_bajo"] if pisa else SPEC.get("subt_y", -0.23))
         kf = SPEC.get("subt_clave_factor", 2.5 if ROT else 1.75); ga, gb = SPEC.get("subt_jer_sep", [0.045, -0.035])
         if ROT and any(ks) and not all(ks):
             # La frase pequeña entra con el bloque; la clave, DEBAJO y grande, entra cuando se dice y las dos
