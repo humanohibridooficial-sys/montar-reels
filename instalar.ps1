@@ -49,6 +49,14 @@ foreach ($c in @("node", "git", "py", "ffmpeg")) {
         exit 1
     }
 }
+# Claude Code: es la IA que dirige el montaje (necesita una suscripción de Claude; la primera vez pide entrar)
+if (Get-Command claude -ErrorAction SilentlyContinue) { Ok "Claude Code ya estaba" }
+else {
+    Write-Host "   instalando Claude Code..."
+    npm install -g @anthropic-ai/claude-code --silent
+    RefrescarPath
+    if (Get-Command claude -ErrorAction SilentlyContinue) { Ok "Claude Code" } else { Aviso "Claude Code no aparece todavía: abre otra ventana y lanza 'claude' para comprobarlo" }
+}
 
 # 2. Entorno de Python -----------------------------------------------------------------------------------------
 Paso "2/8 Entorno de Python propio en .venv (no toca el Python del sistema)"
@@ -95,6 +103,8 @@ Paso "6/8 Tu configuración (config.json) y carpeta de trabajo"
 if (-not (Test-Path "config.json")) { Copy-Item "config.ejemplo.json" "config.json"; Ok "creado config.json (edítalo si quieres cambiar colores o carpetas)" } else { Ok "config.json ya estaba: no lo toco" }
 if (-not (Test-Path ".env")) { Copy-Item ".env.ejemplo" ".env"; Ok "creado .env (pon ahí tu PEXELS_API_KEY si vas a buscar B-roll)" } else { Ok ".env ya estaba: no lo toco" }
 foreach ($d in @("trabajo", "trabajo\transcripciones", "trabajo\piezas", "mi-estilo\referencias")) { New-Item -ItemType Directory -Force (Join-Path $REPO $d) | Out-Null }
+# El catálogo de recursos es de cada uno (no se sube a git): se parte del de ejemplo
+if (-not (Test-Path "mi-estilo\recursos.md")) { Copy-Item "mi-estilo\recursos.ejemplo.md" "mi-estilo\recursos.md"; Ok "creado mi-estilo\recursos.md (tu catálogo de recursos, desde el de ejemplo)" } else { Ok "mi-estilo\recursos.md ya estaba: no lo toco" }
 Ok "carpetas de trabajo listas"
 
 # 7. Skill para Claude Code ------------------------------------------------------------------------------------
@@ -104,6 +114,14 @@ New-Item -ItemType Directory -Force $SK | Out-Null
 $texto = [IO.File]::ReadAllText((Join-Path $REPO "skill\SKILL.md"), [Text.Encoding]::UTF8).Replace("{{REPO}}", $REPO)
 [IO.File]::WriteAllText((Join-Path $SK "SKILL.md"), $texto, (New-Object Text.UTF8Encoding($false)))
 Ok "skill copiada y apuntando a $REPO"
+# Los agentes director (decide el montaje) y revisor (juzga el export), para cualquier carpeta de Claude Code
+$AG = Join-Path $HOME ".claude\agents"
+New-Item -ItemType Directory -Force $AG | Out-Null
+foreach ($a in Get-ChildItem (Join-Path $REPO ".claude\agents") -Filter *.md) {
+    $texto = [IO.File]::ReadAllText($a.FullName, [Text.Encoding]::UTF8).Replace("{{REPO}}", $REPO)
+    [IO.File]::WriteAllText((Join-Path $AG $a.Name), $texto, (New-Object Text.UTF8Encoding($false)))
+    Ok "agente $($a.BaseName)"
+}
 
 # 8. Comprobación ----------------------------------------------------------------------------------------------
 Paso "8/8 Comprobación"
@@ -115,6 +133,7 @@ if ($fallo -ne 0) { Aviso "algo no carga (mira el error de arriba)"; exit 1 }
 & ffmpeg -hide_banner -version | Select-Object -First 1
 
 Write-Host ""
-Write-Host "Instalación terminada." -ForegroundColor Green
-Write-Host "Falta UNA cosa a mano: abre CapCut, crea un proyecto vacío, llámalo PLANTILLA-REELS y cierra CapCut."
-Write-Host "Después abre Claude Code en esta carpeta y dile: 'edita este reel' con la ruta de tu vídeo."
+Write-Host "Instalación terminada. Ahora lo compruebo todo:" -ForegroundColor Green
+Write-Host "(si es la primera vez, faltará la plantilla: abre CapCut, crea un proyecto vacío, llámalo PLANTILLA-REELS,"
+Write-Host " ciérralo y lanza .\comprobar.ps1)"
+& (Join-Path $REPO "comprobar.ps1")
