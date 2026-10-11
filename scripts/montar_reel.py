@@ -249,13 +249,15 @@ for r in SPEC.get("rotulos_png", []):
     ty = r.get("y", 0.0 if r.get("pista") else SPEC.get("rotulos_y", 0.0))
     if r.get("colocar", "auto") == "auto":
         # Nunca sobre la cara (revisión de la v5, 11-10): se mide la caja visible del rótulo; si pisa la franja
-        # cabeza-barbilla, va bajo la barbilla (al pecho) o, si no cabe, sobre la cabeza.
+        # cabeza-barbilla, va bajo la barbilla (al pecho) o, si no cabe, sobre la cabeza. Y siempre dentro de la
+        # zona segura del formato (orgánico: 15 % arriba y 20 % abajo libres; anuncio: y 288-1267).
+        zt, zb = (288, 1267) if SPEC.get("formato") == "anuncio" else (1920 * 0.15, 1920 * 0.80)
         bb = Image.open(r["png"]).getchannel("A").getbbox() if os.path.exists(r["png"]) else None
         if bb:
             y0 = 960 + (bb[1] - 960) * e - ty * 960; y1 = 960 + (bb[3] - 960) * e - ty * 960
             arriba, barbilla = cara_en(SPEC["video"], (r["ini"] + (r.get("fin", r["ini"] + 2))) / 2)
             if arriba and y1 > arriba - 20 and y0 < barbilla + 20:
-                alto = y1 - y0; hueco_abajo = 1920 * 0.80 - (barbilla + 40); hueco_arriba = arriba - 30 - 1920 * 0.15
+                alto = y1 - y0; hueco_abajo = zb - (barbilla + 40); hueco_arriba = arriba - 30 - zt
                 if alto > max(hueco_abajo, hueco_arriba) and max(hueco_abajo, hueco_arriba) >= 0.6 * alto:
                     e *= max(hueco_abajo, hueco_arriba) / alto  # se encoge lo justo para caber sin tocar la cara
                     # CapCut escala desde el centro de la pantalla: se vuelve a medir dónde queda
@@ -263,7 +265,10 @@ for r in SPEC.get("rotulos_png", []):
                 if alto <= hueco_abajo: nuevo = barbilla + 40
                 elif alto <= hueco_arriba: nuevo = arriba - 30 - alto
                 else: nuevo = barbilla + 40; print(f"  aviso: {os.path.basename(r['png'])} no cabe sin tocar la cara; va al pecho")
-                ty -= (nuevo - y0) / 960
+                ty -= (nuevo - y0) / 960; y1 += nuevo - y0; y0 = nuevo
+            if y1 > zb: ty += (y1 - zb) / 960; y0 -= y1 - zb; y1 = zb       # se sale por abajo: sube
+            if y0 < zt: ty -= (zt - y0) / 960; y1 += zt - y0; y0 = zt       # se sale por arriba: baja
+            if y1 > zb: print(f"  aviso: {os.path.basename(r['png'])} es más alto que la zona segura")
     seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"), clip_settings=d.Clip_settings(scale_x=e, scale_y=e, transform_y=ty))
     if t0 > 0.1:  # el gancho, entero y opaco desde el fotograma 0 (v5: entraba con fundido y el 0 salía sin texto)
         seg.add_animation(d.CapCut_Intro_type.Zoom_In if r.get("anim") == "pop" else d.CapCut_Intro_type.Fade_In, "0.25s")
