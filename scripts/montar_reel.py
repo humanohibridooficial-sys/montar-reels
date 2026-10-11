@@ -118,6 +118,19 @@ for p in SPEC.get("palabra_detras", []):
     if SPEC.get("sfx_auto", True): sfx(p.get("sfx", "pop"), t0 + 0.05, p.get("sfx_vol", 0.45))
 
 # ---------- 3. b-roll ----------
+_compuestos = os.path.join(config.RAIZ, "trabajo", "_compuestos"); os.makedirs(_compuestos, exist_ok=True)
+def cabeza_en(video, t):
+    """Fila (en 1080x1920) donde empieza tu cabeza en el segundo t de la toma, con el recorte de silueta."""
+    import cv2, numpy as np, mediapipe as mp
+    from mediapipe.tasks.python import vision, BaseOptions
+    with vision.ImageSegmenter.create_from_options(vision.ImageSegmenterOptions(
+            base_options=BaseOptions(model_asset_path=config.SELFIE), output_confidence_masks=True)) as sg:
+        cap = cv2.VideoCapture(video); cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000); ok, fr = cap.read()
+        if not ok: return 0
+        fr = cv2.resize(fr, (1080, 1920))
+        m = sg.segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(fr, cv2.COLOR_BGR2RGB))).confidence_masks[0].numpy_view() > 0.5
+        filas = np.where(m.sum(axis=1) > 40)[0]
+        return int(filas[0]) if len(filas) else 0
 for b in SPEC.get("broll", []):
     mm = vmat(b["clip"]); t0 = T(b["ini"]); du = b.get("dur", 2.0)
     src0 = max(0, mm.duration / 1e6 / 2 - du / 2)
@@ -139,8 +152,28 @@ for b in SPEC.get("broll", []):
         # "corte" = altura de la línea en pantalla (0 arriba, 1 abajo): por defecto, arriba acaba sobre tu
         # cabeza y abajo empieza en tus hombros (medido en la toma 38). Si en CapCut se ve el lado contrario,
         # cambia "invertir" en la spec.
-        arriba = b.get("lado", "arriba") == "arriba"
-        corte = b.get("corte", 0.31 if arriba else 0.66)
+        # lado "auto" (por defecto): se mide dónde empieza tu cabeza en ese momento. Con hueco arriba (>= 30 % de la
+        # pantalla) el clip va ARRIBA y el difuminado acaba sobre tu cabeza; si te grabas tan cerca que no cabe, no
+        # se fuerza: pasa a "tú delante del clip" (Luismi, 10-10: "si el hueco está arriba, ponlo arriba; si no
+        # cabe, busca otras opciones").
+        lado = b.get("lado", "auto"); corte = b.get("corte")
+        if lado == "auto" or corte is None:
+            cab = cabeza_en(SPEC["video"], b["ini"] + du / 2)
+            if lado == "auto":
+                lado = "arriba" if cab >= 0.30 * 1920 else "delante"
+            if corte is None: corte = max(0.12, cab / 1920 - 0.07) if lado == "arriba" else 0.66
+        if lado == "delante":
+            comp = os.path.join(_compuestos, f"delante-{os.path.basename(b['clip']).rsplit('.', 1)[0]}-{b['ini']:.2f}.mp4")
+            if not os.path.exists(comp):
+                subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "delante_del_clip.py"),
+                                SPEC["video"], str(b["ini"]), str(b["ini"] + du), b["clip"], comp], check=True, capture_output=True)
+            mc = vmat(comp)
+            seg = d.Video_segment(mc, trange(f"{t0:.3f}s", f"{min(du, mc.duration / 1e6 - 0.05):.3f}s"), volume=0)
+            seg.add_animation(d.CapCut_Intro_type.Fade_In, "0.15s"); seg.add_animation(d.CapCut_Outro_type.Fade_Out, "0.15s")
+            script.add_segment(seg, "broll"); USADOS.append(["broll:delante(sin hueco arriba)", round(t0, 2)])
+            print(f"  b-roll {os.path.basename(b['clip'])}: sin hueco sobre tu cabeza, va como 'tú delante del clip'")
+            continue
+        arriba = lado == "arriba"
         seg = d.Video_segment(mm, trange(f"{t0:.3f}s", f"{du:.3f}s"), source_timerange=trange(f"{src0:.3f}s", f"{du:.3f}s"), volume=0)
         seg.add_mask(script, d.CapCut_Mask_type.Split, center_y=(0.5 - corte) * script.height,
                      rotation=0 if arriba else 180, feather=b.get("difuminado", 35), invert=b.get("invertir", False))
