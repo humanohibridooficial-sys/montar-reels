@@ -160,7 +160,9 @@ for b in SPEC.get("broll", []):
         if lado == "auto" or corte is None:
             cab = cabeza_en(SPEC["video"], b["ini"] + du / 2)
             if lado == "auto":
-                lado = "arriba" if cab >= 0.30 * 1920 else "delante"
+                # 40 %, no 30 %: con un 33 % libre (T42, s48) la franja útil quedaba muy fina entre los botones de
+                # Instagram arriba y el difuminado sobre la cabeza. Luismi lo vio mal en la prueba v3 (11-10).
+                lado = "arriba" if cab >= 0.40 * 1920 else "delante"
             if corte is None: corte = max(0.12, cab / 1920 - 0.07) if lado == "arriba" else 0.66
         if lado == "delante":
             comp = os.path.join(_compuestos, f"delante-{os.path.basename(b['clip']).rsplit('.', 1)[0]}-{b['ini']:.2f}.mp4")
