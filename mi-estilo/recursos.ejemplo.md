@@ -11,7 +11,7 @@ Todo recurso se viste con TU marca, nunca con la de la referencia.
 ## Tono de la pieza (lo primero que se decide)
 | Tono | Cuándo | Cómo se monta |
 |---|---|---|
-| sobria | consejo o dato que debe sonar a experto | pocos recursos, encuadre casi quieto, claves con fundido, sin destellos |
+| sobria | consejo o dato que debe sonar a experto | pocos recursos, encuadre suave, claves con fundido, sin destellos |
 | intensa | problema, reto, urgencia | un recurso cada 3-4 s, zooms marcados, claves de golpe, destellos entre bloques |
 | emocional | historia, miedo, frustración | blanco y negro, silencios, desvanecer, claves suaves |
 No repitas tono en dos piezas seguidas salvo que el guion lo pida (lo mira el director en `usados.json`).

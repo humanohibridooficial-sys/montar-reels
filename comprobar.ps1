@@ -32,6 +32,7 @@ if (Hay $PY) {
 # 3. Piezas que se descargan
 if (Hay (Join-Path $REPO "vendor\VectCutAPI\pyJianYingDraft")) { Bien "VectCutAPI (escribe los proyectos de CapCut)" } else { Mal "VectCutAPI en vendor\VectCutAPI" "lanza .\instalar.ps1 (paso 3)" }
 if (Hay (Join-Path $REPO "modelos\selfie_segmenter.tflite")) { Bien "modelo de recorte de silueta" } else { Mal "modelos\selfie_segmenter.tflite" "lanza .\instalar.ps1 (paso 4)" }
+if (Hay (Join-Path $REPO "modelos\blaze_face_short_range.tflite")) { Bien "detector de caras (para que ningún texto te tape la cara)" } else { Mal "modelos\blaze_face_short_range.tflite" "lanza .\instalar.ps1 (paso 4)" }
 if (Hay (Join-Path $REPO "modelos\hand_landmarker.task")) { Bien "modelo de manos" } else { Ojo "modelos\hand_landmarker.task (solo para detectar gestos)" "lanza .\instalar.ps1 (paso 4)" }
 foreach ($f in @("Anton-Regular.ttf", "BebasNeue-Regular.ttf")) {
     if (Hay (Join-Path $REPO "fuentes\$f")) { Bien "fuente $f" } else { Mal "fuentes\$f" "lanza .\instalar.ps1 (paso 5)" }
