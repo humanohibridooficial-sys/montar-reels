@@ -124,6 +124,23 @@ foreach ($a in Get-ChildItem (Join-Path $REPO ".claude\agents") -Filter *.md) {
     [IO.File]::WriteAllText((Join-Path $AG $a.Name), $texto, (New-Object Text.UTF8Encoding($false)))
     Ok "agente $($a.BaseName)"
 }
+# El puente con Negocio (specs/2026-10-12-puente-negocio.md): una clave propia de este PC y que arranque solo
+# con Windows. La clave se pega una vez en Negocio; sin ella el puente no hace nada.
+$cfg = [IO.File]::ReadAllText((Join-Path $REPO "config.json"), [Text.Encoding]::UTF8) | ConvertFrom-Json
+if (-not $cfg.puente_clave) {
+    $bytes = New-Object byte[] 18; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    $clave = [Convert]::ToBase64String($bytes).Replace("+", "-").Replace("/", "_")
+    $cfg | Add-Member -NotePropertyName puente_clave -NotePropertyValue $clave -Force
+    [IO.File]::WriteAllText((Join-Path $REPO "config.json"), ($cfg | ConvertTo-Json -Depth 5), (New-Object Text.UTF8Encoding($false)))
+    Ok "clave del puente creada"
+}
+$inicio = Join-Path ([Environment]::GetFolderPath("Startup")) "Puente montar-reels.lnk"
+$atajo = (New-Object -ComObject WScript.Shell).CreateShortcut($inicio)
+$atajo.TargetPath = "powershell.exe"
+$atajo.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$(Join-Path $REPO 'puente.ps1')`""
+$atajo.WorkingDirectory = $REPO
+$atajo.Save()
+Ok "el puente arrancará solo con Windows. Tu clave para Negocio: $((Get-Content (Join-Path $REPO 'config.json') -Raw | ConvertFrom-Json).puente_clave)"
 
 # 8. Comprobación ----------------------------------------------------------------------------------------------
 Paso "8/8 Comprobación"

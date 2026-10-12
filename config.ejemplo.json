@@ -10,5 +10,8 @@
   "color_clave": "#E0B83C",
   "color_marca": "#0E1F3A",
   "codificador": "x264",
-  "whisper_dispositivo": "auto"
+  "whisper_dispositivo": "auto",
+  "carpeta_tomas": "trabajo",
+  "puente_clave": "",
+  "puente_puerto": 7810
 }
