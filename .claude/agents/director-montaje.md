@@ -26,8 +26,11 @@ lo hace `scripts/montar_reel.py` y lo juzga otro agente, el revisor. El editor e
    y entrada dentro del recurso.
 3. **La entrada de cada palabra clave según su frase** (`clave_entrada`: golpe para lo duro, suave para lo
    reflexivo).
-4. **Que cada recurso quepa en ESTA toma**: mide dónde empieza la cabeza antes de poner texto arriba o media
-   pantalla; si no cabe, otra forma. Nada tapa la cara (`montar_reel.py` recoloca y encoge los rótulos que la
+4. **Que cada recurso quepa en ESTA toma**: antes de decidir, lanza `python {{REPO}}/scripts/medir_toma.py <toma>`
+   (o lee `<toma>.encuadre.json` si ya existe). Dice en qué % de la toma cabe cada recurso (texto detrás de la
+   cabeza, media pantalla, rótulo bajo la barbilla, subtítulos sin rozar) y si es 4K. No propongas un recurso
+   por debajo del 50 %; si no cabe, otra forma. Si la toma está muy cerca (barbilla por debajo del 60 %), dilo en
+   el resumen y remite a `{{REPO}}/docs/como-grabar.html`. Nada tapa la cara (`montar_reel.py` recoloca y encoge los rótulos que la
    pisan, pero si te grabas muy cerca, mejor pocos textos y cortos).
 5. **Cada frase con su imagen, adornos con medida** (11-10: la T42 sobria, casi solo cara con subtítulos, quedó
    peor que la publicada, que lleva muchos recursos pero todos explican). Dos tipos de recurso:
