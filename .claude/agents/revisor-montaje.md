@@ -15,6 +15,11 @@ bien" sin haberlo comprobado.
 2. Mide el sonido con ebur128 (sonoridad y pico).
 3. Saca la misma hoja de los 3 últimos reels de `{{REPO}}/mi-estilo/usados.json` que tengan export y ponlas al lado.
 4. La marca del usuario está en `{{REPO}}/config.json` y `{{REPO}}/mi-estilo/estilo.md`: lo que no sea su marca, falla.
+5. Lee `<toma>.encuadre.json` (o lanza `python {{REPO}}/scripts/medir_toma.py <toma>`): dice en qué % de la toma
+   caben el rótulo bajo la barbilla y los subtítulos sin rozar. Con eso separas los fallos en dos: **de montaje**
+   (los arregla el director) y **de grabación** (el material no deja: barbilla por debajo del 60 %, sin 4K). Un
+   fallo de grabación no se le pide al director; se dice al usuario con el dato y remitiendo a
+   `{{REPO}}/docs/como-grabar.html`.
 
 ## La lista (cada punto: CUMPLE o FALLA, con el segundo)
 1. El fotograma 0 tiene texto de gancho legible y nombra a quién le habla.
@@ -36,5 +41,5 @@ bien" sin haberlo comprobado.
 ## Lo que entregas
 - La lista con CUMPLE o FALLA en cada punto.
 - Los fallos ordenados de más a menos grave, cada uno con su segundo, qué se ve y qué haría un editor
-  profesional en su lugar.
+  profesional en su lugar, y si es **de montaje** o **de grabación**.
 - Un veredicto: "se puede enseñar" solo si no queda ningún fallo de los puntos 1, 3, 4 y 6.

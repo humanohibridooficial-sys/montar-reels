@@ -18,7 +18,7 @@ medido en la T42), así que todo acaba encima de su cara. Luismi acepta cambiar 
 | F3 | **Dos distancias desde una toma en 4K**: alternar plano medio y primer plano recortado y centrado en la cara, en lugar del zoom al 130 % | Con una toma en 4K, el recorte sale nítido (sin escalar por encima del 100 %) y la cara centrada |
 | F4 | **Tomas de cerca aparte**: `tomas_cerca: [ficheros]` emparejadas por la transcripción; el corte entre distancias cae en mitad de frase | Con una toma doble del gancho, el corte no repite ni salta palabras |
 | F5 | **Gráficos animados con alfa** (listas que se construyen, flechas que se dibujan) en vez de PNG fijos | Primero comprobar que CapCut 9.5 respeta el alfa de un .mov/.webm; si no, ir por composición previa con ffmpeg como F2 |
-| F6 | **Director sabe qué material hay**: `scripts/medir_toma.py` da en qué % de la toma cabe cada recurso y si es 4K; el director lo lanza antes de decidir | Hecha 11-10 (medida). Controles: T42 = rótulo bajo la barbilla en el 33 % y subtítulos sin rozar en el 57 %; Carla (2 reels) = 94-100 % y 100 %. El aire sobre la cabeza es parecido (62 % frente a 65-69 %): lo que separa es el sitio bajo la barbilla. Falta que el revisor lo use |
+| F6 | **Director y revisor saben qué material hay**: `scripts/medir_toma.py` da en qué % de la toma cabe cada recurso y si es 4K; el director lo lanza antes de decidir | Hecha 11-10 (medida). Controles: T42 = rótulo bajo la barbilla en el 33 % y subtítulos sin rozar en el 57 %; Carla (2 reels) = 94-100 % y 100 %. El aire sobre la cabeza es parecido (62 % frente a 65-69 %): lo que separa es el sitio bajo la barbilla. El revisor también (12-10): separa fallos de montaje y de grabación |
 
 ## Decisiones
 
