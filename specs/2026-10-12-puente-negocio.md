@@ -58,3 +58,11 @@ Negocio (navegador)  --fetch-->  http://127.0.0.1:7810  (puente.py, en el PC)  -
   y el revisor devuelve su veredicto en Negocio.
 - Sin clave o desde otro origen, el puente responde 403 (control negativo).
 - Con el puente apagado, Negocio lo dice y deja copiar la orden.
+
+## Bitácora
+
+- 13-10, primera prueba real: se lanzaron cinco montajes de la misma pieza. El log estaba vacío (`claude -p`
+  solo escribe al acabar) y el botón seguía activo mientras se medía la toma. Arreglo: `--output-format
+  stream-json` traducido a líneas legibles conforme pasa, un trabajo por toma (si ya hay uno, devuelve su id),
+  cerrojo para que dos clics seguidos no se cuelen, y el estado sobrevive a un reinicio del puente (`.fin`).
+  En Negocio, el botón se desactiva mientras envía (hh-kpi #404).
