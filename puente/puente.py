@@ -205,7 +205,9 @@ def herramientas_fabrica() -> list[str]:
     return ["Read", "Glob", "Grep", "WebSearch", "WebFetch",
             f"Write({salida}/**)", f"Edit({salida}/**)", f"Edit({LEDGER})",
             # Con espacio tras el script: `negocio.mjs.otro` o `transcribir.pyw` no casan con la regla.
-            f"Bash(node {mjs} :*)", f"Bash({PY_GPU} {TRANSCRIBIR} :*)"]
+            # Comodín ` *`, no ` :*`: con el espacio delante, `:*` no casa con nada (medido el 14-10: la primera
+            # corrida de Negocio no pudo lanzar ni `semana`).
+            f"Bash(node {mjs} *)", f"Bash({PY_GPU} {TRANSCRIBIR} *)"]
 
 
 def orden_fabrica(accion: str, corrida: str, pedido: str) -> str:
