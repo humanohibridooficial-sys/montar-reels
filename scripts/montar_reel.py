@@ -381,6 +381,11 @@ if SPEC.get("subt_zona", True) and SPEC.get("subt_modo") == "marca":
 # Cualquier rótulo en pantalla (también los de arriba): mientras está, la clave no se viste de rótulo. Una sola
 # palabra dorada a la vez (v5: "SE CIERRA" + "PUERTA" y "SÍGUEME" + "JUNTOS" a la vez).
 EN_PANTALLA = [(T(r["ini"]), T(r["fin"]) if "fin" in r else TOTAL) for r in SPEC.get("rotulos_png", [])]
+# Entrada de la frase del subtítulo. Pop_Up la sube ~45 px al entrar y la mete en el rótulo de encima (revisor,
+# REACCION-MILLA v1, 14-10: pisaba SÍGUEME). "fundido" no la mueve; "ninguna", corte seco. Por defecto, la de siempre.
+SUBT_ENTRADA = {"pop": d.CapCut_Text_intro.Pop_Up, "fundido": d.CapCut_Text_intro.Fade_In, "ninguna": None}[SPEC.get("subt_entrada", "pop")]
+def entra_subt(seg, dur):
+    if SUBT_ENTRADA: seg.add_animation(SUBT_ENTRADA, dur)
 for j, bl in enumerate(bloques):
     t0 = T(bl[0][0]); t1 = T(bloques[j + 1][0][0]) if j + 1 < len(bloques) else TOTAL
     if t1 - t0 < 0.12: continue
@@ -454,20 +459,20 @@ for j, bl in enumerate(bloques):
                                  border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
                                  shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
                                  clip_settings=d.Clip_settings(transform_y=sy + ga))
-            seg.add_animation(d.CapCut_Text_intro.Pop_Up, "0.18s"); script.add_segment(seg, "subtitulos")
+            entra_subt(seg, "0.18s"); script.add_segment(seg, "subtitulos")
             sk = d.Text_segment(" ".join(claves), trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"),
                                 style=d.Text_style(size=tam * kf, color=(224 / 255, 184 / 255, 60 / 255), align=1, bold=True),
                                 border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
                                 shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
                                 clip_settings=d.Clip_settings(transform_y=sy + gb))
-            sk.add_animation(d.CapCut_Text_intro.Pop_Up, "0.22s"); script.add_segment(sk, "subtitulos_clave"); continue
+            entra_subt(sk, "0.22s"); script.add_segment(sk, "subtitulos_clave"); continue
         MARCA_INFO.append(list(zip(pal, ks)))
         seg = d.Text_segment(" ".join(pal), trange(f"{t0:.3f}s", f"{t1 - t0:.3f}s"),
                              style=d.Text_style(size=SPEC.get("subt_size", 16), color=(1, 1, 1), align=1, bold=True),
                              border=d.Text_border(color=(0, 0, 0), width=40, alpha=1.0),
                              shadow=d.Text_shadow(has_shadow=True, alpha=0.7, angle=-60, distance=8, smoothing=0.3),
                              clip_settings=d.Clip_settings(transform_y=sy))
-        seg.add_animation(d.CapCut_Text_intro.Pop_Up, "0.18s")
+        entra_subt(seg, "0.18s")
         script.add_segment(seg, "subtitulos"); continue
     txt = " ".join(w.strip() for _, _, w in bl).strip()
     es_clave = any(limpio(w) in clave for _, _, w in bl)
