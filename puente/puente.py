@@ -204,7 +204,8 @@ def herramientas_fabrica() -> list[str]:
     mjs = NEGOCIO_MJS.replace("\\", "/")
     return ["Read", "Glob", "Grep", "WebSearch", "WebFetch",
             f"Write({salida}/**)", f"Edit({salida}/**)", f"Edit({LEDGER})",
-            f"Bash(node {mjs}:*)", f"Bash({PY_GPU} {TRANSCRIBIR}:*)"]
+            # Con espacio tras el script: `negocio.mjs.otro` o `transcribir.pyw` no casan con la regla.
+            f"Bash(node {mjs} :*)", f"Bash({PY_GPU} {TRANSCRIBIR} :*)"]
 
 
 def orden_fabrica(accion: str, corrida: str, pedido: str) -> str:
@@ -361,7 +362,9 @@ class Puente(BaseHTTPRequestHandler):
                        "motivo": motivo.strip()[:300] if isinstance(motivo, str) and motivo.strip() else None},
                       f, ensure_ascii=False, indent=1)
         tid = lanzar("fabrica", orden_fabrica(accion, corrida, pedido.replace("\\", "/")), "fabrica:" + hueco,
-                     cwd=SALIDA_FABRICA, permitidas=herramientas_fabrica(),
+                     # cwd donde NO puede escribir: si fuera fabrica-output, podría dejarse un .claude/settings.json
+                     # con hooks que se ejecutarían en la siguiente corrida (revisión de seguridad del 14-10).
+                     cwd=FABRICA, permitidas=herramientas_fabrica(),
                      dirs=[FABRICA, os.path.join(CASA, ".claude", "skills"), SALIDA_FABRICA],
                      al_acabar=cierre_de_corrida(corrida))
         return self._json(200, {"id": tid})
