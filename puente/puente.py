@@ -57,8 +57,10 @@ def listar_tomas() -> list[dict]:
 
 def herramientas() -> list[str]:
     """Lo que Claude puede usar sin preguntar. Nada de git, red ni borrar."""
+    # Con espacio y ` *`, no `:*`: la ruta lleva los dos puntos de `C:` y con `:*` la regla no casaba con nada
+    # (prueba del 15-10: el director no pudo lanzar montar_reel.py). El mismo arreglo que en herramientas_fabrica.
     return ["Read", "Write", "Edit", "Glob", "Grep", "Task", "Agent",
-            f"Bash({PY}:*)", "Bash(ffmpeg:*)", "Bash(ffprobe:*)"]
+            f"Bash({PY} *)", "Bash(ffmpeg *)", "Bash(ffprobe *)"]
 
 
 def linea_de_evento(ev: dict) -> list[str]:
@@ -157,10 +159,16 @@ def estado_trabajo(tid: str) -> dict | None:
 
 
 def orden_montar(d: dict, toma: str) -> str:
+    # Solo nombra lo que de verdad está junto a la toma: si falta el guion, que el director lo sepa y lo diga
+    # (prueba del 15-10: la orden decía que estaban y no estaban).
+    base = os.path.splitext(toma)[0]
+    hay = [n for e, n in ((".guion.txt", "su guion (.guion.txt)"), (".montaje.json", "la hoja de montaje de Negocio (.montaje.json)"),
+                          (".encuadre.json", "la medida del encuadre (.encuadre.json)")) if os.path.isfile(base + e)]
+    junto = f"Junto a la toma están {', '.join(hay)}. " if hay else ""
+    falta = "" if os.path.isfile(base + ".guion.txt") else "No hay guion de Negocio: sácalo de la toma y dilo en NO PUDE. "
     return (
         f"Monta el reel '{d.get('tema') or 'sin tema'}' (pieza {d.get('hueco')}, día {d.get('fecha')}) con la toma {toma}. "
-        "Junto a la toma están su guion (.guion.txt), la hoja de montaje de Negocio (.montaje.json) y la medida del "
-        "encuadre (.encuadre.json). Primero el agente director-montaje: tono, hoja de montaje y spec. Después monta el "
+        + junto + falta + "Primero el agente director-montaje: tono, hoja de montaje y spec. Después monta el "
         f"proyecto de CapCut con `{PY} scripts/montar_reel.py <spec>` (desde la raíz de montar-reels). No esperes al "
         "export: el usuario lo hará en CapCut. Acaba con tres líneas: PROYECTO: <nombre del borrador de CapCut>, "
         "TONO: <tono y por qué> y NO PUDE: <lo que no se pudo hacer, o 'nada'>."
