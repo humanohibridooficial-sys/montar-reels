@@ -419,22 +419,74 @@ class Puente(BaseHTTPRequestHandler):
         ya = en_marcha_para("fabrica:" + hueco)
         if ya:
             return self._json(200, {"id": ya, "ya_estaba": True})
-        # Lo de la pieza va en un fichero, no dentro de la orden: el motivo lo escribe Luismi a mano.
-        carpeta = os.path.join(SALIDA_FABRICA, "_puente")
-        os.makedirs(carpeta, exist_ok=True)
-        pedido = os.path.join(carpeta, f"{corrida}.json")
-        motivo = d.get("motivo")
-        with open(pedido, "w", encoding="utf-8") as f:
-            json.dump({"corrida": corrida, "accion": accion, "huecoId": hueco, "pieza": d.get("pieza"),
-                       "motivo": motivo.strip()[:300] if isinstance(motivo, str) and motivo.strip() else None},
-                      f, ensure_ascii=False, indent=1)
-        tid = lanzar("fabrica", orden_fabrica(accion, corrida, pedido.replace("\\", "/")), "fabrica:" + hueco,
-                     # cwd donde NO puede escribir: si fuera fabrica-output, podría dejarse un .claude/settings.json
-                     # con hooks que se ejecutarían en la siguiente corrida (revisión de seguridad del 14-10).
-                     cwd=FABRICA, permitidas=herramientas_fabrica(),
-                     dirs=[FABRICA, os.path.join(CASA, ".claude", "skills"), SALIDA_FABRICA],
-                     al_acabar=cierre_de_corrida(corrida))
-        return self._json(200, {"id": tid})
+        return self._json(200, {"id": lanzar_fabrica(accion, corrida, hueco, d.get("pieza"), d.get("motivo"))})
+
+
+def lanzar_fabrica(accion: str, corrida: str, hueco: str, pieza, motivo) -> str:
+    # Lo de la pieza va en un fichero, no dentro de la orden: el motivo lo escribe Luismi a mano.
+    carpeta = os.path.join(SALIDA_FABRICA, "_puente")
+    os.makedirs(carpeta, exist_ok=True)
+    pedido = os.path.join(carpeta, f"{corrida}.json")
+    with open(pedido, "w", encoding="utf-8") as f:
+        json.dump({"corrida": corrida, "accion": accion, "huecoId": hueco, "pieza": pieza,
+                   "motivo": motivo.strip()[:300] if isinstance(motivo, str) and motivo.strip() else None},
+                  f, ensure_ascii=False, indent=1)
+    return lanzar("fabrica", orden_fabrica(accion, corrida, pedido.replace("\\", "/")), "fabrica:" + hueco,
+                  # cwd donde NO puede escribir: si fuera fabrica-output, podría dejarse un .claude/settings.json
+                  # con hooks que se ejecutarían en la siguiente corrida (revisión de seguridad del 14-10).
+                  cwd=FABRICA, permitidas=herramientas_fabrica(),
+                  dirs=[FABRICA, os.path.join(CASA, ".claude", "skills"), SALIDA_FABRICA],
+                  al_acabar=cierre_de_corrida(corrida))
+
+
+# "Preparar el mes" (spec hh-kpi 2026-10-14-fabrica-flujo-facil, paso 5): la cola vive en Negocio para que el botón
+# valga con el PC apagado. El puente la mira al arrancar y cada 2 minutos y lanza UNA pieza cada vez, con la misma
+# orden y las mismas herramientas que el botón de una pieza. Nunca dos Fábricas a la vez: comparten ledger y Negocio.
+CADA_COLA = 120
+_log_cola = os.path.join(DIR_TRABAJOS, "cola.log")
+
+
+def fabrica_ocupada() -> bool:
+    return any(t["tipo"] == "fabrica" and t["proc"].poll() is None for t in TRABAJOS.values())
+
+
+def mirar_cola() -> str | None:
+    """Toma la siguiente de la cola y la lanza. Devuelve el id del trabajo, o None si no había o estaba ocupada."""
+    if fabrica_ocupada() or not os.path.isfile(NEGOCIO_MJS) or not shutil.which("claude"):
+        return None
+    node = shutil.which("node")
+    if not node:
+        return None
+    r = subprocess.run([node, NEGOCIO_MJS, "cola-tomar"], capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", timeout=60, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    if r.returncode != 0:
+        raise RuntimeError((r.stderr or r.stdout).strip()[:300])
+    s = json.loads(r.stdout.strip().splitlines()[-1]).get("siguiente")
+    if not s:
+        return None
+    corrida, hueco = str(s.get("corrida") or ""), str(s.get("hueco") or "")
+    if s.get("accion") != "pieza" or not UUID.match(corrida) or not UUID.match(hueco):
+        raise RuntimeError(f"pedido de la cola raro: {str(s)[:200]}")
+    try:
+        return lanzar_fabrica("pieza", corrida, hueco, s.get("pieza"), None)
+    except Exception as e:  # ya está tomada: si no arranca, que no se quede "en marcha" para siempre
+        subprocess.run([node, NEGOCIO_MJS, "corrida-cerrar", corrida, "error"], capture_output=True, timeout=60,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        raise RuntimeError(f"no arrancó la pieza {hueco}: {e}")
+
+
+def vigilar_cola():
+    time.sleep(20)  # que el servidor arranque primero
+    while True:
+        try:
+            tid = mirar_cola()
+            if tid:
+                with open(_log_cola, "a", encoding="utf-8") as f:
+                    f.write(f"{datetime.datetime.now():%Y-%m-%d %H:%M} lanzada {tid}\n")
+        except Exception as e:  # noqa: BLE001 — la cola no puede tirar el puente; queda escrito y se reintenta
+            with open(_log_cola, "a", encoding="utf-8") as f:
+                f.write(f"{datetime.datetime.now():%Y-%m-%d %H:%M} fallo: {e}\n")
+        time.sleep(CADA_COLA)
 
 
 def main():
@@ -445,6 +497,7 @@ def main():
     ThreadingHTTPServer.allow_reuse_address = False
     srv = ThreadingHTTPServer(("127.0.0.1", PUERTO), Puente)
     print(f"Puente de montar-reels en http://127.0.0.1:{PUERTO} · tomas en {TOMAS}")
+    threading.Thread(target=vigilar_cola, daemon=True).start()
     srv.serve_forever()
 
 
