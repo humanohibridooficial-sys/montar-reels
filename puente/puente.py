@@ -201,8 +201,17 @@ TIPOS_SOLTADO = {
     "foto": {".jpg", ".jpeg", ".png", ".webp", ".heic"},
     "video": {".mp4", ".mov", ".m4v", ".webm"},
     "audio": {".m4a", ".mp3", ".wav", ".ogg", ".opus", ".aac"},
+    # Las respuestas que Luismi escribe o dicta pregunta a pregunta (fase 2 bis): Negocio las manda en un .txt.
+    "texto": {".txt"},
 }
 MAX_SOLTADO = 800 * 1024 * 1024  # una toma de 4 minutos del DJI ronda los 400 MB
+MAX_DICTADO = 25 * 1024 * 1024  # una respuesta dictada de varios minutos en webm/opus no llega a 5 MB
+
+
+def limpiar_transcripcion(txt: str) -> str:
+    """Lo que deja transcribir.py (la ruta en la primera línea y cada frase con su [12.3s]) en texto corrido."""
+    lineas = txt.splitlines()[1:]
+    return " ".join(re.sub(r"^\s*\[\d+(?:\.\d+)?s\]\s*", "", l).strip() for l in lineas if l.strip()).strip()
 
 
 def ruta_soltado(hueco: str, nombre: str, largo: int, ahora: datetime.datetime | None = None) -> tuple[str, str]:
@@ -213,7 +222,7 @@ def ruta_soltado(hueco: str, nombre: str, largo: int, ahora: datetime.datetime |
     ext = os.path.splitext(base)[1].lower()
     tipo = next((t for t, exts in TIPOS_SOLTADO.items() if ext in exts), None)
     if not tipo:
-        raise ValueError("Solo fotos, vídeos o notas de voz")
+        raise ValueError("Solo fotos, vídeos, notas de voz o texto")
     if largo <= 0 or largo > MAX_SOLTADO:
         raise ValueError("El fichero está vacío o es demasiado grande")
     limpio = re.sub(r"[^\w.-]+", "-", os.path.splitext(base)[0])[:60] or "material"
@@ -255,7 +264,8 @@ def orden_fabrica(accion: str, corrida: str, pedido: str) -> str:
         f"Eres La Fábrica para FF360 y te lanza un botón de Negocio. Primero lee entero {FABRICA}/KAIZEN.md: manda Kaizen. "
         f"Luego lee {pedido}: la pieza de Kaizen que hay que {'rehacer (otra versión)' if version else 'rellenar'}"
         + (", con su guion de ahora y el motivo de Luismi" if version else "") + ". "
-        "Si la pieza trae 'material' (lo que Luismi soltó: foto, vídeo o nota de voz), sigue el apartado 'Material de "
+        "Si la pieza trae 'material' (lo que Luismi soltó: foto, vídeo, nota de voz o un .txt con sus respuestas a las "
+        "preguntas, que se lee con Read y no se transcribe), sigue el apartado 'Material de "
         "Luismi' de KAIZEN.md: con su material sí se escribe la pieza, pero solo con lo que dice. "
         "Sigue la sección 8 de KAIZEN.md para esa pieza y solo esa. Si su papel es esqueleto, solo estructura y "
         "preguntas, nunca un guion. Verifica el dato con 2 fuentes. "
@@ -378,6 +388,8 @@ class Puente(BaseHTTPRequestHandler):
             return
         if self.path == "/soltar":  # el cuerpo es el fichero, no JSON
             return self._soltar()
+        if self.path == "/transcribir":  # el cuerpo es el audio, no JSON
+            return self._transcribir()
         try:
             d = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0) or 0)) or b"{}")
         except ValueError:
@@ -392,15 +404,45 @@ class Puente(BaseHTTPRequestHandler):
         """La Máquina, fase 2 (spec hh-kpi 2026-10-15-maquina-de-contenido): Luismi suelta en Negocio una foto, un vídeo
         o una nota de voz para una pieza. Se guarda en fabrica-output/_soltado, donde la Fábrica puede leerlo; no se
         procesa aquí: lo lee la Fábrica cuando Negocio la lance con ese material."""
+        guardado = self._guardar(MAX_SOLTADO)
+        if guardado:
+            self._json(200, {"ruta": guardado[0].replace("\\", "/"), "tipo": guardado[1]})
+
+    def _transcribir(self):
+        """Fase 2 bis: el micro de cada pregunta. Luismi dicta una respuesta; el audio se guarda en _soltado (así es
+        material suyo, como lo soltado) y transcribir.py lo pasa a texto en la GPU, en local. Devuelve el texto para
+        que aparezca en el hueco de esa pregunta y lo corrija. Sin el cerrojo: no espera a un montaje en marcha."""
+        guardado = self._guardar(MAX_DICTADO)
+        if not guardado:
+            return
+        ruta = guardado[0]
+        try:
+            r = subprocess.run([PY_GPU, TRANSCRIBIR, ruta], capture_output=True, text=True, encoding="utf-8",
+                               errors="replace", timeout=240)
+        except subprocess.TimeoutExpired:
+            return self._json(500, {"error": "Tu PC tardó demasiado en pasarlo a texto"})
+        txt = os.path.splitext(ruta)[0] + ".txt"
+        if not os.path.isfile(txt):
+            print("transcribir: sin texto", ruta, (r.stdout or "")[-300:], (r.stderr or "")[-300:], file=sys.stderr)
+            return self._json(500, {"error": "No se oye nada o el audio no se pudo leer"})
+        with open(txt, encoding="utf-8") as f:
+            texto = limpiar_transcripcion(f.read())
+        self._json(200, {"texto": texto, "ruta": ruta.replace("\\", "/")})
+
+    def _guardar(self, maximo: int):
+        """Guarda el cuerpo en _soltado. Devuelve (ruta, tipo), o None si ya respondió con el error."""
         hueco, nombre = self.headers.get("X-Hueco", ""), self.headers.get("X-Nombre", "")
         try:
             largo = int(self.headers.get("Content-Length", 0) or 0)
         except ValueError:
             largo = 0
         try:
+            if largo > maximo:
+                raise ValueError("El fichero es demasiado grande")
             ruta, tipo = ruta_soltado(hueco, nombre, largo)
         except ValueError as e:
-            return self._json(400, {"error": str(e)})
+            self._json(400, {"error": str(e)})
+            return None
         os.makedirs(os.path.dirname(ruta), exist_ok=True)
         quedan = largo
         with open(ruta, "wb") as f:
@@ -412,8 +454,9 @@ class Puente(BaseHTTPRequestHandler):
                 quedan -= len(trozo)
         if quedan:
             os.remove(ruta)
-            return self._json(400, {"error": "El fichero llegó cortado"})
-        return self._json(200, {"ruta": ruta.replace("\\", "/"), "tipo": tipo})
+            self._json(400, {"error": "El fichero llegó cortado"})
+            return None
+        return ruta, tipo
 
     def _post(self, d: dict):
         if self.path == "/montar":
