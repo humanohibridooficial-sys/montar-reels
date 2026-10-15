@@ -196,6 +196,31 @@ PY_GPU = os.path.join(CASA, ".venvs", "fw", "Scripts", "python.exe").replace("\\
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 ACCIONES_FABRICA = {"pieza", "version"}  # semana y mes: parte 2
 
+# Lo que Luismi suelta en Negocio (spec hh-kpi 2026-10-15-maquina-de-contenido, fase 2), por extensión.
+TIPOS_SOLTADO = {
+    "foto": {".jpg", ".jpeg", ".png", ".webp", ".heic"},
+    "video": {".mp4", ".mov", ".m4v", ".webm"},
+    "audio": {".m4a", ".mp3", ".wav", ".ogg", ".opus", ".aac"},
+}
+MAX_SOLTADO = 800 * 1024 * 1024  # una toma de 4 minutos del DJI ronda los 400 MB
+
+
+def ruta_soltado(hueco: str, nombre: str, largo: int, ahora: datetime.datetime | None = None) -> tuple[str, str]:
+    """Dónde se guarda lo soltado y de qué tipo es. Solo el nombre del fichero (nada de rutas que lleguen de fuera)."""
+    if not UUID.match(hueco or ""):
+        raise ValueError("Falta la pieza")
+    base = os.path.basename((nombre or "").replace("\\", "/"))
+    ext = os.path.splitext(base)[1].lower()
+    tipo = next((t for t, exts in TIPOS_SOLTADO.items() if ext in exts), None)
+    if not tipo:
+        raise ValueError("Solo fotos, vídeos o notas de voz")
+    if largo <= 0 or largo > MAX_SOLTADO:
+        raise ValueError("El fichero está vacío o es demasiado grande")
+    limpio = re.sub(r"[^\w.-]+", "-", os.path.splitext(base)[0])[:60] or "material"
+    ahora = ahora or datetime.datetime.now()
+    return (os.path.join(SALIDA_FABRICA, "_soltado", ahora.strftime("%Y-%m-%d"),
+                         f"{hueco[:8]}-{ahora.strftime('%H%M%S')}-{limpio}{ext}"), tipo)
+
 
 TRANSCRIBIR = os.path.join(FABRICA, "fuentes", "transcribir.py").replace("\\", "/")
 LEDGER = os.path.join(FABRICA, "ledger.jsonl").replace("\\", "/")
@@ -230,6 +255,8 @@ def orden_fabrica(accion: str, corrida: str, pedido: str) -> str:
         f"Eres La Fábrica para FF360 y te lanza un botón de Negocio. Primero lee entero {FABRICA}/KAIZEN.md: manda Kaizen. "
         f"Luego lee {pedido}: la pieza de Kaizen que hay que {'rehacer (otra versión)' if version else 'rellenar'}"
         + (", con su guion de ahora y el motivo de Luismi" if version else "") + ". "
+        "Si la pieza trae 'material' (lo que Luismi soltó: foto, vídeo o nota de voz), sigue el apartado 'Material de "
+        "Luismi' de KAIZEN.md: con su material sí se escribe la pieza, pero solo con lo que dice. "
         "Sigue la sección 8 de KAIZEN.md para esa pieza y solo esa. Si su papel es esqueleto, solo estructura y "
         "preguntas, nunca un guion. Verifica el dato con 2 fuentes. "
         f"Para leer de Negocio: `node {mjs} semana <fecha> --json` y `node {mjs} leer --json`. Lanza cada comando solo, "
@@ -302,7 +329,7 @@ class Puente(BaseHTTPRequestHandler):
         if origen in ORIGENES:
             self.send_header("Access-Control-Allow-Origin", origen)
             self.send_header("Vary", "Origin")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Clave-Puente")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Clave-Puente, X-Hueco, X-Nombre")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             # Chrome lo exige para que una web pública llame a una dirección de la red local.
             self.send_header("Access-Control-Allow-Private-Network", "true")
@@ -348,6 +375,8 @@ class Puente(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self._permitido():
             return
+        if self.path == "/soltar":  # el cuerpo es el fichero, no JSON
+            return self._soltar()
         try:
             d = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0) or 0)) or b"{}")
         except ValueError:
@@ -357,6 +386,33 @@ class Puente(BaseHTTPRequestHandler):
                 return self._post(d)
         except RuntimeError as e:
             return self._json(500, {"error": str(e)})
+
+    def _soltar(self):
+        """La Máquina, fase 2 (spec hh-kpi 2026-10-15-maquina-de-contenido): Luismi suelta en Negocio una foto, un vídeo
+        o una nota de voz para una pieza. Se guarda en fabrica-output/_soltado, donde la Fábrica puede leerlo; no se
+        procesa aquí: lo lee la Fábrica cuando Negocio la lance con ese material."""
+        hueco, nombre = self.headers.get("X-Hueco", ""), self.headers.get("X-Nombre", "")
+        try:
+            largo = int(self.headers.get("Content-Length", 0) or 0)
+        except ValueError:
+            largo = 0
+        try:
+            ruta, tipo = ruta_soltado(hueco, nombre, largo)
+        except ValueError as e:
+            return self._json(400, {"error": str(e)})
+        os.makedirs(os.path.dirname(ruta), exist_ok=True)
+        quedan = largo
+        with open(ruta, "wb") as f:
+            while quedan > 0:
+                trozo = self.rfile.read(min(1 << 20, quedan))
+                if not trozo:
+                    break
+                f.write(trozo)
+                quedan -= len(trozo)
+        if quedan:
+            os.remove(ruta)
+            return self._json(400, {"error": "El fichero llegó cortado"})
+        return self._json(200, {"ruta": ruta.replace("\\", "/"), "tipo": tipo})
 
     def _post(self, d: dict):
         if self.path == "/montar":
