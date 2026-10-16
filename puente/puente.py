@@ -113,6 +113,10 @@ def lanzar(tipo: str, orden: str, clave: str, cwd: str = RAIZ, permitidas: list[
     claude = shutil.which("claude")
     if not claude:
         raise RuntimeError("No encuentro Claude Code (claude) en este PC")
+    # `claude` es un .cmd de npm: cmd.exe no entiende las comillas escapadas (\") que mete subprocess, así que una " en
+    # la orden la saca de sus comillas y un < o > detrás se lee como redirección. El 16-10 `datos "<qué buscas>"` dio
+    # "El sistema no puede encontrar el archivo especificado" en cada corrida. En la orden, comillas simples.
+    orden = orden.replace('"', "'")
     tid = datetime.datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
     log = os.path.join(DIR_TRABAJOS, f"{tid}.log")
     open(log + ".tipo", "w").write(tipo)  # para saber qué era si el puente se reinicia
@@ -270,7 +274,7 @@ def orden_fabrica(accion: str, corrida: str, pedido: str) -> str:
         "Luismi' de KAIZEN.md: con su material sí se escribe la pieza, pero solo con lo que dice. "
         "Sigue la sección 8 de KAIZEN.md para esa pieza y solo esa. Si su papel es esqueleto, solo estructura y "
         "preguntas, nunca un guion. Cada cifra o afirmación técnica sale SOLO del RAG: `node "
-        f"{mjs} datos \"<qué buscas>\"`, y sus ids van en 'datos' del relleno; si no está, la pieza va sin cifra (la web "
+        f"{mjs} datos 'lo que buscas'`, y sus ids van en 'datos' del relleno; si no está, la pieza va sin cifra (la web "
         "sirve para ideas, no para datos). En una reacción, la transcripción del clip va entera en 'clip'. "
         f"Para leer de Negocio: `node {mjs} semana <fecha> --json` y `node {mjs} leer --json`. Lanza cada comando solo, "
         f"sin && ni tuberías. Deja el relleno en {salida}/<fecha de hoy>/ y escríbelo con "
