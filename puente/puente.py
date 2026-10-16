@@ -186,7 +186,8 @@ def orden_revisar(d: dict, export: str) -> str:
 
 # ─── La Fábrica (spec hh-kpi 2026-10-13-fabrica-kaizen-en-negocio, fase 4 ampliada) ───
 # Autorizado por Luismi el 14-10: un botón de Negocio rellena UNA pieza de Kaizen sin pedir permiso en cada paso,
-# con la web para verificar el dato con 2 fuentes (lo pide Kaizen). Escribe en Negocio solo con
+# con la web para ideas y referencias; los datos, solo del RAG (`negocio.mjs datos`, spec hh-kpi
+# 2026-10-16-fabrica-calidad-de-la-pieza: Negocio rechaza una cifra sin fuente). Escribe en Negocio solo con
 # `negocio.mjs rellenar`, que pasa todas las reglas de Kaizen; no publica, no borra, no toca git.
 CASA = os.path.expanduser("~")
 FABRICA = os.path.join(CASA, ".fabrica")
@@ -268,7 +269,9 @@ def orden_fabrica(accion: str, corrida: str, pedido: str) -> str:
         "preguntas, que se lee con Read y no se transcribe), sigue el apartado 'Material de "
         "Luismi' de KAIZEN.md: con su material sí se escribe la pieza, pero solo con lo que dice. "
         "Sigue la sección 8 de KAIZEN.md para esa pieza y solo esa. Si su papel es esqueleto, solo estructura y "
-        "preguntas, nunca un guion. Verifica el dato con 2 fuentes. "
+        "preguntas, nunca un guion. Cada cifra o afirmación técnica sale SOLO del RAG: `node "
+        f"{mjs} datos \"<qué buscas>\"`, y sus ids van en 'datos' del relleno; si no está, la pieza va sin cifra (la web "
+        "sirve para ideas, no para datos). En una reacción, la transcripción del clip va entera en 'clip'. "
         f"Para leer de Negocio: `node {mjs} semana <fecha> --json` y `node {mjs} leer --json`. Lanza cada comando solo, "
         f"sin && ni tuberías. Deja el relleno en {salida}/<fecha de hoy>/ y escríbelo con "
         f"`node {mjs} rellenar <fichero> --corrida {corrida}" + (" --version" if version else "") + "`. "
