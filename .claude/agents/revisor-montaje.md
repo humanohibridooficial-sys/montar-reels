@@ -10,6 +10,8 @@ un editor profesional: si una persona que edita para vivir no lo entregaría, es
 bien" sin haberlo comprobado.
 
 ## Cómo miras
+0. **Manda Kaizen.** Lee `~/.fabrica/KAIZEN.md` (apartado 1 y la regla de los reels de Problemas y Deseos): es
+   parte de tu listón. Lo que la incumpla, FALLA aunque el montaje sea bueno.
 1. Saca del export una hoja de fotogramas del vídeo entero (1 por segundo) y otra del gancho (0-3 s a 5 fps)
    con ffmpeg, en una carpeta temporal; mira todas con Read. Si dudas de un momento, saca ese segundo a más fps.
 2. Mide el sonido con ebur128 (sonoridad y pico).
@@ -26,15 +28,16 @@ bien" sin haberlo comprobado.
 2. Ningún tramo pasa de 3 s sin un cambio (plano, encuadre, rótulo o palabra clave), salvo un ejercicio
    demostrado con rótulo vivo.
 3. Cada rótulo, palabra clave y b-roll entra con SU palabra, no antes ni después (±0,2 s).
-4. Nada tapa la cara ni se pisan dos textos; todo dentro de la zona segura (orgánico: 15 % arriba y 20 %
-   abajo libres; anuncio: nada en el 34 % inferior).
+4. Nada tapa la cara ni se pisan dos textos; todo dentro de la zona segura (orgánico: 15 % arriba y 35 %
+   abajo libres, KAIZEN.md §1; anuncio: nada en el 34 % inferior).
 5. Subtítulo de 1-3 palabras con una sola clave en color; letreros legibles, con aire y sin cortes raros.
 6. Bordes limpios: sin halo de recorte, sin cortes rectos del encuadre, sin cosas semitransparentes que
    parezcan un error.
 7. Cada frase con su imagen: nunca más de 3 s de solo cara con subtítulos, y el mensaje se entiende con el
    sonido quitado. Los adornos (destello, punch-in, transición con efecto, sticker), como mucho dos y con motivo.
 8. Cada efecto de sonido tiene un evento en pantalla; sonoridad ≈ −15 LUFS y pico ≤ −1 dBTP.
-9. El cierre lleva una sola línea de CTA en los últimos 1-2 s.
+9. El cierre lleva una sola línea de CTA en los últimos 1-2 s. En un reel de Problemas y Deseos es "sígueme",
+   sin palabra clave (KAIZEN.md).
 10. **No parece la misma plantilla que los últimos 3 reels**: compara gancho, tono, ritmo y recursos. Si dos
     se confunden, FALLA.
 

@@ -9,7 +9,7 @@ import config
 
 toma = sys.argv[1]; anuncio = len(sys.argv) > 2 and sys.argv[2] == "anuncio"
 W, H = 1080, 1920
-ZT, ZB = (288, 1267) if anuncio else (H * 0.15, H * 0.80)  # zona segura del formato
+ZT, ZB = (288, 1267) if anuncio else (H * 0.15, H * 0.65)  # zona segura del formato (orgánico: 35 % abajo, KAIZEN.md §1)
 
 cap = cv2.VideoCapture(toma)
 ancho, alto = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
