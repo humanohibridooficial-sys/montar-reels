@@ -261,8 +261,8 @@ for r in SPEC.get("rotulos_png", []):
     if r.get("colocar", "auto") == "auto":
         # Nunca sobre la cara (revisión de la v5, 11-10): se mide la caja visible del rótulo; si pisa la franja
         # cabeza-barbilla, va bajo la barbilla (al pecho) o, si no cabe, sobre la cabeza. Y siempre dentro de la
-        # zona segura del formato (orgánico: 15 % arriba y 20 % abajo libres; anuncio: y 288-1267).
-        zt, zb = (288, 1267) if SPEC.get("formato") == "anuncio" else (1920 * 0.15, 1920 * 0.80)
+        # zona segura del formato (orgánico: 15 % arriba y 35 % abajo libres, KAIZEN.md §1; anuncio: y 288-1267).
+        zt, zb = (288, 1267) if SPEC.get("formato") == "anuncio" else (1920 * 0.15, 1920 * 0.65)
         bb = Image.open(r["png"]).getchannel("A").getbbox() if os.path.exists(r["png"]) else None
         if bb:
             y0 = 960 + (bb[1] - 960) * e - ty * 960; y1 = 960 + (bb[3] - 960) * e - ty * 960
@@ -375,7 +375,7 @@ RIVALES = [(T(r["ini"]), T(r["fin"]) if "fin" in r else TOTAL, bool(r.get("tapa"
 if SPEC.get("subt_zona", True) and SPEC.get("subt_modo") == "marca":
     # Con subtítulos en la zona segura, solo es rival el rótulo que ocupa su franja (la T42 v2 se quedaba 8 s sin
     # subtítulos por rótulos que iban a otra altura). Los no medidos (colocar fijo) siguen contando, por si acaso.
-    _zb = 1267 if SPEC.get("formato") == "anuncio" else 1920 * 0.80
+    _zb = 1267 if SPEC.get("formato") == "anuncio" else 1920 * 0.65
     RIVALES = [(T(r["ini"]), T(r["fin"]) if "fin" in r else TOTAL, bool(r.get("tapa"))) for r in SPEC.get("rotulos_png", [])
                if not r.get("arriba") and (r.get("tapa") or "_y" not in r or (r["_y"][1] > _zb - 200 and r["_y"][0] < _zb))]
 # Cualquier rótulo en pantalla (también los de arriba): mientras está, la clave no se viste de rótulo. Una sola
@@ -400,7 +400,7 @@ for j, bl in enumerate(bloques):
     # de abajo, el subtítulo no sale (el rótulo ya dice la idea). subt_zona: false vuelve a subt_y.
     if SPEC.get("subt_zona", True) and SPEC.get("subt_modo") == "marca":
         if pisa: continue
-        zb_s = 1267 if SPEC.get("formato") == "anuncio" else 1920 * 0.80
+        zb_s = 1267 if SPEC.get("formato") == "anuncio" else 1920 * 0.65
         y_base = (960 - (zb_s - 130)) / 960  # el bloque (frase + clave debajo) acaba encima del borde
     else:
         y_base = None
