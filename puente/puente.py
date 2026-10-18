@@ -329,7 +329,7 @@ def orden_ganchos(pedido: str, salida_json: str) -> str:
 
 # "Móntame las historias" (16-10, spec hh-kpi 2026-10-16-fabrica-calidad-de-la-pieza): con el guion YA aprobado de una
 # secuencia de historias, la Fábrica decide titular, línea y escena de cada una y `historias.py` las monta (ApiMart con
-# aspecto de foto de móvil + el texto, molde del 13-10) en OneDrive. Sin web: todo lo que necesita está en el pedido y en
+# aspecto de foto de móvil, con la cara de Luismi de sus fotos reales, + el texto; molde del 18-10) en OneDrive. Sin web: todo lo que necesita está en el pedido y en
 # ~/.fabrica, así no lee texto ajeno. Gasta ApiMart (unos 0,14 créditos por historia; si la escena ya está, no repite).
 HISTORIAS_PY = os.path.join(FABRICA, "fuentes", "historias.py").replace("\\", "/")
 # El Python con PIL (el de fw no lo trae): el mismo con el que se montaron las historias del 13-10.
@@ -350,8 +350,11 @@ def orden_historias(pedido: str, salida_json: str) -> str:
         f"apartado Montar historias, y luego {pedido}: la secuencia de historias YA aprobada (su guion) y su pieza. "
         f"Lee también {HISTORIAS_PY} hasta el final de su docstring: ahí está la forma del fichero. "
         f"Escribe {salida_json} con una entrada por historia del guion, en su orden: titular corto con UNA palabra o "
-        "frase entre asteriscos (la que va en dorado), una línea opcional y la escena en inglés (solo qué se ve: el "
-        "script pone el estilo de foto de móvil, sin caras ni texto). Los textos salen del guion aprobado, recortados, "
+        "frase entre asteriscos (la que va en dorado), una línea opcional y la escena en inglés: dónde está Luismi y qué "
+        "hace como ENTRENADOR (observa, explica o señala; nunca juega). Kaizen: Luismi sale en todas; el script pone su "
+        "cara de las fotos reales, el chándal con el escudo y el estilo de foto de móvil. Si la escena es en el campo, "
+        f"pon en lugar uno de los ficheros de {CASA.replace(chr(92), '/')}/.fabrica/lugares (un sitio real); solo una "
+        "historia de objetos (botas, plato) lleva sin_luismi. Los textos salen del guion aprobado, recortados, "
         "sin añadir ideas ni cifras: el guion ya pasó a Luismi. Copia el guion entero en el campo guion. "
         "Ninguna historia es hablada a cámara (decisión de Luismi del 13-10): la que el guion marque a cámara va también "
         "como foto con su texto. Si una historia pide reacción, encuesta, pregunta o enlace, ponlo en sticker. "
