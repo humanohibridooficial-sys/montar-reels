@@ -81,7 +81,23 @@ def linea_de_evento(ev: dict) -> list[str]:
     return out
 
 
-def traducir(proc: subprocess.Popen, f, fin: str, al_acabar=None):
+NO_PUDE = re.compile(r"NO PUDE:\s*(.+)", re.I)
+
+
+def no_pudo(log: str) -> str | None:
+    """Lo que el montaje dice que no pudo hacer, o None si fue 'nada'."""
+    try:
+        cola = open(log, encoding="utf-8", errors="replace").read()[-4000:]
+    except OSError:
+        return None
+    m = NO_PUDE.findall(cola)
+    if not m:
+        return None
+    ultimo = m[-1].strip().strip("'\".")
+    return None if ultimo.lower() in ("nada", "nada.", "") else ultimo[:200]
+
+
+def traducir(proc: subprocess.Popen, f, fin: str, al_acabar=None, tipo: str | None = None):
     for crudo in proc.stdout:
         try:
             lineas = linea_de_evento(json.loads(crudo))
@@ -92,6 +108,11 @@ def traducir(proc: subprocess.Popen, f, fin: str, al_acabar=None):
         f.flush()
     rc = proc.wait()
     f.close()
+    if rc == 0 and tipo == "montar":
+        falta = no_pudo(f.name)
+        if falta:  # Negocio lo enseña como fallido y se ve qué faltó
+            open(f.name, "a", encoding="utf-8").write(f"El montaje no está completo: {falta}\n")
+            rc = 3
     if al_acabar:  # antes del .fin: así Negocio no ve "hecho" sin que la corrida esté cerrada
         try:
             al_acabar(rc)
@@ -130,10 +151,17 @@ def lanzar(tipo: str, orden: str, clave: str, cwd: str = RAIZ, permitidas: list[
            "--permission-mode", "dontAsk", "--allowedTools", *(permitidas or herramientas()),
            "--disallowedTools", "PowerShell", *extra]
     f = open(log, "w", encoding="utf-8")
-    proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env,
-                            text=True, encoding="utf-8", errors="replace",
-                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-    threading.Thread(target=traducir, args=(proc, f, log + ".fin", al_acabar(log) if al_acabar else None), daemon=True).start()
+    try:
+        proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env,
+                                text=True, encoding="utf-8", errors="replace",
+                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except OSError as e:
+        faltan = [x for x in [claude, cwd, *(dirs or [])] if x and not os.path.exists(x)]
+        f.write(f"No arrancó: {e}. claude={claude} cwd={cwd}" + (f". No existen: {', '.join(faltan)}" if faltan else "") + "\n")
+        f.close()
+        open(log + ".fin", "w").write("1")
+        raise
+    threading.Thread(target=traducir, args=(proc, f, log + ".fin", al_acabar(log) if al_acabar else None, tipo), daemon=True).start()
     TRABAJOS[tid] = {"id": tid, "tipo": tipo, "inicio": time.time(), "proc": proc, "log": log, "clave": clave}
     return tid
 
@@ -690,10 +718,16 @@ def mirar_cola() -> str | None:
     node = shutil.which("node")
     if not node:
         return None
-    r = subprocess.run([node, NEGOCIO_MJS, "cola-tomar"], capture_output=True, text=True, encoding="utf-8",
-                       errors="replace", timeout=60, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    try:
+        r = subprocess.run([node, NEGOCIO_MJS, "cola-tomar"], capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", timeout=60, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except subprocess.TimeoutExpired:
+        raise SinRed("Negocio no contestó en 60 s (red o PC recién despierto)")
     if r.returncode != 0:
-        raise RuntimeError((r.stderr or r.stdout).strip()[:300])
+        texto = (r.stderr or r.stdout).strip()
+        if re.search(r"ENOTFOUND|EAI_AGAIN|ECONNRESET|ETIMEDOUT|ECONNREFUSED|fetch failed", texto):
+            raise SinRed(texto.splitlines()[-1][:160] if texto else "sin red")
+        raise RuntimeError(f"cola-tomar salió con {r.returncode}: {texto[-300:] or '(sin salida)'}")
     s = json.loads(r.stdout.strip().splitlines()[-1]).get("siguiente")
     if not s:
         return None
@@ -708,17 +742,31 @@ def mirar_cola() -> str | None:
         raise RuntimeError(f"no arrancó la pieza {hueco}: {e}")
 
 
+class SinRed(Exception):
+    """Sin red o sin respuesta de Negocio: se reintenta en la siguiente vuelta, no es un fallo de la cola."""
+
+
 def vigilar_cola():
     time.sleep(20)  # que el servidor arranque primero
+    sin_red_desde = None
     while True:
         try:
             tid = mirar_cola()
+            if sin_red_desde:
+                with open(_log_cola, "a", encoding="utf-8") as f:
+                    f.write(f"{datetime.datetime.now():%Y-%m-%d %H:%M} vuelve la red (sin ella desde {sin_red_desde})\n")
+                sin_red_desde = None
             if tid:
                 with open(_log_cola, "a", encoding="utf-8") as f:
                     f.write(f"{datetime.datetime.now():%Y-%m-%d %H:%M} lanzada {tid}\n")
+        except SinRed as e:  # se apunta una vez, no en cada vuelta
+            if not sin_red_desde:
+                sin_red_desde = f"{datetime.datetime.now():%Y-%m-%d %H:%M}"
+                with open(_log_cola, "a", encoding="utf-8") as f:
+                    f.write(f"{sin_red_desde} sin red: {e}\n")
         except Exception as e:  # noqa: BLE001 — la cola no puede tirar el puente; queda escrito y se reintenta
             with open(_log_cola, "a", encoding="utf-8") as f:
-                f.write(f"{datetime.datetime.now():%Y-%m-%d %H:%M} fallo: {e}\n")
+                f.write(f"{datetime.datetime.now():%Y-%m-%d %H:%M} fallo: {type(e).__name__}: {e}\n")
         time.sleep(CADA_COLA)
 
 
