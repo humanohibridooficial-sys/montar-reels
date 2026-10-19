@@ -439,6 +439,44 @@ MONTAJES = {
 }
 
 
+class PedidoMalo(Exception):
+    """Al pedido le falta algo: se le dice a quien lo pidió (400), no es un fallo del PC."""
+
+
+def lanzar_montaje(que: str, d: dict, al_acabar=None) -> tuple[str, bool]:
+    """Monta una pieza ya aprobada. Lo usan el botón (POST /historias y /carrusel) y la cola (fase 2b, spec hh-kpi
+    2026-10-18-maquina-herramienta-kaizen). Devuelve (id del trabajo, si ya estaba en marcha)."""
+    m = MONTAJES[que]
+    proyecto, hueco = str(d.get("proyectoId") or ""), str(d.get("huecoId") or "")
+    if not UUID.match(proyecto) or not UUID.match(hueco):
+        raise PedidoMalo("Falta el proyecto o la pieza")
+    guion = d.get("guion") if isinstance(d.get("guion"), dict) else None
+    if not guion or not all(isinstance(guion.get(k), str) for k in ("hook", "cuerpo", "cta")):
+        raise PedidoMalo("La pieza no tiene guion: primero escríbela y apruébala")
+    if not os.path.isfile(m["script"]) or not os.path.isfile(PY_PIL):
+        raise RuntimeError(f"No encuentro el montador en este PC ({m['script']})")
+    ya = en_marcha_para(f"{que}:{hueco}")
+    if ya:
+        return ya, True
+    fecha = str(d.get("fecha") or "")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha):
+        raise PedidoMalo("Falta la fecha de la pieza")
+    txt = lambda x, n: x.strip()[:n] if isinstance(x, str) else None
+    carpeta = os.path.join(SALIDA_FABRICA, que, fecha)
+    os.makedirs(carpeta, exist_ok=True)
+    pedido = os.path.join(SALIDA_FABRICA, "_puente", f"{que}-{hueco}.json")
+    os.makedirs(os.path.dirname(pedido), exist_ok=True)
+    with open(pedido, "w", encoding="utf-8") as f:
+        json.dump({"proyectoId": proyecto, "huecoId": hueco, "fecha": fecha, "tema": txt(d.get("tema"), 600),
+                   "clave": txt(d.get("clave"), 60), "guion": {k: guion[k][:6000] for k in ("hook", "cuerpo", "cta")}},
+                  f, ensure_ascii=False, indent=1)
+    salida_json = os.path.join(carpeta, f"{que}-{hueco[:8]}.json").replace("\\", "/")
+    tid = lanzar(que, m["orden"](pedido.replace("\\", "/"), salida_json), f"{que}:{hueco}",
+                 cwd=FABRICA, permitidas=m["herramientas"](), dirs=[FABRICA, SALIDA_FABRICA, SKILL_CARRUSEL],
+                 al_acabar=al_acabar)
+    return tid, False
+
+
 def cierre_de_corrida(corrida: str):
     """Al acabar, el puente cierra la corrida en Negocio (hecho o error, con el RESUMEN del log)."""
     def con_log(log: str):
@@ -618,34 +656,13 @@ class Puente(BaseHTTPRequestHandler):
         self._json(404, {"error": "No existe"})
 
     def _montar(self, que: str, d: dict):
-        m = MONTAJES[que]
-        proyecto, hueco = str(d.get("proyectoId") or ""), str(d.get("huecoId") or "")
-        if not UUID.match(proyecto) or not UUID.match(hueco):
-            return self._json(400, {"error": "Falta el proyecto o la pieza"})
-        guion = d.get("guion") if isinstance(d.get("guion"), dict) else None
-        if not guion or not all(isinstance(guion.get(k), str) for k in ("hook", "cuerpo", "cta")):
-            return self._json(400, {"error": "La pieza no tiene guion: primero escríbela y apruébala"})
-        if not os.path.isfile(m["script"]) or not os.path.isfile(PY_PIL):
-            return self._json(500, {"error": f"No encuentro el montador en este PC ({m['script']})"})
-        ya = en_marcha_para(f"{que}:{hueco}")
-        if ya:
-            return self._json(200, {"id": ya, "ya_estaba": True})
-        fecha = str(d.get("fecha") or "")
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha):
-            return self._json(400, {"error": "Falta la fecha de la pieza"})
-        txt = lambda x, n: x.strip()[:n] if isinstance(x, str) else None
-        carpeta = os.path.join(SALIDA_FABRICA, que, fecha)
-        os.makedirs(carpeta, exist_ok=True)
-        pedido = os.path.join(SALIDA_FABRICA, "_puente", f"{que}-{hueco}.json")
-        os.makedirs(os.path.dirname(pedido), exist_ok=True)
-        with open(pedido, "w", encoding="utf-8") as f:
-            json.dump({"proyectoId": proyecto, "huecoId": hueco, "fecha": fecha, "tema": txt(d.get("tema"), 600),
-                       "clave": txt(d.get("clave"), 60), "guion": {k: guion[k][:6000] for k in ("hook", "cuerpo", "cta")}},
-                      f, ensure_ascii=False, indent=1)
-        salida_json = os.path.join(carpeta, f"{que}-{hueco[:8]}.json").replace("\\", "/")
-        tid = lanzar(que, m["orden"](pedido.replace("\\", "/"), salida_json), f"{que}:{hueco}",
-                     cwd=FABRICA, permitidas=m["herramientas"](), dirs=[FABRICA, SALIDA_FABRICA, SKILL_CARRUSEL])
-        return self._json(200, {"id": tid})
+        try:
+            tid, ya = lanzar_montaje(que, d)
+        except PedidoMalo as e:
+            return self._json(400, {"error": str(e)})
+        except RuntimeError as e:
+            return self._json(500, {"error": str(e)})
+        return self._json(200, {"id": tid, "ya_estaba": True} if ya else {"id": tid})
 
     def _ganchos(self, d: dict):
         proyecto, ad = str(d.get("proyectoId") or ""), str(d.get("adId") or "")
@@ -713,7 +730,8 @@ _log_cola = os.path.join(DIR_TRABAJOS, "cola.log")
 
 
 def fabrica_ocupada() -> bool:
-    return any(t["tipo"] == "fabrica" and t["proc"].poll() is None for t in TRABAJOS.values())
+    # Los montajes también cuentan (fase 2b): escriben en Negocio y gastan ApiMart; uno cada vez.
+    return any(t["tipo"] in ("fabrica", *MONTAJES) and t["proc"].poll() is None for t in TRABAJOS.values())
 
 
 def mirar_cola() -> str | None:
@@ -736,10 +754,14 @@ def mirar_cola() -> str | None:
     s = json.loads(r.stdout.strip().splitlines()[-1]).get("siguiente")
     if not s:
         return None
-    corrida, hueco = str(s.get("corrida") or ""), str(s.get("hueco") or "")
-    if s.get("accion") != "pieza" or not UUID.match(corrida) or not UUID.match(hueco):
+    corrida, hueco, accion = str(s.get("corrida") or ""), str(s.get("hueco") or ""), s.get("accion")
+    if (accion != "pieza" and accion not in MONTAJES) or not UUID.match(corrida) or not UUID.match(hueco):
         raise RuntimeError(f"pedido de la cola raro: {str(s)[:200]}")
     try:
+        if accion in MONTAJES:  # fase 2b: montar un carrusel o una secuencia ya aprobados, con la orden del botón
+            pieza = s.get("pieza") if isinstance(s.get("pieza"), dict) else {}
+            tid, _ = lanzar_montaje(accion, {**pieza, "huecoId": hueco}, al_acabar=cierre_de_corrida(corrida))
+            return tid
         return lanzar_fabrica("pieza", corrida, hueco, s.get("pieza"), None)
     except Exception as e:  # ya está tomada: si no arranca, que no se quede "en marcha" para siempre
         subprocess.run([node, NEGOCIO_MJS, "corrida-cerrar", corrida, "error"], capture_output=True, timeout=60,
