@@ -298,6 +298,9 @@ def orden_fabrica(accion: str, corrida: str, pedido: str) -> str:
     salida = SALIDA_FABRICA.replace("\\", "/")
     return (
         f"Eres La Fábrica para FF360 y te lanza un botón de Negocio. Primero lee entero {FABRICA}/KAIZEN.md: manda Kaizen. "
+        # Estación 0 (fase 3, spec hh-kpi 2026-10-18-maquina-herramienta-kaizen): Nino, "la estación 0 nunca se salta".
+        f"Antes de escribir, la estación 0, mide lo de ayer: lanza `node {mjs} medir` (KAIZEN.md sección 8). Si dice que "
+        "TOCA recalibrar, ajusta tu apuesta con lo que falló antes de apostar y dilo en el RESUMEN; si no, sigue. "
         f"Luego lee {pedido}: la pieza de Kaizen que hay que {'rehacer (otra versión)' if version else 'rellenar'}"
         + (", con su guion de ahora y el motivo de Luismi" if version else "") + ". "
         "Si la pieza trae 'material' (lo que Luismi soltó: foto, vídeo, nota de voz o un .txt con sus respuestas a las "
