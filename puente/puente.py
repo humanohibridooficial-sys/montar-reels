@@ -804,12 +804,16 @@ def lanzar_fabrica(accion: str, corrida: str, hueco: str, pieza, motivo) -> str:
 REDDIT_PULSE = os.path.join(CASA, ".claude", "skills", "investigacion-viral", "scripts", "reddit_pulse.py").replace("\\", "/")
 
 
-def herramientas_ideas() -> list[str]:
+def herramientas_ideas(hueco: str, salida_json: str) -> list[str]:
+    """Solo lo que lee y la subida de ESTA pieza: nada de rellenar, montadas, apuesta ni corrida-cerrar (revisión de
+    seguridad del 20-10: lo que lee en la web podría pedirle que los lance)."""
     salida = SALIDA_FABRICA.replace("\\", "/")
     mjs = NEGOCIO_MJS.replace("\\", "/")
     return ["Read", "Glob", "Grep", "WebSearch", "WebFetch",
             f"Write({salida}/ideas/**)", f"Edit({salida}/ideas/**)",
-            f"Bash(node {mjs} *)", f"Bash({PY_GPU} {REDDIT_PULSE} *)", f"Bash({PY_GPU} {TRANSCRIBIR} *)"]
+            f"Bash(node {mjs} leer --json)", f"Bash(node {mjs} aprendido reel --json)",
+            f"Bash(node {mjs} aprendido carrusel --json)", f"Bash(node {mjs} ideas {hueco} {salida_json})",
+            f"Bash({PY_GPU} {REDDIT_PULSE} *)", f"Bash({PY_GPU} {TRANSCRIBIR} *)"]
 
 
 def orden_ideas(pedido: str, salida_json: str, hueco: str) -> str:
@@ -828,7 +832,7 @@ def orden_ideas(pedido: str, salida_json: str, hueco: str) -> str:
         f"Si sirve un vídeo de TikTok de {FABRICA}/referentes-tiktok.txt, su gancho se saca con `{PY_GPU} {TRANSCRIBIR} ENLACE`. "
         "Nada de instagram.com, nunca: ni web, ni WebFetch, ni enlaces (Instagram cerró la cuenta personal de Luismi por "
         f"trabajo automatizado). Antes de proponer, mira lo ya publicado con `node {mjs} leer --json` y `node {mjs} "
-        "aprendido reel --json` para no repetir y para tirar de lo que le funcionó. "
+        "aprendido reel --json` (o `aprendido carrusel --json`) para no repetir y para tirar de lo que le funcionó. "
         f"Escribe {salida_json} en JSON con la forma {{ideas: [{{angulo, prueba: {{fuente, url, numero}}, "
         "gancho, frescura, por_que}]}: entre 3 y 5, ordenadas por la fuerza de la prueba. angulo es la "
         "idea para FF360 en una frase (español de España, tuteo, sin emojis); 'prueba' es el contenido que ya funcionó, "
@@ -850,7 +854,7 @@ def lanzar_ideas(corrida: str, hueco: str, pieza) -> str:
         json.dump({"corrida": corrida, "huecoId": hueco, "pieza": pieza}, f, ensure_ascii=False, indent=1)
     salida_json = os.path.join(carpeta, f"{corrida}.json").replace("\\", "/")
     return lanzar("fabrica", orden_ideas(pedido.replace("\\", "/"), salida_json, hueco), "ideas:" + hueco,
-                  cwd=FABRICA, permitidas=herramientas_ideas(),
+                  cwd=FABRICA, permitidas=herramientas_ideas(hueco, salida_json),
                   dirs=[FABRICA, os.path.join(CASA, ".claude", "skills"), SALIDA_FABRICA],
                   al_acabar=cierre_de_corrida(corrida))
 
