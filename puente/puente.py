@@ -800,7 +800,7 @@ def lanzar_fabrica(accion: str, corrida: str, hueco: str, pieza, motivo) -> str:
 
 # "Dame ideas" (fase 8, spec hh-kpi 2026-10-18-maquina-herramienta-kaizen): la estación 1 de Nino (investigacion-viral)
 # para el molde de UNA pieza que Luismi crea. Lee la web (texto ajeno), así que va tan cerrada como la Fábrica: escribe
-# solo en fabrica-output/ideas y solo puede lanzar negocio.mjs y el script de Reddit de la skill. Nada de instagram.com.
+# solo en fabrica-output/ideas y solo puede lanzar lo justo de negocio.mjs, vistas_youtube.py y transcribir.py. Nada de instagram.com.
 # Reddit fuera (20-10): da 403 a este PC y su API ya no se abre a la IA. YouTube, con su número, por este script.
 VISTAS_YT = os.path.join(FABRICA, "fuentes", "vistas_youtube.py").replace("\\", "/")
 
@@ -895,7 +895,7 @@ def mirar_cola() -> str | None:
     if not s:
         return None
     corrida, hueco, accion = str(s.get("corrida") or ""), str(s.get("hueco") or ""), s.get("accion")
-    if (accion not in ("pieza", "ideas") and accion not in MONTAJES) or not UUID.match(corrida) or not UUID.match(hueco):
+    if (accion not in ("pieza", "version", "ideas") and accion not in MONTAJES) or not UUID.match(corrida) or not UUID.match(hueco):
         raise RuntimeError(f"pedido de la cola raro: {str(s)[:200]}")
     try:
         if accion in MONTAJES:  # fase 2b: montar un carrusel o una secuencia ya aprobados, con la orden del botón
@@ -904,6 +904,8 @@ def mirar_cola() -> str | None:
             return tid
         if accion == "ideas":  # fase 8: "Dame ideas", la estación 1 para esa pieza
             return lanzar_ideas(corrida, hueco, s.get("pieza"))
+        if accion == "version":  # fase 9: otra versión que esperó con el PC apagado, con su guion de ahora y el motivo
+            return lanzar_fabrica("version", corrida, hueco, s.get("pieza"), s.get("motivo"))
         return lanzar_fabrica("pieza", corrida, hueco, s.get("pieza"), None)
     except Exception as e:  # ya está tomada: si no arranca, que no se quede "en marcha" para siempre
         subprocess.run([node, NEGOCIO_MJS, "corrida-cerrar", corrida, "error"], capture_output=True, timeout=60,
