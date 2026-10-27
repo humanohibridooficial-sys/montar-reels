@@ -802,6 +802,7 @@ def lanzar_fabrica(accion: str, corrida: str, hueco: str, pieza, motivo) -> str:
 # para el molde de UNA pieza que Luismi crea. Lee la web (texto ajeno), así que va tan cerrada como la Fábrica: escribe
 # solo en fabrica-output/ideas y solo puede lanzar lo justo de negocio.mjs, vistas_youtube.py y transcribir.py. Nada de instagram.com.
 # Reddit fuera (20-10): da 403 a este PC y su API ya no se abre a la IA. YouTube, con su número, por este script.
+# La voz de tus leads (27-10, hh-kpi PR 646): lo que le escriben por DM y WhatsApp, por `negocio.mjs voz`.
 VISTAS_YT = os.path.join(FABRICA, "fuentes", "vistas_youtube.py").replace("\\", "/")
 
 
@@ -813,7 +814,8 @@ def herramientas_ideas(hueco: str, salida_json: str) -> list[str]:
     return ["Read", "Glob", "Grep", "WebSearch", "WebFetch",
             f"Write({salida}/ideas/**)", f"Edit({salida}/ideas/**)",
             f"Bash(node {mjs} leer --json)", f"Bash(node {mjs} aprendido reel --json)",
-            f"Bash(node {mjs} aprendido carrusel --json)", f"Bash(node {mjs} ideas {hueco} {salida_json})",
+            f"Bash(node {mjs} aprendido carrusel --json)", f"Bash(node {mjs} voz --json)",
+            f"Bash(node {mjs} ideas {hueco} {salida_json})",
             f"Bash({PY_GPU} {VISTAS_YT} *)", f"Bash({PY_GPU} {TRANSCRIBIR} *)"]
 
 
@@ -830,9 +832,15 @@ def orden_ideas(pedido: str, salida_json: str, hueco: str) -> str:
         f"1) LA CUENTA FANTASMA, primero: `node {mjs} leer --json` trae los vídeos de sus competidores y referentes con "
         "veces su media, números y enlace. Es la fuente principal: empieza por lo que más destaca y encaja en el molde. "
         f"Si hace falta el gancho dicho de un TikTok, `{PY_GPU} {TRANSCRIBIR} ENLACE` (como mucho 3). "
-        "2) YouTube, de apoyo: búscalo con WebSearch (español e inglés por separado) y saca su número con "
+        f"2) LA VOZ DE TUS LEADS (27-10): `node {mjs} voz --json` trae lo que le escriben sus leads por DM y WhatsApp, "
+        "literal y sin datos personales. Úsala para el ángulo y, sobre todo, para el gancho con SUS palabras (la duda o "
+        "el dolor tal cual lo dicen). Si una idea sale de ahí, su prueba es {fuente: 'tus leads', url: "
+        "'https://negocio.humanohibrido.es/conversaciones', numero: 'lo dicen N de M personas'} contando de verdad "
+        "cuántos mensajes lo dicen; nunca copies un mensaje entero ni nada que identifique a nadie, y si son menores "
+        "habla de ellos como lo haría la familia. "
+        "3) YouTube, de apoyo: búscalo con WebSearch (español e inglés por separado) y saca su número con "
         f"`{PY_GPU} {VISTAS_YT} URL` (visualizaciones y seguidores del canal; sin número no vale). "
-        "3) La web, solo para contexto: sin número, no es prueba. Reddit no se usa (bloqueado). "
+        "4) La web, solo para contexto: sin número, no es prueba. Reddit no se usa (bloqueado). "
         "Nada de instagram.com, nunca: ni web, ni WebFetch, ni enlaces (Instagram cerró la cuenta personal de Luismi por "
         f"trabajo automatizado); si una pieza de la fantasma es de Instagram, se descarta. Mira lo ya publicado con "
         f"`node {mjs} aprendido reel --json` (o `aprendido carrusel --json`) para no repetir y tirar de lo que le funcionó. "
