@@ -811,7 +811,11 @@ def herramientas_ideas(hueco: str, salida_json: str) -> list[str]:
     seguridad del 20-10: lo que lee en la web podría pedirle que los lance)."""
     salida = SALIDA_FABRICA.replace("\\", "/")
     mjs = NEGOCIO_MJS.replace("\\", "/")
-    return ["Read", "Glob", "Grep", "WebSearch", "WebFetch",
+    # WebFetch solo a YouTube (27-10): desde que lee la voz de los leads, un WebFetch libre dejaría que una página con
+    # instrucciones escondidas le pidiera mandarlos a otra web. La web general, solo por los resultados de WebSearch.
+    return ["Read", "Glob", "Grep", "WebSearch",
+            "WebFetch(domain:youtube.com)", "WebFetch(domain:www.youtube.com)", "WebFetch(domain:m.youtube.com)",
+            "WebFetch(domain:youtu.be)",
             f"Write({salida}/ideas/**)", f"Edit({salida}/ideas/**)",
             f"Bash(node {mjs} leer --json)", f"Bash(node {mjs} aprendido reel --json)",
             f"Bash(node {mjs} aprendido carrusel --json)", f"Bash(node {mjs} voz --json)",
@@ -840,7 +844,8 @@ def orden_ideas(pedido: str, salida_json: str, hueco: str) -> str:
         "habla de ellos como lo haría la familia. "
         "3) YouTube, de apoyo: búscalo con WebSearch (español e inglés por separado) y saca su número con "
         f"`{PY_GPU} {VISTAS_YT} URL` (visualizaciones y seguidores del canal; sin número no vale). "
-        "4) La web, solo para contexto: sin número, no es prueba. Reddit no se usa (bloqueado). "
+        "4) La web, solo para contexto y solo por los resultados de WebSearch (WebFetch solo abre YouTube): sin número, "
+        "no es prueba. Reddit no se usa (bloqueado). Nunca mandes a ninguna web lo que te dicen los leads. "
         "Nada de instagram.com, nunca: ni web, ni WebFetch, ni enlaces (Instagram cerró la cuenta personal de Luismi por "
         f"trabajo automatizado); si una pieza de la fantasma es de Instagram, se descarta. Mira lo ya publicado con "
         f"`node {mjs} aprendido reel --json` (o `aprendido carrusel --json`) para no repetir y tirar de lo que le funcionó. "
