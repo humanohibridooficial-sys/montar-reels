@@ -5,6 +5,7 @@
 # Solo biblioteca estándar. Seguridad: escucha en 127.0.0.1, CORS solo para Negocio, cabecera X-Clave-Puente
 # con la clave de config.json (`puente_clave`) y `claude -p` con las herramientas cerradas.
 import json, os, re, subprocess, sys, threading, time, uuid, shutil, datetime
+import urllib.error, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -231,6 +232,79 @@ SALIDA_FABRICA = os.path.join(CASA, "fabrica-output")
 PY_GPU = os.path.join(CASA, ".venvs", "fw", "Scripts", "python.exe").replace("\\", "/")  # transcribir.py
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 ACCIONES_FABRICA = {"pieza", "version"}  # semana y mes: parte 2
+
+# Paso 4 de Negocio, Editar (spec hh-kpi 2026-10-28-negocio-sencillo-dos-mundos, P3; Luismi: "b"): al revisar el
+# export, tu PC además lo sube a Negocio, que es lo que luego se publica. pedir (URL firmada) -> PUT directo al bucket
+# -> hecho. La clave es la del PC (FANTASMA_SECRET), la misma que usa negocio.mjs; nunca va al log ni a la respuesta.
+NEGOCIO_URL = os.environ.get("NEGOCIO_URL", "https://negocio.humanohibrido.es")
+ENV_NEGOCIO = os.environ.get("FABRICA_ENV", "C:/Users/luism/HH-DIETAS/.env.local")
+SUBIDAS: dict[str, dict] = {}  # hueco -> {estado: subiendo | hecho | error, mb, error?}
+
+
+def clave_negocio(texto_env: str | None = None) -> str:
+    """FANTASMA_SECRET del entorno o del .env.local de HH-DIETAS. Vacío si falta o es corta (menos de 24)."""
+    s = os.environ.get("FANTASMA_SECRET", "").strip() if texto_env is None else ""
+    if not s:
+        if texto_env is None:
+            try:
+                with open(ENV_NEGOCIO, encoding="utf-8") as f:
+                    texto_env = f.read()
+            except OSError:
+                texto_env = ""
+        m = re.search(r"""^\s*FANTASMA_SECRET\s*=\s*["']?([^"'\r\n]*)["']?\s*$""", texto_env, re.M)
+        s = m.group(1).strip() if m else ""
+    return s if len(s) >= 24 else ""
+
+
+def motivo_subida(status: int, cuerpo: str, mb: float) -> str:
+    """El error de la subida, dicho para Luismi. El tope de Supabase Storage es el caso esperado (50 MB por defecto)."""
+    c = cuerpo.lower()
+    if status == 413 or "maximum allowed size" in c or "too large" in c:
+        return f"Supabase no acepta {mb} MB: hay que subir el límite de subida en Storage, Settings"
+    try:
+        c = json.loads(cuerpo).get("error") or cuerpo
+    except (ValueError, AttributeError):
+        c = cuerpo
+    return f"Negocio respondió {status}: {str(c)[:200]}"
+
+
+def _negocio_terminado(paso: str, proyecto: str, hueco: str, mb: float, clave: str) -> dict:
+    cuerpo = json.dumps({"proyectoId": proyecto, "huecoId": hueco, "paso": paso, "mb": mb}).encode()
+    req = urllib.request.Request(f"{NEGOCIO_URL}/api/contenido/fabrica/terminado", data=cuerpo, method="POST",
+                                 headers={"Content-Type": "application/json", "Authorization": f"Bearer {clave}"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read() or b"{}")
+
+
+def subir_terminado(proyecto: str, hueco: str, ruta: str) -> None:
+    largo = os.path.getsize(ruta)
+    mb = round(largo / 1048576, 1)
+    SUBIDAS[hueco] = {"estado": "subiendo", "mb": mb}
+    try:
+        clave = clave_negocio()
+        if not clave:
+            raise RuntimeError(f"Falta FANTASMA_SECRET en {ENV_NEGOCIO}")
+        url = _negocio_terminado("pedir", proyecto, hueco, mb, clave)["url"]
+        with open(ruta, "rb") as f:
+            put = urllib.request.Request(url, data=f, method="PUT", headers={
+                "Content-Type": "video/mp4", "x-upsert": "true", "Content-Length": str(largo)})
+            urllib.request.urlopen(put, timeout=1800).close()
+        _negocio_terminado("hecho", proyecto, hueco, mb, clave)
+        SUBIDAS[hueco] = {"estado": "hecho", "mb": mb}
+    except urllib.error.HTTPError as e:
+        SUBIDAS[hueco] = {"estado": "error", "mb": mb, "error": motivo_subida(e.code, e.read().decode("utf-8", "replace"), mb)}
+    except Exception as e:  # sin red, timeout, fichero: se cuenta en la pantalla y el puente sigue
+        SUBIDAS[hueco] = {"estado": "error", "mb": mb, "error": str(e)[:300] or type(e).__name__}
+    print("subida", hueco, SUBIDAS[hueco], file=sys.stderr)
+
+
+def lanzar_subida(proyecto: str, hueco: str, ruta: str) -> bool:
+    """Una por pieza a la vez. False si no se lanza (sin los ids de Negocio o ya subiendo)."""
+    if not UUID.match(proyecto) or not UUID.match(hueco) or SUBIDAS.get(hueco, {}).get("estado") == "subiendo":
+        return False
+    SUBIDAS[hueco] = {"estado": "subiendo", "mb": round(os.path.getsize(ruta) / 1048576, 1)}
+    threading.Thread(target=subir_terminado, args=(proyecto, hueco, ruta), daemon=True).start()
+    return True
 
 # Lo que Luismi suelta en Negocio (spec hh-kpi 2026-10-15-maquina-de-contenido, fase 2), por extensión.
 TIPOS_SOLTADO = {
@@ -601,6 +675,9 @@ class Puente(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True})
         if self.path == "/tomas":
             return self._json(200, {"tomas": listar_tomas()})
+        m = re.fullmatch(r"/subida/([0-9a-f-]{36})", self.path)
+        if m:
+            return self._json(200, SUBIDAS.get(m.group(1), {"estado": "nada"}))
         m = re.fullmatch(r"/trabajo/([\w-]+)", self.path)
         if m:
             e = estado_trabajo(m.group(1))
@@ -722,6 +799,8 @@ class Puente(BaseHTTPRequestHandler):
             ya = en_marcha_para(export)
             if ya:
                 return self._json(200, {"id": ya, "ya_estaba": True})
+            # P3 de Negocio sencillo: el export elegido para revisar es el terminado; tu PC lo sube a Negocio a la vez.
+            lanzar_subida(str(d.get("proyectoId") or ""), str(d.get("hueco") or ""), export)
             return self._json(200, {"id": lanzar("revisar", orden_revisar(d, export), export, dirs=[TOMAS, config.CAPCUT, FABRICA])})
         if self.path == "/fabrica":
             return self._fabrica(d)
