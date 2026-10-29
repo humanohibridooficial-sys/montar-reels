@@ -4,7 +4,10 @@
 # Luismi, 29-10: "para la maquina de nino, manda nino, para la de FF360 cerebro kaizen estructura nino".
 # Las skills de ~/.claude/skills llevan el parche K (~/.fabrica/parches/04-kaizen-manda.diff) y leen ~/.fabrica, que
 # es FF360. Esta copia quita el parche con `git apply -R` (no a mano) y lleva todo lo de ~/.fabrica a ~/.fabrica-nino,
-# con su propia marca (Atlas), su historial y su ledger. Las originales no se tocan: FF360(K) sigue igual.
+# con su historial y su ledger. Las originales no se tocan: FF360(K) sigue igual.
+# 29-10 (Luismi: La Máquina es "FF360, con mi avatar", con "avatar y reglas de Kaizen"): la marca es la de FF360
+# (config-maquina.json), el avatar es el de ~/.fabrica/avatar y las reglas fijas son los apartados 2 (avatar) y 4 (lo que
+# nunca se hace) de ~/.fabrica/KAIZEN.md, copiados cada vez a REGLAS-KAIZEN.md. La estructura (apartado 3) es de Nino.
 import argparse, os, re, shutil, subprocess, sys
 
 CASA = os.path.expanduser("~")
@@ -12,7 +15,9 @@ ORIGEN = os.path.join(CASA, ".claude", "skills")
 FABRICA = os.path.join(CASA, ".fabrica")
 NINO = os.path.join(CASA, ".fabrica-nino")
 PARCHE_K = os.path.join(FABRICA, "parches", "04-kaizen-manda.diff")
-CONFIG_ATLAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config-atlas.json")
+CONFIG_MAQUINA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config-maquina.json")
+# Los apartados de KAIZEN.md que valen en La Máquina, por su número de título ("## 2. Avatar...", "## 4. Lo que nunca...").
+APARTADOS_KAIZEN = ("2", "4")
 
 # Las 17 que toca el parche K. goated-ads va dentro: guion-viral la usa para los ganchos.
 SKILLS = ["carrusel", "edicion-video", "fabrica-core", "fabrica-init", "guion-viral", "investigacion-viral",
@@ -65,13 +70,31 @@ def git_apply(diff: str, cwd: str, *extra) -> tuple[bool, str]:
     return r.returncode == 0, (r.stderr or r.stdout).strip()
 
 
-def construir(origen=ORIGEN, nino=NINO, parche=PARCHE_K, config=CONFIG_ATLAS, env_ff360=None) -> dict:
+def reglas_kaizen(texto: str) -> str:
+    """Los apartados APARTADOS_KAIZEN de KAIZEN.md, tal cual. Si falta alguno, error: mejor parar que ir sin reglas."""
+    trozos = re.split(r"(?m)^(?=## )", texto)
+    elegidos = [t for t in trozos if re.match(r"## (\d+)\.", t) and re.match(r"## (\d+)\.", t).group(1) in APARTADOS_KAIZEN]
+    numeros = sorted(re.match(r"## (\d+)\.", t).group(1) for t in elegidos)
+    if numeros != sorted(APARTADOS_KAIZEN):
+        raise RuntimeError("KAIZEN.md no tiene los apartados %s (tiene %s)" % (", ".join(APARTADOS_KAIZEN), ", ".join(numeros) or "ninguno"))
+    cabeza = ("# Reglas fijas de Kaizen para La Máquina\n\n"
+              "Copiadas de ~/.fabrica/KAIZEN.md por puente/nino_puro.py (no editar aquí). Valen el avatar y lo que nunca "
+              "se hace. La estructura, el método y los gates son los de Nino.\n\n")
+    return cabeza + "".join(t.rstrip() + "\n\n" for t in elegidos)
+
+
+def construir(origen=ORIGEN, nino=NINO, parche=PARCHE_K, config=CONFIG_MAQUINA, env_ff360=None, fabrica=FABRICA) -> dict:
     """Rehace nino/skills desde cero. Devuelve lo que quedó (restos) y lo que se hizo."""
     faltan = [s for s in SKILLS if not os.path.isdir(os.path.join(origen, s))]
     if faltan:
         raise RuntimeError("Faltan skills en %s: %s" % (origen, ", ".join(faltan)))
     if not os.path.isfile(parche):
         raise RuntimeError("No encuentro el parche K: %s" % parche)
+    avatar = os.path.join(fabrica, "avatar")
+    if not os.path.isfile(os.path.join(avatar, "avatar.json")):
+        raise RuntimeError("No encuentro el avatar: %s" % os.path.join(avatar, "avatar.json"))
+    with open(os.path.join(fabrica, "KAIZEN.md"), encoding="utf-8") as fh:
+        reglas = reglas_kaizen(fh.read())
 
     skills = os.path.join(nino, "skills")
     nueva = skills + ".nueva"
@@ -107,11 +130,15 @@ def construir(origen=ORIGEN, nino=NINO, parche=PARCHE_K, config=CONFIG_ATLAS, en
     os.replace(nueva, skills)
 
     hecho = {"skills": len(SKILLS), "ficheros_reescritos": cambiados, "restos": quedan}
-    # La marca de Atlas: solo si no hay una, para no pisar lo que Luismi cambie a mano.
-    destino = os.path.join(nino, "config.json")
-    if not os.path.exists(destino):
-        shutil.copyfile(config, destino)
-        hecho["config"] = "creada"
+    # La marca de FF360, siempre desde la plantilla del repo: así no se queda una vieja (la de Atlas del primer día).
+    shutil.copyfile(config, os.path.join(nino, "config.json"))
+    # El avatar de FF360 (el de Kaizen), entero salvo los scripts que lo sacan.
+    destino_avatar = os.path.join(nino, "avatar")
+    shutil.rmtree(destino_avatar, ignore_errors=True)
+    shutil.copytree(avatar, destino_avatar, ignore=shutil.ignore_patterns("*.py", "__pycache__"))
+    with open(os.path.join(nino, "REGLAS-KAIZEN.md"), "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(reglas)
+    hecho["avatar"] = sorted(os.listdir(destino_avatar))
     # Las claves de API son las mismas: enlace duro al .env de ~/.fabrica, sin leerlo ni copiarlo.
     env_ff360 = env_ff360 or os.path.join(FABRICA, ".env")
     env_nino = os.path.join(nino, ".env")

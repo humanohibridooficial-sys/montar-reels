@@ -1,0 +1,96 @@
+{
+  "_comentario": "LA FABRICA para La Maquina de FF360 (Nino puro, 29-10). nino_puro.py la copia a ~/.fabrica-nino/config.json cada vez que rehace la copia. Marca de FF360 (sale de ~/.fabrica/config.json); el avatar y las reglas fijas de Kaizen van aparte, en ~/.fabrica-nino/avatar y REGLAS-KAIZEN.md. La estructura es la de Nino. API keys NUNCA aqui.",
+  "version": 1,
+  "nivel": "esencial",
+  "marca": {
+    "nombre": "FF360 · Luismi",
+    "handle": "@nutretufutbol",
+    "colores": {
+      "primario": "#E0B83C",
+      "secundario": "#E6F0FF",
+      "fondo": "#070D16",
+      "marcador": "#2E6BFF"
+    },
+    "_colores": "13-10: en las skills de la Fabrica 'secundario' es la TINTA del texto (carrusel_engine.py pick_ink, miniatura.py), no un acento. Con el azul #2E6BFF ahi, todo el cuerpo salia en azul sobre azul noche. Texto = #E6F0FF (--ff-texto de FF360). El azul de estructura va en 'marcador' (==palabra== en bloque azul). Dorado = la palabra que golpea. Nunca lima #FCED0B ni verde #00A651.",
+    "zona_segura": {
+      "arriba": 0.15,
+      "abajo": 0.35,
+      "lados": 0.06
+    },
+    "fuente_titulo": "Anton",
+    "fuente_cuerpo": "Poppins",
+    "mascota": null,
+    "tono": "Tecnico que habla claro: sobrio, concreto, sin dramatismo y sin absolutos. Espanol de Espana.",
+    "trato": "tuteo",
+    "idiomas": [
+      "es",
+      "en"
+    ]
+  },
+  "nicho": {
+    "tema": "Nutricion y fuerza para futbolistas que enfocan su carrera profesionalmente (Juvenil Division de Honor y Liga Nacional hasta Segunda y Tercera RFEF)",
+    "subtemas": [
+      "Comer para jugar: la vispera, el dia y el dia despues del partido",
+      "Fuerza para tu futbol: ganar duelos y arrancar sin ponerte grande",
+      "Recuperar para el siguiente: sueno y respiracion entre partidos",
+      "Hidratacion antes, durante y despues del partido",
+      "Llegar entero a los 90 minutos"
+    ],
+    "subreddits": [
+      "bootroom",
+      "SportsScience",
+      "nutrition",
+      "futbol"
+    ],
+    "cuentas_x": [],
+    "canales_youtube": [],
+    "webs": []
+  },
+  "stack": {
+    "ffmpeg": true,
+    "remotion": false,
+    "elevenlabs": {
+      "tiene": false,
+      "modo": null,
+      "voice_id": null
+    },
+    "heygen": {
+      "tiene": false,
+      "modo": null,
+      "avatar_id": null
+    },
+    "higgsfield": false,
+    "sandcastles": false,
+    "supabase": false,
+    "airtable": false,
+    "manychat": false,
+    "kie": false
+  },
+  "salidas": {
+    "reel": true,
+    "youtube": false,
+    "carrusel": true,
+    "pdfs": false,
+    "ugc": false,
+    "seo": false
+  },
+  "cta": {
+    "_keyword": "Regla de Kaizen: las publicaciones (reels, carruseles) NO llevan palabra clave; cierran con 'Sigueme' o 'Guardalo y compartelo'. La palabra clave solo va en historias y la elige Luismi.",
+    "keyword": "",
+    "keyword_historias": "RENDIMIENTO",
+    "link": "https://ff360.es/red/marcador",
+    "oferta": "Metodo 360: comer para jugar, fuerza para tu futbol, recuperar para el siguiente y que aguante sin mi. Sin precio en ninguna pieza."
+  },
+  "local": {
+    "ciudad": "",
+    "zonas": [],
+    "telefono": "",
+    "pais": "ES"
+  },
+  "rutas": {
+    "output": "~/fabrica-output/maquina"
+  },
+  "escalera": [
+    "carrusel_pdfs"
+  ]
+}
