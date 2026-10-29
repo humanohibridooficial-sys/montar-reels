@@ -43,12 +43,18 @@ diff = "".join(difflib.unified_diff(LIMPIO.splitlines(True), CON_K.splitlines(Tr
                                     "a/carrusel/SKILL.md", "b/carrusel/SKILL.md"))
 parche = os.path.join(base, "04.diff")
 escribir(parche, diff)
-config = os.path.join(base, "config-atlas.json")
-escribir(config, '{"marca": {"nombre": "Atlas"}}\n')
+config = os.path.join(base, "config-maquina.json")
+escribir(config, '{"marca": {"nombre": "FF360"}}\n')
 env = os.path.join(fab, ".env")
 escribir(env, "NO_SE_LEE=1\n")
+# El avatar y KAIZEN.md de ~/.fabrica (29-10: La Máquina es FF360 con su avatar y las reglas fijas de Kaizen).
+escribir(os.path.join(fab, "avatar", "avatar.json"), '{"problemas": []}\n')
+escribir(os.path.join(fab, "avatar", "1 - Mi Avatar.txt"), "el futbolista\n")
+escribir(os.path.join(fab, "avatar", "sacar.py"), "print('no va')\n")
+escribir(os.path.join(fab, "KAIZEN.md"), "# K\n## 0. Como se decide\ncero\n## 2. Avatar\nel avatar\n## 3. Voz y guiones\n"
+         "la estructura de Kaizen\n## 4. Lo que nunca se hace\nnunca el precio\n## 5. Colores\n")
 
-h = nino_puro.construir(origen, nino, parche, config, env)
+h = nino_puro.construir(origen, nino, parche, config, env, fab)
 cs = os.path.join(nino, "skills")
 ok(h["restos"] == {"kaizen": 0, "fabrica_ff360": 0, "skill_con_parche": 0}, f"la copia queda pura: {h['restos']}")
 car = leer(os.path.join(cs, "carrusel", "SKILL.md"))
@@ -65,18 +71,24 @@ ok(".fabrica-nino\\skills\\ugc\\a" in qa, "también con barras de Windows")
 with open(os.path.join(cs, "carrusel", "fuente.ttf"), "rb") as f:
     ok(f.read() == b"\x00\xff.fabrica\xfe", "los binarios se copian sin tocar")
 ok("Kaizen" in leer(os.path.join(origen, "carrusel", "SKILL.md")), "las originales siguen con el parche K")
-ok(leer(os.path.join(nino, "config.json")).count("Atlas") == 1 and h.get("config") == "creada", "config de Atlas creada")
+ok(leer(os.path.join(nino, "config.json")).count("FF360") == 1, "config de FF360 puesta")
+ok(h.get("avatar") == ["1 - Mi Avatar.txt", "avatar.json"], f"el avatar copiado, sin el script que lo saca ({h.get('avatar')})")
+rk = leer(os.path.join(nino, "REGLAS-KAIZEN.md"))
+ok("el avatar" in rk and "nunca el precio" in rk, "las reglas fijas: avatar y lo que nunca se hace")
+ok("la estructura de Kaizen" not in rk and "cero" not in rk and "Colores" not in rk, "sin la estructura de Kaizen ni lo demás")
 ok(os.path.samefile(env, os.path.join(nino, ".env")) and h.get("env") == "enlazado", ".env enlazado, no copiado")
 
-escribir(os.path.join(nino, "config.json"), '{"marca": {"nombre": "Atlas a mano"}}\n')
-h2 = nino_puro.construir(origen, nino, parche, config, env)
-ok("a mano" in leer(os.path.join(nino, "config.json")) and "config" not in h2, "la segunda vez no pisa la config")
+# Cambiado a sabiendas (29-10): antes la config no se pisaba; ahora sale siempre de la plantilla del repo, para que no se
+# quede una vieja (la de Atlas del primer día).
+escribir(os.path.join(nino, "config.json"), '{"marca": {"nombre": "Atlas"}}\n')
+h2 = nino_puro.construir(origen, nino, parche, config, env, fab)
+ok("Atlas" not in leer(os.path.join(nino, "config.json")), "una config vieja se cambia por la de la plantilla")
 ok(os.path.isfile(os.path.join(cs, "vsl", "SKILL.md")), "la segunda vez rehace la copia entera")
 
 # Si las skills se actualizan y el parche ya no encaja, no se hace nada y la copia buena se queda.
 escribir(os.path.join(origen, "carrusel", "SKILL.md"), "# otra version\n")
 try:
-    nino_puro.construir(origen, nino, parche, config, env)
+    nino_puro.construir(origen, nino, parche, config, env, fab)
     ok(False, "un parche que no encaja tendría que parar")
 except RuntimeError as e:
     ok("no sale limpio" in str(e), "un parche que no encaja para")
@@ -87,7 +99,7 @@ escribir(os.path.join(origen, "carrusel", "SKILL.md"), CON_K)
 bueno = nino_puro.reescribir
 nino_puro.reescribir = lambda t: t
 try:
-    nino_puro.construir(origen, nino, parche, config, env)
+    nino_puro.construir(origen, nino, parche, config, env, fab)
     ok(False, "sin reescribir tendría que parar")
 except RuntimeError as e:
     ok("no queda pura" in str(e), "sin reescribir rutas, para (control positivo)")

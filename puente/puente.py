@@ -955,12 +955,13 @@ def lanzar_ideas(corrida: str, hueco: str, pieza) -> str:
 
 
 # P5, La Máquina (spec hh-kpi 2026-10-28-negocio-sencillo-dos-mundos, M1b). Luismi, 29-10: "para la maquina de nino,
-# manda nino". Las piezas de Atlas (origen `maquina:<tipo>`) las hace la copia de Nino sin el parche K que deja
-# puente/nino_puro.py en ~/.fabrica-nino, con su marca y su historial. Llegan por la misma cola ("ideas" y "pieza").
+# manda nino". Las piezas de La Máquina (origen `maquina:<tipo>`) las hace la copia de Nino sin el parche K que deja
+# puente/nino_puro.py en ~/.fabrica-nino, con su historial. Llegan por la misma cola ("ideas" y "pieza").
+# 29-10 (Luismi): es contenido de FF360 "con mi avatar", con "avatar y reglas de Kaizen" y la estructura de Nino.
 # Claude no habla con Negocio: deja el JSON y los ficheros en su carpeta y, al acabar, los sube el puente con la clave
 # del PC. negocio.mjs (que es de FF360) no se usa salvo para cerrar la corrida.
 NINO = os.path.join(CASA, ".fabrica-nino").replace("\\", "/")
-SALIDA_MAQUINA = os.path.join(SALIDA_FABRICA, "atlas")
+SALIDA_MAQUINA = os.path.join(SALIDA_FABRICA, "maquina")
 TIPOS_MAQUINA = {
     "reel": {"nombre": "reel con guion viral", "skill": "guion-viral"},
     "carrusel": {"nombre": "carrusel", "skill": "carrusel"},
@@ -1001,9 +1002,13 @@ def herramientas_maquina(accion: str, tipo: str, carpeta: str) -> list[str]:
 def orden_maquina(accion: str, tipo: str, carpeta: str) -> str:
     t = TIPOS_MAQUINA[tipo]
     comun = (
-        f"Eres La Máquina de Nino para Atlas, tal cual la vende Nino: manda Nino, en el criterio y en la estructura. Las "
-        f"skills están en {NINO}/skills: léelas con Read, nunca con la herramienta Skill, y si una remite a otra, léela "
-        f"también ahí. La marca, el nicho y el CTA están en {NINO}/config.json. El pedido es {carpeta}/pedido.json: el "
+        f"Eres La Máquina de Nino para FF360, tal cual la vende Nino: manda Nino en el método, la estructura y los gates. "
+        f"Las skills están en {NINO}/skills: léelas con Read, nunca con la herramienta Skill, y si una remite a otra, "
+        f"léela también ahí. La marca, el nicho y el CTA están en {NINO}/config.json. Antes de nada lee el avatar, "
+        f"{NINO}/avatar (todos sus ficheros), y {NINO}/REGLAS-KAIZEN.md: son las reglas fijas de Kaizen (a quién le "
+        "hablas y lo que nunca se hace) y, si chocan con una skill, ganan ellas; en todo lo demás manda Nino. Las "
+        "publicaciones no llevan palabra clave: cierran con 'Sígueme' o 'Guárdalo y compártelo'. Nunca inventes casos "
+        f"ni testimonios. El pedido es {carpeta}/pedido.json: el "
         f"tipo de pieza es {t['nombre']}. Escribe solo en {carpeta}. Lanza cada comando solo, sin && ni tuberías. "
         "Español de España, tuteo, sin emojis. Nada de instagram.com, nunca: ni web, ni enlaces, ni fuentes (Instagram "
         "cerró la cuenta personal de Luismi por trabajo automatizado). No inventes números: una cifra de 10 para arriba, "
@@ -1168,7 +1173,7 @@ def mirar_cola() -> str | None:
         raise RuntimeError(f"pedido de la cola raro: {str(s)[:200]}")
     try:
         pieza_cola = s.get("pieza") if isinstance(s.get("pieza"), dict) else {}
-        if pieza_cola.get("maquina"):  # P5: una pieza de La Máquina (Atlas), con Nino puro
+        if pieza_cola.get("maquina"):  # P5: una pieza de La Máquina (FF360 con Nino puro)
             return lanzar_maquina(accion, corrida, hueco, pieza_cola)
         if accion in MONTAJES:  # fase 2b: montar un carrusel o una secuencia ya aprobados, con la orden del botón
             pieza = s.get("pieza") if isinstance(s.get("pieza"), dict) else {}

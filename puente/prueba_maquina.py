@@ -37,7 +37,11 @@ ok(not any(x in ("Skill", "Task", "Agent", "PowerShell") for a in ("ideas", "pie
 
 for a in ("ideas", "pieza"):
     o = puente.orden_maquina(a, "carrusel", carpeta)
-    ok(puente.NINO + "/skills" in o and "KAIZEN" not in o.upper() and "/.fabrica/config" not in o, f"orden de {a}: Nino puro, sin Kaizen")
+    # Cambiado a sabiendas (29-10, Luismi: "avatar y reglas de Kaizen"): de Kaizen, solo el avatar y REGLAS-KAIZEN.md;
+    # nunca KAIZEN.md entero (su estructura es la de FF360(K)) ni la config de ~/.fabrica.
+    ok(puente.NINO + "/skills" in o and f"{puente.NINO}/REGLAS-KAIZEN.md" in o and f"{puente.NINO}/avatar" in o,
+       f"orden de {a}: Nino puro, con el avatar y las reglas fijas de Kaizen")
+    ok("/.fabrica/KAIZEN.md" not in o and "/.fabrica/config" not in o, f"orden de {a}: nunca KAIZEN.md entero ni la config de FF360(K)")
     ok('"' not in o, f"orden de {a}: sin comillas dobles (el puente las cambia, pero mejor que no haya)")
 ok("investigacion-viral" in puente.orden_maquina("ideas", "pdf", carpeta), "ideas: con investigacion-viral")
 ok("pdf-lead-magnet" in puente.orden_maquina("pieza", "pdf", carpeta) and "guia.pdf" in puente.orden_maquina("pieza", "pdf", carpeta), "pieza pdf: su skill y su fichero")
