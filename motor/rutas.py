@@ -13,6 +13,7 @@ DATOS = _r('carpeta_datos')              # fichas/, palabras.json y voz/ (fuera 
 FICHAS = DATOS / 'fichas'
 PALABRAS = DATOS / 'palabras.json'
 VOZ = DATOS / 'voz'
+PERFIL = DATOS / 'perfil'                # perfil.json y foto.jpg de la tarjeta de "Seguir" (fuera del repo, que es público)
 RENDER = _r('carpeta_render')            # p<n>/ de cada pieza; disco local, 13-17 GB por pieza mientras renderiza
 SALIDA = _r('carpeta_salida')            # donde se deja el vídeo terminado
 PLANTILLA = MOTOR / 'plantilla'
