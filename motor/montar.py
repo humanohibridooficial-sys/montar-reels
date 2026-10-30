@@ -13,7 +13,8 @@ from rutas import CONTENIDO, TOMAS, FICHAS, PALABRAS, VOZ, RENDER, PLANTILLA
 from estilo import CSS, JS
 F = json.load(open(FICHAS / f'{N}.json', encoding='utf-8'))
 P = RENDER / f'p{N}'
-SRC = CONTENIDO / F['video'] if '/' in F['video'] else TOMAS / F['video']   # con carpeta: relativa a carpeta_contenido
+# Con carpeta: relativa a carpeta_contenido. Sin ella, en carpeta_tomas (las DJI) o en carpeta_contenido (las del móvil, m1-m7).
+SRC = CONTENIDO / F['video'] if '/' in F['video'] or not (TOMAS / F['video']).exists() else TOMAS / F['video']
 def run(*a):
     subprocess.run(a, check=True)
 
@@ -181,7 +182,11 @@ for n, w in enumerate(words[1:], 1):
     prev = words[n - 1]
     gap = w['start'] - prev['end']
     nueva = re.search(r'[.,?!]$', prev['word']) or gap > 0.3 or any(abs(w['start'] - j) < 0.2 for j in joins)
-    if (nueva and w['start'] - last >= 1.8) or w['start'] - last > 3.2:
+    # 2,6 y no 3: salta en la palabra siguiente, y la puerta del plan no deja pasar más de 3 s sin un cambio.
+    # Si whisper estira una palabra (un "lo..." de 2 s), la siguiente llega tarde: se cambia a mitad de palabra.
+    while w['start'] - last > 3.0:
+        last = round(last + 2.6, 3); zoom.append([last, ESC[k % len(ESC)]]); k += 1
+    if (nueva and w['start'] - last >= 1.8) or w['start'] - last > 2.6:
         zoom.append([w['start'], ESC[k % len(ESC)]]); k += 1; last = w['start']
 fol = cue(F['follow'])
 plan = {
