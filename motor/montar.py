@@ -10,7 +10,7 @@
 import json, subprocess, re, sys, shutil, pathlib, html
 
 N = sys.argv[1]
-from rutas import CONTENIDO, TOMAS, FICHAS, PALABRAS, VOZ, RENDER, PLANTILLA, SCRIPTS, PY_SILUETA
+from rutas import CONTENIDO, TOMAS, FICHAS, PALABRAS, VOZ, RENDER, PLANTILLA, SCRIPTS, PY_SILUETA, PERFIL
 from estilo import CSS, JS
 F = json.load(open(FICHAS / f'{N}.json', encoding='utf-8'))
 P = RENDER / f'p{N}'
@@ -262,12 +262,19 @@ if PN:
     PANEL_HTML = ('  <div id="panel">' + ''.join(f'<div class="hd"><div class="h1">{it[1]}</div><div class="h2">{it[2]}</div></div>' for it in PN['items'])
                   + '<div class="bl">' + ''.join(f'<div class="b"><i></i>{it[3]}</div>' for it in PN['items']) + '</div></div>')
 TC, NU = F.get('tachado'), F.get('num')
+# Tarjeta de "Seguir" con el perfil real (Luismi 30-10); sin motor-datos/perfil/ sale la de siempre.
+PF = {'usuario': 'nutretufutbol', 'nombre': '@nutretufutbol'}
+if (PERFIL / 'perfil.json').exists():
+    PF.update(json.load(open(PERFIL / 'perfil.json', encoding='utf-8')))
+AVATAR = 'FF'
+if (PERFIL / 'foto.jpg').exists():
+    shutil.copy(PERFIL / 'foto.jpg', P / 'assets/perfil.jpg'); AVATAR = '<img src="assets/perfil.jpg">'
 s = s.replace('  <video id="talk" class="clip" data-om-id="talk" data-var-src="talk" data-start="0" data-track-index="0" muted playsinline></video>',
               '  <div id="talkwrap"><video id="talk" class="clip" data-om-id="talk" data-var-src="talk" data-start="0" data-track-index="0" muted playsinline></video>' + ''.join(XTALK) + '</div>\n'
               + PANEL_HTML + '\n' + tiles + '\n  ' + '\n  '.join(XHTML) + '\n  <div id="tops"></div>\n  <div id="subs"></div>\n'
               + (f'  <div id="num">{NU["texto"]}</div>\n' if NU else '')
               + (f'  <div id="tachado"><span>{TC["texto"]}<b></b></span></div>\n' if TC else '')
-              + '  <div id="follow"><div class="av">FF</div><div><div class="nm">nutretufutbol</div><div class="hn">@nutretufutbol</div></div>'
+              + f'  <div id="follow"><div class="av">{AVATAR}</div><div class="tx"><div class="nm">{e(PF["usuario"])}</div><div class="hn">{e(PF["nombre"])}</div></div>'
               '<div class="bt b1">Seguir</div><div class="bt b2">Siguiendo</div></div>\n  <div id="leak"></div>')
 
 # Reencuadres: un tamaño distinto en cada frase nueva (tras punto, coma larga o empalme), como sus cambios de cámara.

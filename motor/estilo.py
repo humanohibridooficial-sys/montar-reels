@@ -24,11 +24,12 @@ CSS = '''
   #tachado b { position: absolute; left: -4%; right: -4%; top: 46%; height: 14px; border-radius: 7px; background: #E5322D; transform: scaleX(0); transform-origin: 0 50%; }
   #leak { position: absolute; inset: -10%; opacity: 0; z-index: 9; pointer-events: none; mix-blend-mode: screen; filter: blur(30px);
     background: radial-gradient(circle at 30% 38%, #fffbe6 0%, #ffe08a 30%, #ffc94400 62%), radial-gradient(circle at 78% 72%, #ffffff 0%, #fff0b8 28%, #ffffff00 60%), #fff3c4; }
-  #follow { position: absolute; left: 50%; top: 250px; width: 700px; margin-left: -350px; opacity: 0; z-index: 8; display: flex; align-items: center; gap: 24px;
+  #follow { position: absolute; left: 50%; top: 250px; width: 780px; margin-left: -390px; opacity: 0; z-index: 8; display: flex; align-items: center; gap: 24px;
     background: #fff; border-radius: 30px; padding: 24px 28px; box-shadow: 0 20px 50px #0006; box-sizing: border-box; }
   #follow .av { width: 96px; height: 96px; border-radius: 50%; background: #070D16; display: grid; place-items: center; font: 400 40px/1 Anton, sans-serif; color: #E0B83C; flex: none; }
   #follow .nm { font: 800 40px/1.1 Inter, sans-serif; color: #111; }
-  #follow .hn { font: 500 30px/1.2 Inter, sans-serif; color: #8A8F98; }
+  #follow .hn { font: 500 26px/1.25 Inter, sans-serif; color: #6B7079; max-width: 390px; }
+  #follow .av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
   #follow .bt { position: absolute; right: 28px; top: 50%; margin-top: -36px; height: 72px; padding: 0 34px; border-radius: 18px; display: grid; place-items: center;
     font: 800 34px/1 Inter, sans-serif; }
   #follow .b1 { background: #2E6BFF; color: #fff; }
