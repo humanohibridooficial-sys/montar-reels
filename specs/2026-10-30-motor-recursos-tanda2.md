@@ -39,3 +39,13 @@ Colores de la marca (`estilo.md`): marino, dorado, y azul solo de filo.
     - Puerta nueva: cada punto, palabra o tarjeta cae dentro de su recurso. Control: con la cue mala, falla.
     - La línea del mapa cruzaba la cara. Ahora el mapa va en la franja de arriba (y 250-470) y la puerta lo trata como el titular (no se pueden pisar).
   - Pendiente: pasarlo por `revisor-montaje` y que lo vea Luismi.
+- 30-10, primera revisión con `revisor-montaje`: "no se puede enseñar". Corregido y visto en vídeo:
+  - El FF360 tapaba la boca. Ahora va en el pecho, en el sitio del subtítulo, y dura 0,8 s o más.
+  - Las tarjetas estaban en la columna de botones de IG y pisaban el subtítulo. Ahora van a la izquierda, a 190 px, por encima del subtítulo.
+  - La pizarra se apoyaba en el cráneo y un jugador salía volando (GSAP escala SVG desde 0,0). Ahora es más pequeña, va por encima de la cabeza y los jugadores crecen desde su centro.
+  - La píldora duplicaba el subtítulo en dorado. Ahora ocupa su sitio y el subtítulo se oculta.
+  - El mapa se leía mal sobre el cielo y la línea llegaba antes que la palabra. Ahora va en caja marino y la línea sale tras la palabra.
+  - La lista sube a 64 px con sombra dura.
+  - El destello del motor baja de 0,95 a 0,3 (estilo.md: "flojos y muy cortos"). Lo de 0,3 no se ha renderizado; a 0,5 aún lavaba.
+  - Puerta nueva: tarjetas a la derecha y logo de menos de 0,8 s. Control: la ficha vieja falla en las dos y la corregida pasa.
+  - No se tocan los subtítulos en mayúsculas de estilo.md: esa regla es de la letra de CapCut (11-10) y el motor sigue el estilo de Carla (28-10).

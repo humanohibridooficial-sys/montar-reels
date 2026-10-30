@@ -176,7 +176,7 @@ for i, x in enumerate(F.get('extras', [])):
     t1 = cue(x['out']) if 'out' in x else round(t0 + 0.4, 3)
     tipo = x['tipo']
     subs = [[cue(c[0])] + list(c[1:]) for c in x.get('items') or x.get('palabras') or x.get('clips') or x.get('jugadores') or []]
-    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color', 'texto')}, 'in': t0, 'out': t1,
+    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color', 'texto', 'lado')}, 'in': t0, 'out': t1,
                    'items': [c[0] for c in subs]})
     pista = f'data-start="{t0}" data-duration="{round(t1 - t0, 3)}" data-media-start="0" data-track-index="{40 + i}" muted playsinline'
     if tipo == 'tinte':
@@ -233,7 +233,7 @@ for i, x in enumerate(F.get('extras', [])):
                      + ''.join(f'<circle class="jg" cx="{round(c[1] * 600)}" cy="{round(c[2] * 400)}" r="16"/>' for c in js) + '</svg></div></div>')
     elif tipo == 'mapa':   # palabras en zigzag por encima de la cabeza y una línea discontinua que las va uniendo
         # 30-10: a los lados de la cara, la línea la cruzaba; arriba (y 250-470) va por encima de la cabeza (22-33 % de alto)
-        pos = [(230 if k % 2 == 0 else 850, 250 + k * round(220 / max(1, len(subs) - 1))) for k in range(len(subs))]
+        pos = [(250 if k % 2 == 0 else 830, 310 + k * round(190 / max(1, len(subs) - 1))) for k in range(len(subs))]
         largos = [((pos[k + 1][0] - pos[k][0]) ** 2 + (pos[k + 1][1] - pos[k][1]) ** 2) ** 0.5 for k in range(len(pos) - 1)]
         tot = sum(largos) or 1
         fr = [round(1 - sum(largos[:k]) / tot, 4) for k in range(len(pos))]   # dashoffset al decir la palabra k
@@ -243,7 +243,7 @@ for i, x in enumerate(F.get('extras', [])):
                      f'<path d="{d}" class="ml" mask="url(#mm-{i})"/></svg>'
                      + ''.join(f'<div class="mw" style="left:{px}px;top:{py}px">{e(c[1])}</div>' for (px, py), c in zip(pos, subs)) + '</div>')
     elif tipo == 'tarjetas':   # columna de clips verticales a un lado; él sigue hablando en el centro
-        XHTML.append(f'<div class="tcol {x.get("lado", "der")}" id="x-{i}">' + ''.join(
+        XHTML.append(f'<div class="tcol {x.get("lado", "izq")}" id="x-{i}">' + ''.join(
             f'<div class="tc"><video src="assets/broll/x{i}-{k}.mp4" data-start="{c[0]}" data-duration="{round(t1 - c[0], 3)}" '
             f'data-media-start="0" data-track-index="{60 + i * 5 + k}" muted playsinline></video></div>' for k, c in enumerate(subs)) + '</div>')
     elif tipo == 'barrido':   # no lleva capa: anima el plano a cámara
@@ -312,7 +312,7 @@ for a_, b_ in [
     ("  tl.fromTo(tc, { opacity: 0, y: 20 }", "  if (PLAN.tachado) tl.fromTo(tc, { opacity: 0, y: 20 }"),
     ("  const ventanas = [[PLAN.tachado[0], PLAN.tachado[2]], [PLAN.num[0], PLAN.num[1]], [p0, p3]];",
      "  const ventanas = [PLAN.tachado && [PLAN.tachado[0], PLAN.tachado[2]], PLAN.num, PN.length && [PN[0], PN[PN.length - 1]],\n"
-     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo'].includes(x.tipo)).map((x) => [x.in, x.out])].filter(Boolean);"),
+     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo', 'pildora'].includes(x.tipo)).map((x) => [x.in, x.out])].filter(Boolean);"),
     ("  OM.music({ style: 'cinematic', drop: PLAN.num[0], ending: 'button' });\n", ""),
 ]:
     assert a_ in JS, a_[:60]

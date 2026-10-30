@@ -56,6 +56,10 @@ for x in p.get('extras', []):
 # Un rótulo que dice una palabra de la voz entra con ella (revisor 30-10: cuatro entraban 0,4-1,2 s antes).
 habladas = [(norm(w['word']), w['start']) for w in words['words']]
 for x in p.get('extras', []):
+    if x['tipo'] == 'tarjetas' and x.get('lado') == 'der':
+        fallos.append(f"{x['in']:.1f} s: tarjetas a la derecha, en la columna de botones de Instagram")
+    if x['tipo'] == 'logo' and x['out'] - x['in'] < 0.8:
+        fallos.append(f"{x['in']:.1f} s: el {x.get('texto', 'logo')} solo dura {x['out'] - x['in']:.1f} s; menos de 0,8 s no se lee")
     if x['tipo'] == 'congelado' and x['out'] - x['in'] > 1.0:
         fallos.append(f"{x['in']:.1f} s: congelado de {x['out'] - x['in']:.1f} s; con más de 1 s el labio deja de ir con la voz")
     if x['tipo'] == 'tuit':   # el tuit cita a otro: su texto no se dice en voz alta

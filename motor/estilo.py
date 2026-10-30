@@ -69,15 +69,15 @@ CSS = '''
     background: #E0B83C; color: #070D16; font: 400 76px/1 Anton, sans-serif; padding: 16px 30px 12px; border-radius: 16px; box-shadow: 0 16px 40px #0009; }
   .flash { position: absolute; inset: 0; z-index: 9; background: #fff; opacity: 0; pointer-events: none; }
   /* segunda tanda (30-10) */
-  .lst { position: absolute; left: 9%; right: 9%; top: 700px; z-index: 7; opacity: 0; text-shadow: 0 3px 14px #000c; }
-  .lst .lt { font: 400 76px/1 Anton, sans-serif; color: #fff; text-transform: uppercase; margin-bottom: 26px; }
-  .lst .li { display: flex; align-items: center; gap: 22px; font: 500 54px/1.15 Inter, sans-serif; color: #fff; margin-bottom: 20px; opacity: 0; }
+  .lst { position: absolute; left: 9%; right: 9%; top: 680px; z-index: 7; opacity: 0; text-shadow: 0 3px 16px #000, 0 0 4px #000; }
+  .lst .lt { font: 400 92px/1 Anton, sans-serif; color: #fff; text-transform: uppercase; margin-bottom: 26px; }
+  .lst .li { display: flex; align-items: center; gap: 24px; font: 600 64px/1.15 Inter, sans-serif; color: #fff; margin-bottom: 22px; opacity: 0; }
   .lst .li b { font-weight: 800; color: #E0B83C; }
   .lst .li i { width: 26px; height: 26px; border-radius: 50%; background: #E0B83C; flex: none; box-shadow: 0 0 0 5px #E0B83C40; }
-  .pil { position: absolute; left: 50%; top: 940px; transform: translateX(-50%); z-index: 7; opacity: 0; display: grid; place-items: center;
+  .pil { position: absolute; left: 50%; top: 1090px; transform: translateX(-50%); z-index: 7; opacity: 0; display: grid; place-items: center;
     background: #E0B83C; border-radius: 999px; padding: 14px 44px 10px; box-shadow: 0 14px 34px #0008; min-width: 200px; }
   .pil .pw { grid-area: 1 / 1; font: 400 72px/1 Anton, sans-serif; color: #0E1F3A; text-transform: uppercase; opacity: 0; white-space: nowrap; }
-  .piz { position: absolute; left: 50%; top: 230px; width: 640px; height: 430px; margin-left: -320px; z-index: 7; opacity: 0; perspective: 900px; }
+  .piz { position: absolute; left: 50%; top: 170px; width: 450px; height: 300px; margin-left: -225px; z-index: 7; opacity: 0; perspective: 900px; }
   .piz .pz3 { width: 100%; height: 100%; transform-origin: 50% 100%; }
   .piz svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 20px 30px #000a); }
   .piz .pc { fill: #0E1F3A; stroke: #fff; stroke-width: 5; } .piz .pl { fill: none; stroke: #ffffffb0; stroke-width: 4; }
@@ -86,16 +86,16 @@ CSS = '''
   .mapa svg { position: absolute; inset: 0; width: 1080px; height: 1920px; }
   .mapa .ml { fill: none; stroke: #E0B83C; stroke-width: 9; stroke-dasharray: 22 16; stroke-linecap: round; }
   .mapa .mk { fill: none; stroke: #fff; stroke-width: 40; }
-  .mapa .mw { position: absolute; transform: translate(-50%, -50%); font: 700 60px/1 Inter, sans-serif; color: #fff; opacity: 0; white-space: nowrap;
-    text-shadow: 0 4px 16px #000d; }
-  .tcol { position: absolute; top: 480px; width: 250px; z-index: 6; display: flex; flex-direction: column; gap: 22px; }
-  .tcol.der { right: 4%; } .tcol.izq { left: 4%; }
-  .tcol .tc { width: 250px; height: 444px; border-radius: 24px; overflow: hidden; opacity: 0; border: 3px solid #E0B83C; box-shadow: 0 16px 36px #0009; }
+  .mapa .mw { position: absolute; transform: translate(-50%, -50%); font: 700 54px/1 Inter, sans-serif; color: #fff; opacity: 0; white-space: nowrap;
+    background: #0E1F3AE6; border-left: 8px solid #E0B83C; border-radius: 14px; padding: 14px 24px 12px; box-shadow: 0 10px 26px #0008; }
+  .tcol { position: absolute; top: 360px; width: 190px; z-index: 6; display: flex; flex-direction: column; gap: 16px; }
+  .tcol.der { right: 6%; } .tcol.izq { left: 6%; }
+  .tcol .tc { width: 190px; height: 338px; border-radius: 24px; overflow: hidden; opacity: 0; border: 3px solid #E0B83C; box-shadow: 0 16px 36px #0009; }
   .tcol .tc video { width: 100%; height: 100%; object-fit: cover; }
-  .logo { position: absolute; left: 0; right: 0; top: 880px; z-index: 8; opacity: 0; text-align: center; }
-  .logo span { display: inline-block; font: italic 400 230px/1 Anton, sans-serif; color: #E0B83C; letter-spacing: .01em;
+  .logo { position: absolute; left: 0; right: 0; top: 1050px; z-index: 8; opacity: 0; text-align: center; }
+  .logo span { display: inline-block; font: italic 400 190px/1 Anton, sans-serif; color: #E0B83C; letter-spacing: .01em;
     -webkit-text-stroke: 4px #070D16; paint-order: stroke fill; text-shadow: 0 14px 40px #000c; }
-  .logo .ch { position: absolute; top: -10px; bottom: -10px; width: 26px; margin-left: -13px; border-radius: 13px; opacity: 0;
+  .logo .ch { position: absolute; top: 10px; bottom: 10px; width: 14px; margin-left: -7px; border-radius: 7px; opacity: 0;
     background: radial-gradient(#fffbe6, #ffd25a 45%, #ffb30000 75%); filter: blur(4px); }
 '''
 
@@ -150,8 +150,8 @@ JS = '''
   // Destellos de luz cálida en los cambios de bloque (tapan el corte).
   const lk = $id('leak');
   PLAN.leaks.forEach((t) => {
-    tl.fromTo(lk, { opacity: 0 }, { opacity: 0.95, duration: 0.16, ease: 'power1.in', immediateRender: false }, t - 0.16)
-      .to(lk, { opacity: 0, duration: 0.4, ease: 'power2.out' }, t + 0.04);
+    tl.fromTo(lk, { opacity: 0 }, { opacity: 0.3, duration: 0.1, ease: 'power1.in', immediateRender: false }, t - 0.1)   // 30-10: a 0,95 y a 0,5 lavaba el titular
+      .to(lk, { opacity: 0, duration: 0.25, ease: 'power2.out' }, t + 0.02);
     OM.sfx('whoosh', t - 0.1, { gain: 0.3 });
   });
   // Subtítulos: línea blanca pequeña y, debajo, la palabra que golpea grande (dorada; cursiva serif si tiene carga).
@@ -232,7 +232,7 @@ JS = '''
     } else if (x.tipo === 'pizarra') {   // se levanta en perspectiva, salen los jugadores y vuelve a tumbarse
       const p3 = el.querySelector('.pz3');
       tl.set(el, { opacity: 1 }, t0).fromTo(p3, { rotationX: 78, scale: 0.6, opacity: 0 }, { rotationX: 14, scale: 1, opacity: 1, duration: 0.55, ease: 'power3.out', immediateRender: false }, t0);
-      el.querySelectorAll('.jg').forEach((j, k) => tl.fromTo(j, { scale: 0 }, { scale: 1, duration: 0.2, ease: 'back.out(3)', immediateRender: false }, x.items[k]));
+      el.querySelectorAll('.jg').forEach((j, k) => tl.fromTo(j, { scale: 0, transformOrigin: '50% 50%' }, { scale: 1, transformOrigin: '50% 50%', duration: 0.2, ease: 'back.out(3)', immediateRender: false }, x.items[k]));
       tl.to(p3, { rotationX: 78, opacity: 0, duration: 0.35, ease: 'power2.in' }, t1 - 0.35);
       sale(el);
     } else if (x.tipo === 'mapa') {   // cada palabra al decirla, y la línea llega hasta ella
@@ -240,7 +240,7 @@ JS = '''
       tl.set(el, { opacity: 1 }, t0);
       el.querySelectorAll('.mw').forEach((w, k) => {
         tl.fromTo(w, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out', immediateRender: false }, x.items[k]);
-        if (k) tl.fromTo(mk, { strokeDashoffset: fr[k - 1] }, { strokeDashoffset: fr[k], duration: 0.3, ease: 'power1.inOut', immediateRender: false }, x.items[k] - 0.3);
+        if (k) tl.fromTo(mk, { strokeDashoffset: fr[k - 1] }, { strokeDashoffset: fr[k], duration: 0.25, ease: 'power1.inOut', immediateRender: false }, x.items[k] + 0.05);
       });
       sale(el);
     } else if (x.tipo === 'tarjetas') {
@@ -252,9 +252,9 @@ JS = '''
     } else if (x.tipo === 'logo') {   // se revela de izquierda a derecha con una chispa en el borde
       const sp = el.querySelector('span'), ch = el.querySelector('.ch');
       tl.set(el, { opacity: 1 }, t0)
-        .fromTo(sp, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: 0.4, ease: 'power2.inOut', immediateRender: false }, t0)
-        .fromTo(ch, { left: '22%', opacity: 1 }, { left: '78%', duration: 0.4, ease: 'power2.inOut', immediateRender: false }, t0)
-        .to(ch, { opacity: 0, duration: 0.15 }, t0 + 0.4);
+        .fromTo(sp, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: 0.3, ease: 'power2.out', immediateRender: false }, t0)
+        .fromTo(ch, { left: '26%', opacity: 1 }, { left: '74%', duration: 0.3, ease: 'power2.out', immediateRender: false }, t0)
+        .to(ch, { opacity: 0, duration: 0.12 }, t0 + 0.3);
       sale(el);
     } else if (x.tipo === 'detras') {
       tl.set(el, { opacity: 1 }, t0);
