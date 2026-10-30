@@ -30,3 +30,11 @@ Máquina (`puente/puente.py`) y la skill `editor-reels-ff360` siguen mandando a 
 
 ## Bitácora
 - 30-10: spec. El entorno de DeepFilterNet del lote del 28-10 no aparece; se reinstala en `montar-reels/.venv`.
+- 30-10, fase 1 hecha: `motor/preparar.py <n> <toma>`, con `preparar_voz.py` para una toma suelta y `transcribir_toma.py`.
+  - Entornos: DeepFilterNet en `~/.venvs/df`, con Python 3.11 y `soundfile` (en 3.12 no hay paquete para Windows y pide Rust). faster-whisper en `~/.venvs/fw`; el audio se le pasa ya decodificado porque su PyAV es incompatible.
+  - Control con la toma 75 preparada como pieza nueva:
+    - 97 palabras, 100 % iguales a las del lote;
+    - desfase de inicio: mediana 0,01 s y máximo 0,51 s;
+    - voz limpia de la misma duración (43,65 s);
+    - unos 36 s en total.
+  - Restos de la prueba borrados y `palabras.json` restaurado.
