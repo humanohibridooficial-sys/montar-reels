@@ -17,3 +17,7 @@ RENDER = _r('carpeta_render')            # p<n>/ de cada pieza; disco local, 13-
 SALIDA = _r('carpeta_salida')            # donde se deja el vídeo terminado
 PLANTILLA = MOTOR / 'plantilla'
 OM = _r('om')                            # bin/om de la skill huashu-motion
+# Los recursos con tu silueta (palabra detrás de ti, tú delante del clip) usan los scripts del repo y MediaPipe, que va en
+# su propio entorno: uv venv .venv && uv pip install --python .venv/Scripts/python.exe -r requirements.txt
+SCRIPTS = _r('scripts') if 'scripts' in _c else MOTOR.parent / 'scripts'
+PY_SILUETA = _r('python_silueta') if 'python_silueta' in _c else MOTOR.parent / '.venv/Scripts/python.exe'
