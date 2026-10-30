@@ -31,3 +31,11 @@ Colores de la marca (`estilo.md`): marino, dorado, y azul solo de filo.
 
 ## Bitácora
 - 30-10: spec. Rama `feat/motor-recursos-tanda2`, que sale de `feat/motor-revisor-y-recursos` (PR 50 sin mergear).
+- 30-10: los 7 escritos y vistos en vídeo (`comparativa-75/5-tu-motor-tanda-2.mp4`, prueba sobre la 75, ficha en el scratchpad).
+  - La 75 sin `extras` pasa igual.
+  - La prueba pasa la puerta (54 eventos) y la revisión del fichero (−16,4 LUFS, pico −2,0).
+  - Visto y corregido:
+    - La primera tarjeta entraba a los 12,9 s. Su cue "fuerte" cogía el primer "fuerte" de la pieza, y debía ser "fuerte#2".
+    - Puerta nueva: cada punto, palabra o tarjeta cae dentro de su recurso. Control: con la cue mala, falla.
+    - La línea del mapa cruzaba la cara. Ahora el mapa va en la franja de arriba (y 250-470) y la puerta lo trata como el titular (no se pueden pisar).
+  - Pendiente: pasarlo por `revisor-montaje` y que lo vea Luismi.

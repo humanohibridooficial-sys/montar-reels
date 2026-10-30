@@ -84,6 +84,8 @@ run('ffmpeg', '-v', 'error', '-y', '-i', str(P / 'assets/talk.mp4'), '-vn',
 
 # ---- 2. b-roll -----------------------------------------------------------------------------------------
 B = list(F.get('broll', [])) + [it for it in F.get('panel', {}).get('broll', [])]
+B += [{'id': f'x{i}-{k}', 'file': c[1], 'ss': c[2] if len(c) > 2 else 0}   # clips de la columna de tarjetas
+      for i, x in enumerate(F.get('extras', [])) if x['tipo'] == 'tarjetas' for k, c in enumerate(x['clips'])]
 for b in B:
     f = CONTENIDO / b['file']
     trc = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=color_transfer',
@@ -164,12 +166,18 @@ if PN:
 # congelado {texto, destello} · detras {texto, color, y}. Todos llevan in y out.
 # ("delante", tú recortado sobre el clip a pantalla completa, se quitó el 30-10: Luismi, "da mal".)
 # El "in" es la palabra que dice el rótulo, no la frase: la puerta del plan falla si entra a destiempo.
+# Segunda tanda (30-10): lista {titulo, items [[cue, texto con **clave**]]} · pildora {palabras [[cue, palabra]]} ·
+# pizarra {jugadores [[cue, x, y]] (0-1 del campo)} · mapa {palabras [[cue, palabra]]} · tarjetas {lado izq|der,
+# clips [[cue, file, ss]]} · barrido {in; out opcional} · logo {texto}.
 e = html.escape
 EXTRAS, XHTML, XTALK = [], [], []
 for i, x in enumerate(F.get('extras', [])):
-    t0, t1 = cue(x['in']), cue(x['out'])
+    t0 = cue(x['in'])
+    t1 = cue(x['out']) if 'out' in x else round(t0 + 0.4, 3)
     tipo = x['tipo']
-    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color', 'texto')}, 'in': t0, 'out': t1})
+    subs = [[cue(c[0])] + list(c[1:]) for c in x.get('items') or x.get('palabras') or x.get('clips') or x.get('jugadores') or []]
+    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color', 'texto')}, 'in': t0, 'out': t1,
+                   'items': [c[0] for c in subs]})
     pista = f'data-start="{t0}" data-duration="{round(t1 - t0, 3)}" data-media-start="0" data-track-index="{40 + i}" muted playsinline'
     if tipo == 'tinte':
         XHTML.append(f'<div class="tinte {x.get("color", "rojo")}" id="x-{i}"></div>')
@@ -210,6 +218,38 @@ for i, x in enumerate(F.get('extras', [])):
         run(str(PY_SILUETA), str(SCRIPTS / 'palabra_detras.py'), str(P / 'assets/talk.mp4'), str(t0), str(t1), x['texto'].upper(),
             str(P / f'assets/x-{i}.mp4'), x.get('color', '#E0B83C'), str(x.get('y', 580)))   # 30-10: a 430 nada la tapaba
         XTALK.append(f'<div class="tile" id="x-{i}"><video src="assets/x-{i}.mp4" {pista}></video></div>')
+    elif tipo == 'lista':   # puntos sobre el propio plano, cada uno al nombrarlo
+        XHTML.append(f'<div class="lst" id="x-{i}">' + (f'<div class="lt">{e(x["titulo"])}</div>' if x.get('titulo') else '')
+                     + ''.join(f'<div class="li"><i></i><span>{re.sub(r"[*][*](.+?)[*][*]", r"<b>\1</b>", e(c[1]))}</span></div>' for c in subs) + '</div>')
+    elif tipo == 'pildora':   # una palabra en la píldora, y cambia con cada una que dice
+        XHTML.append(f'<div class="pil" id="x-{i}">' + ''.join(f'<span class="pw">{e(c[1])}</span>' for c in subs) + '</div>')
+    elif tipo == 'pizarra':   # campo que se levanta sobre la cabeza; los jugadores salen uno a uno
+        js = subs or [[round(t0 + 0.6 + k * 0.25, 3), px, py] for k, (px, py) in enumerate([(.2, .5), (.42, .28), (.42, .72), (.66, .4), (.82, .62)])]
+        x_ = EXTRAS[-1]; x_['items'] = [c[0] for c in js]
+        XHTML.append(f'<div class="piz" id="x-{i}"><div class="pz3"><svg viewBox="0 0 600 400">'
+                     '<rect x="6" y="6" width="588" height="388" rx="18" class="pc"/><line x1="300" y1="6" x2="300" y2="394" class="pl"/>'
+                     '<circle cx="300" cy="200" r="54" class="pl"/><rect x="6" y="110" width="82" height="180" class="pl"/>'
+                     '<rect x="512" y="110" width="82" height="180" class="pl"/>'
+                     + ''.join(f'<circle class="jg" cx="{round(c[1] * 600)}" cy="{round(c[2] * 400)}" r="16"/>' for c in js) + '</svg></div></div>')
+    elif tipo == 'mapa':   # palabras en zigzag por encima de la cabeza y una línea discontinua que las va uniendo
+        # 30-10: a los lados de la cara, la línea la cruzaba; arriba (y 250-470) va por encima de la cabeza (22-33 % de alto)
+        pos = [(230 if k % 2 == 0 else 850, 250 + k * round(220 / max(1, len(subs) - 1))) for k in range(len(subs))]
+        largos = [((pos[k + 1][0] - pos[k][0]) ** 2 + (pos[k + 1][1] - pos[k][1]) ** 2) ** 0.5 for k in range(len(pos) - 1)]
+        tot = sum(largos) or 1
+        fr = [round(1 - sum(largos[:k]) / tot, 4) for k in range(len(pos))]   # dashoffset al decir la palabra k
+        d = 'M' + ' L'.join(f'{px} {py + 34}' for px, py in pos)
+        XHTML.append(f'<div class="mapa" id="x-{i}" data-f=\'{json.dumps(fr)}\'><svg viewBox="0 0 1080 1920"><defs><mask id="mm-{i}">'
+                     f'<path d="{d}" class="mk" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/></mask></defs>'
+                     f'<path d="{d}" class="ml" mask="url(#mm-{i})"/></svg>'
+                     + ''.join(f'<div class="mw" style="left:{px}px;top:{py}px">{e(c[1])}</div>' for (px, py), c in zip(pos, subs)) + '</div>')
+    elif tipo == 'tarjetas':   # columna de clips verticales a un lado; él sigue hablando en el centro
+        XHTML.append(f'<div class="tcol {x.get("lado", "der")}" id="x-{i}">' + ''.join(
+            f'<div class="tc"><video src="assets/broll/x{i}-{k}.mp4" data-start="{c[0]}" data-duration="{round(t1 - c[0], 3)}" '
+            f'data-media-start="0" data-track-index="{60 + i * 5 + k}" muted playsinline></video></div>' for k, c in enumerate(subs)) + '</div>')
+    elif tipo == 'barrido':   # no lleva capa: anima el plano a cámara
+        pass
+    elif tipo == 'logo':   # el nombre del programa se revela con un borde de luz
+        XHTML.append(f'<div class="logo" id="x-{i}"><span>{e(x.get("texto", "FF360"))}</span><b class="ch"></b></div>')
     else:
         raise KeyError(f'extra {i}: el tipo {tipo!r} no existe')
 
@@ -272,7 +312,7 @@ for a_, b_ in [
     ("  tl.fromTo(tc, { opacity: 0, y: 20 }", "  if (PLAN.tachado) tl.fromTo(tc, { opacity: 0, y: 20 }"),
     ("  const ventanas = [[PLAN.tachado[0], PLAN.tachado[2]], [PLAN.num[0], PLAN.num[1]], [p0, p3]];",
      "  const ventanas = [PLAN.tachado && [PLAN.tachado[0], PLAN.tachado[2]], PLAN.num, PN.length && [PN[0], PN[PN.length - 1]],\n"
-     "    ...PLAN.extras.filter((x) => x.tipo === 'cortinilla').map((x) => [x.in, x.out])].filter(Boolean);"),
+     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo'].includes(x.tipo)).map((x) => [x.in, x.out])].filter(Boolean);"),
     ("  OM.music({ style: 'cinematic', drop: PLAN.num[0], ending: 'button' });\n", ""),
 ]:
     assert a_ in JS, a_[:60]

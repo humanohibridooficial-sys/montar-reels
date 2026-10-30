@@ -26,6 +26,7 @@ def eventos():
     ev += [(p['tachado'][0], 'tachado')] if p['tachado'] else []
     ev += [(p['follow'][0], 'seguir')]
     ev += [(x['in'], x['tipo']) for x in p.get('extras', [])]
+    ev += [(t, x['tipo']) for x in p.get('extras', []) for t in x.get('items', [])]   # cada punto de una lista cuenta
     ev += [(w['start'], 'clave') for w in words['words'] if norm(w['word']) in p['claves']]
     return sorted(ev)
 
@@ -48,7 +49,7 @@ if p['tachado'] and not p['tachado'][0] < p['tachado'][1] < p['tachado'][2]: fal
 if p['panel'] and p['panel'] != sorted(p['panel']): fallos.append('panel desordenado')
 # Dos cosas en la franja de arriba a la vez se pisan: el titular, el tuit y el contador comparten sitio.
 for x in p.get('extras', []):
-    if x['tipo'] in ('tuit', 'contador'):
+    if x['tipo'] in ('tuit', 'contador', 'pizarra', 'mapa'):
         for t in p['tops']:
             if x['in'] < t[1] and t[0] < x['out']:
                 fallos.append(f"{max(x['in'], t[0]):.1f} s: el {x['tipo']} se pisa con el titular \"{t[2]}\"")
@@ -66,6 +67,11 @@ for x in p.get('extras', []):
             if abs(d) > 0.25:
                 fallos.append(f"{x['in']:.1f} s: {x['tipo']} \"{x['texto']}\" entra {abs(d):.1f} s {'antes' if d > 0 else 'después'} de \"{pal}\"")
             break
+# Cada punto, palabra o tarjeta cae dentro de su recurso (30-10: una cue "fuerte" cogió el primer "fuerte" de la pieza).
+for x in p.get('extras', []):
+    for t in x.get('items', []):
+        if not x['in'] - 0.05 <= t <= x['out']:
+            fallos.append(f"{t:.1f} s: un punto de {x['tipo']} cae fuera de su tramo ({x['in']:.1f}-{x['out']:.1f} s); ¿falta un #2 en la cue?")
 for x in p.get('extras', []):
     if not 0.4 < x['out'] - x['in'] < 9: fallos.append(f"{x['in']:.1f} s: {x['tipo']} dura {x['out'] - x['in']:.1f} s (0,4-9)")
 
