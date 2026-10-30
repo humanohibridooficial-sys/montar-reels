@@ -24,7 +24,7 @@ CSS = '''
   #tachado b { position: absolute; left: -4%; right: -4%; top: 46%; height: 14px; border-radius: 7px; background: #E5322D; transform: scaleX(0); transform-origin: 0 50%; }
   #leak { position: absolute; inset: -10%; opacity: 0; z-index: 9; pointer-events: none; mix-blend-mode: screen; filter: blur(30px);
     background: radial-gradient(circle at 30% 38%, #fffbe6 0%, #ffe08a 30%, #ffc94400 62%), radial-gradient(circle at 78% 72%, #ffffff 0%, #fff0b8 28%, #ffffff00 60%), #fff3c4; }
-  #follow { position: absolute; left: 50%; top: 250px; width: 780px; margin-left: -390px; opacity: 0; z-index: 8; display: flex; align-items: center; gap: 24px;
+  #follow { position: absolute; left: 50%; top: 300px; width: 780px; margin-left: -390px; opacity: 0; z-index: 8; transform-origin: 50% 0; display: flex; align-items: center; gap: 24px;
     background: #fff; border-radius: 30px; padding: 24px 28px; box-shadow: 0 20px 50px #0006; box-sizing: border-box; }
   #follow .av { width: 96px; height: 96px; border-radius: 50%; background: #070D16; display: grid; place-items: center; font: 400 40px/1 Anton, sans-serif; color: #E0B83C; flex: none; }
   #follow .nm { font: 800 40px/1.1 Inter, sans-serif; color: #111; }
@@ -35,7 +35,8 @@ CSS = '''
   #follow .b1 { background: #2E6BFF; color: #fff; }
   #follow .b2 { background: #EFEFEF; color: #111; opacity: 0; }
   .tile.split { inset: auto; left: 0; top: 0; width: 1080px; height: 820px; -webkit-mask-image: linear-gradient(#000 82%, #0000); }
-  #tops { position: absolute; left: 6%; right: 6%; top: 210px; pointer-events: none; z-index: 7; }
+  /* 300 px y no 210: KAIZEN §1 pide libre el 15 % de arriba (288 px). Revisor 30-10, 41b */
+  #tops { position: absolute; left: 6%; right: 6%; top: 300px; pointer-events: none; z-index: 7; }
   #tops .tp { position: absolute; left: 0; right: 0; top: 0; text-align: center; opacity: 0; text-shadow: 0 4px 18px #000c, 0 0 3px #0009; }
   #tops .t1 { font: 800 62px/1.1 Inter, sans-serif; color: #fff; }
   #tops .t2 { font: 900 112px/1 Inter, sans-serif; color: #E0B83C; text-transform: uppercase; -webkit-text-stroke: 2px #070D16; paint-order: stroke fill; }
@@ -44,7 +45,7 @@ CSS = '''
   /* sin z-index: va por orden debajo de titulares y subtítulos, que no se tiñen (30-10: con z-index 2 el dorado salía naranja) */
   .tinte { position: absolute; inset: 0; opacity: 0; mix-blend-mode: color; pointer-events: none; }
   .tinte.rojo { background: #E5322D; } .tinte.azul { background: #2E6BFF; } .tinte.verde { background: #2FA35B; }
-  .tuit { position: absolute; left: 50%; top: 200px; width: 860px; margin-left: -430px; opacity: 0; z-index: 8; box-sizing: border-box;
+  .tuit { position: absolute; left: 50%; top: 300px; width: 860px; margin-left: -430px; opacity: 0; z-index: 8; box-sizing: border-box;
     background: #070D16; border: 3px solid #2E6BFF; border-radius: 30px; padding: 24px 34px; box-shadow: 0 24px 60px #000a; }
   .tuit .cab { display: flex; align-items: center; gap: 20px; margin-bottom: 14px; }
   .tuit .av { width: 84px; height: 84px; border-radius: 50%; background: #1B2638; flex: none; display: grid; place-items: center;
@@ -264,7 +265,7 @@ JS = '''
   });
   // Tarjeta de perfil: entra tras el destello y "Seguir" se pulsa en "sígueme".
   const fw = $id('follow');
-  tl.fromTo(fw, { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 0.35, ease: 'back.out(1.8)', immediateRender: false }, PLAN.follow[0])
+  tl.fromTo(fw, { opacity: 0, y: -40, scale: 0.85 }, { opacity: 1, y: 0, scale: 0.85, duration: 0.35, ease: 'back.out(1.8)', immediateRender: false }, PLAN.follow[0])
     .fromTo(fw.querySelector('.b1'), { scale: 1 }, { scale: 0.88, duration: 0.08, yoyo: true, repeat: 1, immediateRender: false }, PLAN.follow[1])
     .set(fw.querySelector('.b1'), { opacity: 0 }, PLAN.follow[1] + 0.16).set(fw.querySelector('.b2'), { opacity: 1 }, PLAN.follow[1] + 0.16);
   OM.sfx('pop', PLAN.follow[1] + 0.05, { gain: 0.5, note: 5 });

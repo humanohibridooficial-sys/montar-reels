@@ -8,6 +8,7 @@ import json, os, re, subprocess, sys, unicodedata, urllib.parse, urllib.request
 from pathlib import Path
 
 from rutas import CONTENIDO, REUTILIZABLES, MOTOR
+sys.stdout.reconfigure(encoding='utf-8')   # nombres de autor como "Oğuzhan": la consola de Windows usa cp1252
 
 DEST = REUTILIZABLES / 'b-roll-pexels'
 sin_tildes = lambda s: unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().lower()
