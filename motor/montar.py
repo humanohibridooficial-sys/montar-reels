@@ -298,7 +298,10 @@ plan = {
     'leaks': [cue(c) for c in F.get('leaks', [])] + ([panel[0], panel[-1]] if panel else []),
     'num': [cue(NU['in']), cue(NU['out']) + 0.3] if NU else None,
     'tachado': [cue(TC['in']), cue(TC['raya']), cue(TC['out'])] if TC else None,
-    'follow': [max(fol - 1.6, (panel[-1] + 0.15) if panel else 0), fol],
+    # La tarjeta entra sola 0,8 s antes de "sígueme" y después de lo que tape la pantalla (revisor 30-10: a 1,6 s la
+    # destapaba la cortinilla al salir y se quedaba 3,4 s).
+    'follow': [max([fol - 0.8, (panel[-1] + 0.15) if panel else 0]
+                   + [x['out'] + 0.1 for x in EXTRAS if x['tipo'] in ('cortinilla', 'logo', 'mapa', 'lista') and x['out'] <= fol]), fol],
     'claves': [norm(x) for x in F.get('claves', [])], 'serif': [norm(x) for x in F.get('serif', [])],
     'tops': [[cue(t[0]), cue(t[1]), t[2], t[3], t[4]] for t in F.get('tops', [])],
     'extras': EXTRAS,
