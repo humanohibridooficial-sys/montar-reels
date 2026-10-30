@@ -39,6 +39,18 @@ archivado (30-10): no escribas specs de `scripts/montar_reel.py`.
    dónde cabe cada cosa. Si la barbilla queda por debajo del 60 %, pocos textos y cortos, y dilo remitiendo a
    `{{REPO}}/docs/como-grabar.html`. Nada tapa la cara.
 
+## El b-roll: qué coger según lo que dice
+Cada b-roll enseña lo que dice ESA frase, no el tema en general ("te cambian en el 70" -> un jugador saliendo
+cansado o el banquillo; "lo que comes el sábado" -> un plato de pasta, no "comida"). Por orden:
+1. **La biblioteca**: `python {{REPO}}/motor/broll.py biblioteca "palabras de la frase"`. Los clips se llaman como la
+   frase que acompañaron (`03_en-el-70-no-llegas_...`); usa uno solo si de verdad enseña tu frase.
+2. **Pexels**, si en la biblioteca no hay: `python {{REPO}}/motor/broll.py pexels "query concreta en inglés" <nombre-de-la-frase>`.
+   Baja hasta 4 vídeos verticales a `00-PIEZAS-REUTILIZABLES/b-roll-pexels/` con una hoja de 3 fotogramas cada uno.
+3. **Mira la hoja con Read antes de usarlo.** Descártalo si salen niños pequeños (el avatar es juvenil de 16-18 y sus
+   padres), logos o marcas visibles, o si no se ve lo que dices. Mejor sin b-roll que con uno que no cuenta la frase.
+Solo Pexels o la biblioteca (todo puede acabar en anuncio): nada de TikTok, memes, partidos de televisión ni
+jugadores famosos. No repitas el mismo clip que llevó la versión anterior de la pieza si la hay.
+
 ## La ficha (`carpeta_datos/fichas/<n>.json`)
 Una **cue** es la palabra tal como sale en el montaje: `"palabra"`, `"palabra#2"` (la segunda vez que suena EN
 EL MONTAJE), `"palabra#2>"` (su final) o un número (segundo del montaje). La entrada de un rótulo es la palabra
