@@ -40,7 +40,8 @@ CSS = '''
   #tops .t2 { font: 900 112px/1 Inter, sans-serif; color: #E0B83C; text-transform: uppercase; -webkit-text-stroke: 2px #070D16; paint-order: stroke fill; }
   #tops .t2.s { font: italic 600 124px/1 Playfair, serif; text-transform: none; margin-top: 16px; }
   /* ---- recursos nuevos (30-10), sacados de los referentes de mi-estilo/recursos.md y vestidos con la marca ---- */
-  .tinte { position: absolute; inset: 0; opacity: 0; z-index: 2; mix-blend-mode: color; pointer-events: none; }
+  /* sin z-index: va por orden debajo de titulares y subtítulos, que no se tiñen (30-10: con z-index 2 el dorado salía naranja) */
+  .tinte { position: absolute; inset: 0; opacity: 0; mix-blend-mode: color; pointer-events: none; }
   .tinte.rojo { background: #E5322D; } .tinte.azul { background: #2E6BFF; } .tinte.verde { background: #2FA35B; }
   .tuit { position: absolute; left: 50%; top: 300px; width: 880px; margin-left: -440px; opacity: 0; z-index: 8; box-sizing: border-box;
     background: #070D16; border: 3px solid #2E6BFF; border-radius: 34px; padding: 34px 40px; box-shadow: 0 24px 60px #000a; }

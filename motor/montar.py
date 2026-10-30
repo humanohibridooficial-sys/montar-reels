@@ -187,14 +187,15 @@ for i, x in enumerate(F.get('extras', [])):
             r = x.get('r', 130)
             dib = f'<ellipse class="tr" pathLength="1" stroke-dasharray="1" cx="{cx}" cy="{cy}" rx="{r}" ry="{round(r * 0.8)}" transform="rotate(-8 {cx} {cy})"/>'
             ox, oy = cx, cy - r - 30
-        else:   # la flecha llega en curva desde el lado con más sitio y se para antes del punto
-            sx = -1 if cx > 540 else 1
-            ox, oy = cx + sx * 300, cy - 300
-            ex, ey = cx + sx * 45, cy - 45
-            dib = (f'<path class="tr" pathLength="1" stroke-dasharray="1" d="M{ox} {oy} Q{cx + sx * 260} {cy - 40} {ex} {ey}"/>'
-                   f'<path class="cb" d="M{ex - sx * 8} {ey + 8} L{ex + sx * 52} {ey - 18} L{ex + sx * 18} {ey - 52} Z"/>')
+        else:   # la flecha entra casi en horizontal desde el lado con más sitio (30-10: en diagonal desde arriba cruzaba la cara)
+            sx = 1 if cx > 540 else -1
+            ox, oy = cx + sx * 340, cy + 40
+            ex, ey = cx + sx * 50, cy + 6
+            dib = (f'<path class="tr" pathLength="1" stroke-dasharray="1" d="M{ox} {oy} Q{cx + sx * 190} {cy + 90} {ex} {ey}"/>'
+                   f'<path class="cb" d="M{ex - sx * 6} {ey} L{ex + sx * 44} {ey - 30} L{ex + sx * 40} {ey + 26} Z"/>')
         if x.get('texto'):
             w_ = 50 + 36 * len(x['texto'])
+            ox = min(max(ox, w_ // 2 + 30), 1080 - w_ // 2 - 30)   # el rótulo nunca se sale de la pantalla
             dib += (f'<rect class="cb" x="{ox - w_ // 2}" y="{oy - 100}" width="{w_}" height="86" rx="14"/>'
                     f'<text x="{ox}" y="{oy - 33}" text-anchor="middle">{e(x["texto"].upper())}</text>')
         XHTML.append(f'<svg class="marca" id="x-{i}" viewBox="0 0 1080 1920">{dib}</svg>')
