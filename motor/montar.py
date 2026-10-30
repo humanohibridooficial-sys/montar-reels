@@ -40,6 +40,19 @@ _sd = subprocess.run(['ffmpeg', '-hide_banner', '-i', str(VOZ / f'{N}-limpio.wav
                       '-f', 'null', '-'], capture_output=True, text=True).stderr
 PAUSAS = [(float(a), float(b)) for a, b in re.findall(r'silence_start: ([\d.]+)[\s\S]*?silence_end: ([\d.]+)', _sd)] if F.get('apretar', True) else []
 KEEP = recortar(F['keep'], F.get('quitar', []), PAUSAS)
+# Un tramo no acaba a mitad de palabra (30-10: el 76 cortaba "banquillo" en 46,15 y la voz seguía hasta 46,31).
+# Si al final del tramo aún hay voz, se alarga hasta el silencio siguiente + 0,08 s (o la mitad del silencio, si es corto, para no
+# coger el arranque de la palabra de después): como mucho 0,4 s y sin pisar el tramo de después.
+_sd = subprocess.run(['ffmpeg', '-hide_banner', '-i', str(VOZ / f'{N}-limpio.wav'), '-af', 'silencedetect=noise=-38dB:d=0.06',
+                      '-f', 'null', '-'], capture_output=True, text=True).stderr
+_sil = [(float(a), float(b)) for a, b in re.findall(r'silence_start: ([\d.]+)[\s\S]*?silence_end: ([\d.]+)', _sd)]
+for i, (a, b) in enumerate(KEEP):
+    if any(s <= b <= e for s, e in _sil):
+        continue
+    sig = [(s, e) for s, e in _sil if b < s <= b + 0.4]
+    tope = KEEP[i + 1][0] if i + 1 < len(KEEP) and KEEP[i + 1][0] > b else float('inf')
+    if sig:
+        KEEP[i][1] = round(min(sig[0][0] + 0.08, (sig[0][0] + sig[0][1]) / 2, tope), 3)
 # El "sígueme" no se puede cortar: el último tramo acaba 0,15 s después de que acabe la voz de verdad.
 _sd = subprocess.run(['ffmpeg', '-hide_banner', '-i', str(VOZ / f'{N}-limpio.wav'), '-af', 'silencedetect=noise=-38dB:d=0.3',
                       '-f', 'null', '-'], capture_output=True, text=True).stderr
@@ -79,7 +92,10 @@ run('ffmpeg', '-v', 'error', '-y', '-i', str(SRC), '-i', str(VOZ / f'{N}-limpio.
     '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-crf', '17', '-preset', 'medium', '-pix_fmt', 'yuv420p',
     '-c:a', 'aac', '-b:a', '192k', str(P / 'assets/talk.mp4'))
 run('ffmpeg', '-v', 'error', '-y', '-i', str(P / 'assets/talk.mp4'), '-vn',
-    '-af', 'highpass=f=80,lowpass=f=14000,acompressor=threshold=-20dB:ratio=2:attack=10:release=120,deesser',
+    # 30-10: las tomas del DJI saturan (27 golpes en el 76) y la voz cae 20 dB por encima de 2,5 kHz (suena apagada):
+    # se reconstruyen los picos recortados, se quita algo de barro y se le devuelve presencia y aire antes del de-esser.
+    '-af', 'adeclip,highpass=f=80,equalizer=f=250:t=q:w=1:g=-2,equalizer=f=3500:t=q:w=1.2:g=4,highshelf=f=7000:g=3,'
+           'lowpass=f=14000,acompressor=threshold=-20dB:ratio=2:attack=10:release=120,deesser',
     '-ar', '48000', '-ac', '2', '-c:a', 'pcm_s16le', str(P / 'assets/voice.wav'))
 
 # ---- 2. b-roll -----------------------------------------------------------------------------------------
