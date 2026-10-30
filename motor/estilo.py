@@ -43,17 +43,17 @@ CSS = '''
   /* sin z-index: va por orden debajo de titulares y subtítulos, que no se tiñen (30-10: con z-index 2 el dorado salía naranja) */
   .tinte { position: absolute; inset: 0; opacity: 0; mix-blend-mode: color; pointer-events: none; }
   .tinte.rojo { background: #E5322D; } .tinte.azul { background: #2E6BFF; } .tinte.verde { background: #2FA35B; }
-  .tuit { position: absolute; left: 50%; top: 300px; width: 880px; margin-left: -440px; opacity: 0; z-index: 8; box-sizing: border-box;
-    background: #070D16; border: 3px solid #2E6BFF; border-radius: 34px; padding: 34px 40px; box-shadow: 0 24px 60px #000a; }
-  .tuit .cab { display: flex; align-items: center; gap: 22px; margin-bottom: 22px; }
+  .tuit { position: absolute; left: 50%; top: 200px; width: 860px; margin-left: -430px; opacity: 0; z-index: 8; box-sizing: border-box;
+    background: #070D16; border: 3px solid #2E6BFF; border-radius: 30px; padding: 24px 34px; box-shadow: 0 24px 60px #000a; }
+  .tuit .cab { display: flex; align-items: center; gap: 20px; margin-bottom: 14px; }
   .tuit .av { width: 84px; height: 84px; border-radius: 50%; background: #1B2638; flex: none; display: grid; place-items: center;
     font: 400 40px/1 Anton, sans-serif; color: #8A96A8; }
   .tuit .nm { font: 800 40px/1.1 Inter, sans-serif; color: #fff; }
   .tuit .hn { font: 500 30px/1.2 Inter, sans-serif; color: #8A96A8; }
-  .tuit .tx { font: 600 50px/1.25 Inter, sans-serif; color: #fff; }
+  .tuit .tx { font: 600 44px/1.22 Inter, sans-serif; color: #fff; }
   .tuit .tx b { color: #E0B83C; font-weight: 800; }
   .cort { position: absolute; inset: 0; z-index: 9; opacity: 0; overflow: hidden; pointer-events: none; }
-  .cort .bd { position: absolute; inset: 0; background: #2E6BFF; }
+  .cort .bd { position: absolute; inset: 0; background: #0E1F3A; border-right: 18px solid #2E6BFF; }   /* estilo.md: azul solo de filo */
   .cort .ws { position: absolute; left: 6%; right: 6%; top: 50%; transform: translateY(-50%); text-align: center; }
   .cort .w { display: block; font: 400 170px/0.98 Anton, sans-serif; color: #fff; text-transform: uppercase; opacity: 0; }
   .cort .w.k { color: #E0B83C; -webkit-text-stroke: 3px #070D16; paint-order: stroke fill; }
@@ -170,9 +170,9 @@ JS = '''
       sale(el);
     } else if (x.tipo === 'cortinilla') {   // banda que barre, palabras que caen una a una, y la banda se va
       const bd = el.querySelector('.bd'), ws = el.querySelectorAll('.w');
-      tl.set(el, { opacity: 1 }, t0).fromTo(bd, { xPercent: -101 }, { xPercent: 0, duration: 0.22, ease: 'power3.in', immediateRender: false }, t0);
-      const paso = Math.min(0.2, (t1 - t0 - 0.6) / Math.max(1, ws.length));
-      ws.forEach((w, k) => tl.fromTo(w, { opacity: 0, y: 50, scale: 1.25 }, { opacity: 1, y: 0, scale: 1, duration: 0.18, ease: 'back.out(2)', immediateRender: false }, t0 + 0.22 + k * paso));
+      tl.set(el, { opacity: 1 }, t0 - 0.22).fromTo(bd, { xPercent: -101 }, { xPercent: 0, duration: 0.22, ease: 'power3.in', immediateRender: false }, t0 - 0.22);
+      const paso = Math.max(0.08, Math.min(0.2, (t1 - t0 - 0.35) / Math.max(1, ws.length)));
+      ws.forEach((w, k) => tl.fromTo(w, { opacity: 0, y: 50, scale: 1.25 }, { opacity: 1, y: 0, scale: 1, duration: 0.16, ease: 'back.out(2)', immediateRender: false }, t0 + k * paso));
       tl.to(ws, { opacity: 0, duration: 0.1 }, t1 - 0.24).to(bd, { xPercent: 101, duration: 0.22, ease: 'power3.in' }, t1 - 0.22);
       sale(el);
     } else if (x.tipo === 'marca') {   // el trazo se dibuja; en la flecha, después la punta y el rótulo
@@ -184,12 +184,12 @@ JS = '''
       const img = $id('xi-' + i), fl = $id('xf-' + i);
       tl.set(img, { opacity: 1, filter: 'saturate(0.55) contrast(1.08)' }, t0)
         .fromTo(img, { scale: 1 }, { scale: 1.05, duration: t1 - t0, ease: 'none', immediateRender: false }, t0)
-        .fromTo(fl, { opacity: 0.85 }, { opacity: 0, duration: 0.3, ease: 'power2.out', immediateRender: false }, t0);
+;
+      if (fl) tl.fromTo(fl, { opacity: 0.85 }, { opacity: 0, duration: 0.3, ease: 'power2.out', immediateRender: false }, t0);
       if (el) { tl.fromTo(el, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(2.2)', immediateRender: false }, t0 + 0.12); sale(el); }
       sale(img);
-    } else if (x.tipo === 'detras' || x.tipo === 'delante') {
+    } else if (x.tipo === 'detras') {
       tl.set(el, { opacity: 1 }, t0);
-      if (x.tipo === 'delante') tl.fromTo(el, { scale: 1.06 }, { scale: 1, duration: 0.35, ease: 'power3.out', immediateRender: false }, t0);
       sale(el);
     }
   });

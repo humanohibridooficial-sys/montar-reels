@@ -44,7 +44,6 @@ Tomados de los referentes y aún sin pintar en el motor:
 | `marca` | Flecha o círculo sobre un punto del plano | quique Dd7B s8, Carla Dd8pk s43 |
 | `congelado` | La imagen se para con una anotación mientras sigue la voz | yassin DcTM |
 | `detras` | Palabra gigante detrás de ti (reutiliza `scripts/palabra_detras.py`) | Carla DeMG s32 |
-| `delante` | Tú recortado delante del clip (reutiliza `scripts/delante_del_clip.py`) | quique Dd7B, DeH3 |
 
 Cada recurso nuevo:
 - lleva su efecto en `mezcla.py`;
@@ -90,3 +89,18 @@ dorada grande. "Juegas en una" salía pálido porque el fotograma estaba a mitad
   - El render lo paró Claude Code por falta de memoria del sistema. La ficha 75 se restauró a mano (md5 igual que la original).
   - MediaPipe se instaló en `montar-reels/.venv` (requirements.txt). `motor/config.json` acepta `scripts` y `python_silueta`.
   - Siguiente paso: relanzar la prueba con la memoria libre, mirar la hoja y los fotogramas de cada recurso, y pasarla por `revisor-montaje`.
+- 30-10, parte B verificada en vídeo (`comparativa-75/4-tu-motor-con-recursos-nuevos.mp4`).
+  - Primera revisión con `revisor-montaje`: "no se puede enseñar". Del motor se corrigió:
+    - el tinte teñía los subtítulos;
+    - la flecha cruzaba la cara;
+    - la palabra detrás no quedaba detrás;
+    - el tuit tapaba la cabeza y quitaba el subtítulo;
+    - la cortinilla iba en azul (estilo.md: solo filo), ahora va en marino;
+    - el congelado llevaba destello por defecto.
+  - Puerta nueva:
+    - un rótulo que dice una palabra de la voz entra con ella (±0,25 s);
+    - un congelado de más de 1 s falla.
+
+    Control: la ficha vieja da 5 avisos a destiempo y el congelado de 2,3 s.
+  - Luismi (30-10): "está muy bien salvo dos cosas". Se quita `delante` ("da mal"). Pendiente: la tarjeta de seguir con su perfil real de Instagram (espera su captura).
+  - Visto en la revisión y anterior a esta rama (no se toca sin preguntar): el tachado de la 75 dura 5 s y quita los subtítulos de esa frase; los titulares de arriba quedan a un 11 % de altura.

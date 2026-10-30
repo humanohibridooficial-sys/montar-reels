@@ -161,13 +161,15 @@ if PN:
 # ---- 5. recursos nuevos (30-10), cada uno un elemento de "extras" en la ficha ----------------------------------
 # tinte {color: rojo|azul|verde} · tuit {nombre, usuario, texto con **clave**} · cortinilla {texto: 2-3 palabras, la
 # última en dorado} · contador {texto, de} · marca {forma: circulo|flecha, x, y (0-1 de la pantalla), texto} ·
-# congelado {texto} · detras {texto, color, y} · delante {file, ss, lado}. Todos llevan in y out.
+# congelado {texto, destello} · detras {texto, color, y}. Todos llevan in y out.
+# ("delante", tú recortado sobre el clip a pantalla completa, se quitó el 30-10: Luismi, "da mal".)
+# El "in" es la palabra que dice el rótulo, no la frase: la puerta del plan falla si entra a destiempo.
 e = html.escape
 EXTRAS, XHTML, XTALK = [], [], []
 for i, x in enumerate(F.get('extras', [])):
     t0, t1 = cue(x['in']), cue(x['out'])
     tipo = x['tipo']
-    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color')}, 'in': t0, 'out': t1})
+    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color', 'texto')}, 'in': t0, 'out': t1})
     pista = f'data-start="{t0}" data-duration="{round(t1 - t0, 3)}" data-media-start="0" data-track-index="{40 + i}" muted playsinline'
     if tipo == 'tinte':
         XHTML.append(f'<div class="tinte {x.get("color", "rojo")}" id="x-{i}"></div>')
@@ -202,15 +204,12 @@ for i, x in enumerate(F.get('extras', [])):
     elif tipo == 'congelado':
         run('ffmpeg', '-v', 'error', '-y', '-ss', str(t0), '-i', str(P / 'assets/talk.mp4'), '-frames:v', '1', '-q:v', '2', str(P / f'assets/x-{i}.jpg'))
         XTALK.append(f'<img class="frz" id="xi-{i}" src="assets/x-{i}.jpg">')
-        XHTML.append(f'<div class="flash" id="xf-{i}"></div>' + (f'<div class="frzt" id="x-{i}">{e(x["texto"])}</div>' if x.get('texto') else ''))
+        XHTML.append((f'<div class="flash" id="xf-{i}"></div>' if x.get('destello') else '')
+                     + (f'<div class="frzt" id="x-{i}">{e(x["texto"])}</div>' if x.get('texto') else ''))
     elif tipo == 'detras':   # palabra gigante entre el fondo y tu silueta: va dentro del marco de la toma y sigue sus reencuadres
         run(str(PY_SILUETA), str(SCRIPTS / 'palabra_detras.py'), str(P / 'assets/talk.mp4'), str(t0), str(t1), x['texto'].upper(),
-            str(P / f'assets/x-{i}.mp4'), x.get('color', '#E0B83C'), str(x.get('y', 430)))
+            str(P / f'assets/x-{i}.mp4'), x.get('color', '#E0B83C'), str(x.get('y', 580)))   # 30-10: a 430 nada la tapaba
         XTALK.append(f'<div class="tile" id="x-{i}"><video src="assets/x-{i}.mp4" {pista}></video></div>')
-    elif tipo == 'delante':   # tú recortado delante del clip del que hablas
-        run(str(PY_SILUETA), str(SCRIPTS / 'delante_del_clip.py'), str(P / 'assets/talk.mp4'), str(t0), str(t1), str(CONTENIDO / x['file']),
-            str(P / f'assets/x-{i}.mp4'), x.get('lado', 'centro'), 'auto', str(x.get('ss', 0)))
-        XHTML.append(f'<div class="tile" id="x-{i}" style="z-index:1"><video src="assets/x-{i}.mp4" {pista}></video></div>')
     else:
         raise KeyError(f'extra {i}: el tipo {tipo!r} no existe')
 
@@ -273,7 +272,7 @@ for a_, b_ in [
     ("  tl.fromTo(tc, { opacity: 0, y: 20 }", "  if (PLAN.tachado) tl.fromTo(tc, { opacity: 0, y: 20 }"),
     ("  const ventanas = [[PLAN.tachado[0], PLAN.tachado[2]], [PLAN.num[0], PLAN.num[1]], [p0, p3]];",
      "  const ventanas = [PLAN.tachado && [PLAN.tachado[0], PLAN.tachado[2]], PLAN.num, PN.length && [PN[0], PN[PN.length - 1]],\n"
-     "    ...PLAN.extras.filter((x) => ['tuit', 'cortinilla'].includes(x.tipo)).map((x) => [x.in, x.out])].filter(Boolean);"),
+     "    ...PLAN.extras.filter((x) => x.tipo === 'cortinilla').map((x) => [x.in, x.out])].filter(Boolean);"),
     ("  OM.music({ style: 'cinematic', drop: PLAN.num[0], ending: 'button' });\n", ""),
 ]:
     assert a_ in JS, a_[:60]

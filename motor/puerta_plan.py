@@ -52,6 +52,20 @@ for x in p.get('extras', []):
         for t in p['tops']:
             if x['in'] < t[1] and t[0] < x['out']:
                 fallos.append(f"{max(x['in'], t[0]):.1f} s: el {x['tipo']} se pisa con el titular \"{t[2]}\"")
+# Un rótulo que dice una palabra de la voz entra con ella (revisor 30-10: cuatro entraban 0,4-1,2 s antes).
+habladas = [(norm(w['word']), w['start']) for w in words['words']]
+for x in p.get('extras', []):
+    if x['tipo'] == 'congelado' and x['out'] - x['in'] > 1.0:
+        fallos.append(f"{x['in']:.1f} s: congelado de {x['out'] - x['in']:.1f} s; con más de 1 s el labio deja de ir con la voz")
+    if x['tipo'] == 'tuit':   # el tuit cita a otro: su texto no se dice en voz alta
+        continue
+    for pal in [norm(t) for t in str(x.get('texto', '')).split()][:3]:
+        cerca = [t for w, t in habladas if w == pal and x['in'] - 1.5 < t < x['out']]
+        if cerca:
+            d = min(cerca, key=lambda t: abs(t - x['in'])) - x['in']
+            if abs(d) > 0.25:
+                fallos.append(f"{x['in']:.1f} s: {x['tipo']} \"{x['texto']}\" entra {abs(d):.1f} s {'antes' if d > 0 else 'después'} de \"{pal}\"")
+            break
 for x in p.get('extras', []):
     if not 0.4 < x['out'] - x['in'] < 9: fallos.append(f"{x['in']:.1f} s: {x['tipo']} dura {x['out'] - x['in']:.1f} s (0,4-9)")
 
