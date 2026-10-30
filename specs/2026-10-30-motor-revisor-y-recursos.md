@@ -51,12 +51,12 @@ Cada recurso nuevo:
 - cuenta como evento visual en la puerta del plan;
 - oculta los subtítulos si se pisan.
 
-Además, los subtítulos dejan de salir con tamaños distintos de un bloque a otro (visto en la 75: "Juegas en una",
-"con el").
+Los subtítulos NO se tocan. El "tamaño distinto" del 30-10 es la receta de Carla: blanco pequeño y la clave
+dorada grande. "Juegas en una" salía pálido porque el fotograma estaba a mitad de fundido.
 
 ## Hecho cuando
-- La 75 se monta con `sh motor/montar.sh 75` igual que antes (control: SSIM ≥ 0,99 contra
-  `comparativa-75/1-tu-motor.mp4`) y la revisión sale `ok`.
+- La 75 se monta con `sh motor/montar.sh 75` y la revisión sale `ok`. Solo cambian los reencuadres:
+  el forzado pasa de 3,2 a 2,6 s para no dejar huecos.
 - **Control positivo** de cada comprobación: una ficha saboteada la hace fallar. Casos:
   - un hueco de 5 s sin evento;
   - un tramo de silencio metido a mano;
@@ -72,3 +72,14 @@ Además, los subtítulos dejan de salir con tamaños distintos de un bloque a ot
 
 ## Bitácora
 - 30-10: spec escrito. Rama `feat/motor-revisor-y-recursos`, worktree `montar-reels-motor`.
+- 30-10, parte A hecha y verificada:
+  - Puerta del plan.
+    - Pasó las 6 piezas probadas (75, 27, 33, 40, 56 y m3), después de corregir el reencuadre.
+    - Antes, 4 de 5 tenían huecos de 3,1 a 4,5 s. Venían de palabras que whisper estira a 2 s, y ahora el reencuadre entra a mitad de palabra.
+    - Controles: un hueco de 10,5 s saboteado la hace fallar. La 33 detrás de la 27 falla por copia: mismo gancho y 100 % de los recursos.
+  - Revisión del fichero.
+    - Controles con un mp4 saboteado (+6 dB, negro a los 5 s y silencio a los 20 s): detecta los cuatro fallos (sonoridad, pico, negro y silencio). Un clic metido en la voz en el empalme de 15,83 s da 44 dB y falla.
+    - Quitados los sabotajes, la 75 vuelve a OK.
+  - Camino entero con `montar.sh 75`: puerta OK, render, mezcla, revisión OK (−16,5 LUFS, pico −2,1), entrega y anotación en `usados.json`.
+  - Arreglado de paso (fallo de la PR 49): las tomas del móvil (m1-m7) están en la raíz de `edicion`.
+  - `revisor-montaje` (repo y `~/.claude/agents`) lee primero `qc.json` y `hoja.jpg`, y el objetivo de volumen pasa a ser −17 a −15 LUFS.

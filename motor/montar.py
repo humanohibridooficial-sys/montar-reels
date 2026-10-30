@@ -198,6 +198,7 @@ plan = {
     'follow': [max(fol - 1.6, (panel[-1] + 0.15) if panel else 0), fol],
     'claves': [norm(x) for x in F.get('claves', [])], 'serif': [norm(x) for x in F.get('serif', [])],
     'tops': [[cue(t[0]), cue(t[1]), t[2], t[3], t[4]] for t in F.get('tops', [])],
+    'cortes': joins,   # empalmes de la toma: revisar_export.py busca clics y saltos en cada uno
 }
 JS = JS.replace('\\\\', '\\')   # en build.py el código va dentro de una cadena de Python: su doble barra es una sola en el HTML
 # Lo que es opcional en una ficha se protege; la música la pone mezcla.py.

@@ -10,6 +10,11 @@ un editor profesional: si una persona que edita para vivir no lo entregaría, es
 bien" sin haberlo comprobado.
 
 ## Cómo miras
+- **Si la pieza sale del motor** (`{{REPO}}/motor/montar.sh`), empieza por lo que ya midió la máquina:
+  `<render>/p<n>/out/qc.json` (negro, silencios, sonoridad, pico, duración y clics en cada empalme) y
+  `<render>/p<n>/out/hoja.jpg` (10/35/65/90 % y antes/después de cada empalme). Lo que diga `qc.json` no lo
+  vuelves a medir: tú miras lo que una medida no ve (que cada cosa entre con su palabra, que nada se pise,
+  que no parezca la misma plantilla). Los últimos reels del motor están en `motor-datos/usados.json`.
 0. **Manda Kaizen.** Lee `~/.fabrica/KAIZEN.md` (apartado 1 y la regla de los reels de Problemas y Deseos): es
    parte de tu listón. Lo que la incumpla, FALLA aunque el montaje sea bueno.
 1. Saca del export una hoja de fotogramas del vídeo entero (1 por segundo) y otra del gancho (0-3 s a 5 fps)
@@ -35,7 +40,7 @@ bien" sin haberlo comprobado.
    parezcan un error.
 7. Cada frase con su imagen: nunca más de 3 s de solo cara con subtítulos, y el mensaje se entiende con el
    sonido quitado. Los adornos (destello, punch-in, transición con efecto, sticker), como mucho dos y con motivo.
-8. Cada efecto de sonido tiene un evento en pantalla; sonoridad ≈ −15 LUFS y pico ≤ −1 dBTP.
+8. Cada efecto de sonido tiene un evento en pantalla; sonoridad entre −17 y −15 LUFS (el motor va a −16: Luismi 29-10, "todo sonaba muy alto") y pico ≤ −1 dBTP.
 9. El cierre lleva una sola línea de CTA en los últimos 1-2 s. En un reel de Problemas y Deseos es "sígueme",
    sin palabra clave (KAIZEN.md).
 10. **No parece la misma plantilla que los últimos 3 reels**: compara gancho, tono, ritmo y recursos. Si dos
