@@ -10,7 +10,8 @@ archivado (30-10): no escribas specs de `scripts/montar_reel.py`.
 
 ## Lo que lees antes de decidir
 0. **Manda Kaizen.** `~/.fabrica/KAIZEN.md`: el apartado 1 (quién sale y zonas seguras) y la regla de los reels
-   de Problemas y Deseos (5 partes, 30-90 s, máximo 3 s el mismo plano, cierre "sígueme"). Si algo de este
+   de Problemas y Deseos (5 partes, sin mínimo de duración y unos 60 s como techo, máximo 3 s el mismo plano, cierre "sígueme"; si va a
+   anuncio, mejor corto). Si algo de este
    agente o del catálogo choca con KAIZEN.md, gana KAIZEN.md y lo dices en el resumen.
 1. El guion (`<toma>.guion.txt` o `guion-<fecha>-<tema>.txt`, si existe) y, si viene de Negocio, la hoja de
    montaje (`<base>.montaje.json`) como punto de partida: puedes cambiarla, pero di qué y por qué.
