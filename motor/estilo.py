@@ -186,8 +186,10 @@ JS = '''
     const t0 = bk[0].start, nb = blocks[i + 1];
     const corte = ventanas.map(([a]) => a).filter((c) => c > t0).sort((a, b) => a - b)[0] ?? LEN;
     const t1 = Math.min(nb ? nb[0].start : LEN, bk[bk.length - 1].end + 0.6, corte);
-    tl.fromTo(el, { opacity: 0, y: 16, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.14, ease: 'back.out(2)', immediateRender: false }, t0)
-      .set(el, { opacity: 0 }, t1);
+    // 30-10 Luismi: el subtítulo "se mueve como ondulándose": cada bloque saltaba (y 16 y rebote). Ahora la línea blanca
+    // solo aparece; el único golpe es el de la palabra dorada.
+    tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.06, ease: 'none', immediateRender: false }, t0).set(el, { opacity: 0 }, t1);
+    if (ki >= 0) tl.fromTo(el.querySelector('.l2'), { scale: 0.88 }, { scale: 1, duration: 0.14, ease: 'power2.out', immediateRender: false }, t0);
   });
   // Recursos nuevos (30-10): cada uno entra con su palabra y sale en su "out".
   PLAN.extras.forEach((x, i) => {
