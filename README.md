@@ -79,6 +79,7 @@ Claude trabaja **una pieza cada vez** y espera tu OK antes de pasar a la siguien
 | `mi-estilo/` | Tu estilo y lo que Claude aprende de ti |
 | `skill/` | La skill de Claude Code (el instalador la copia) |
 | `plantillas/pared-azul/` | Reel con gráficos de pared azul y cámara 3D hecho con HyperFrames (ver su README) |
+| `motor/` | Render directo sin CapCut: ficha de la pieza -> HyperFrames de Huashu -> mezcla -> mp4. `sh motor/montar.sh <n>`. Rutas en `motor/config.json` (copia `config.ejemplo.json`). Las fichas, transcripciones y voces van fuera del repo, en `carpeta_datos` |
 
 No se suben a GitHub: `config.json`, `.env`, `.venv/`, `vendor/`, `modelos/`, `fuentes/`, `trabajo/` ni tus vídeos.
 
@@ -89,6 +90,9 @@ No se suben a GitHub: `config.json`, `.env`, `.venv/`, `vendor/`, `modelos/`, `f
   guarda cada `OFL.txt` en `fuentes/`).
 - **Modelos de MediaPipe** (selfie_segmenter y hand_landmarker), de Google, Apache 2.0.
 - **B-roll**: solo vídeos de Pexels (licencia de Pexels). Música y efectos: Pixabay o Mixkit.
+- **`motor/plantilla/`**: `om.js` de huashu-motion (MIT, `vendor/OM-LICENSE.txt`), GSAP (licencia estándar sin cargo,
+  ver `vendor/GSAP-LICENSE.txt`) y fuentes Anton,
+  Playfair Display, Inter, Noto Sans SC y Montserrat (`portada.ttf`), todas SIL OFL (`fonts/OFL.txt`).
 
 ## Lo que NO está probado todavía
 
