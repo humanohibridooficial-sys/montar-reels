@@ -46,6 +46,12 @@ for t in p['tops']:
 if p['byn'] and not 0.8 < p['byn'][1] - p['byn'][0] < 8: fallos.append(f"{p['byn'][0]:.1f} s: blanco y negro de {p['byn'][1] - p['byn'][0]:.1f} s")
 if p['tachado'] and not p['tachado'][0] < p['tachado'][1] < p['tachado'][2]: fallos.append(f"{p['tachado'][0]:.1f} s: tachado desordenado")
 if p['panel'] and p['panel'] != sorted(p['panel']): fallos.append('panel desordenado')
+# Dos cosas en la franja de arriba a la vez se pisan: el titular, el tuit y el contador comparten sitio.
+for x in p.get('extras', []):
+    if x['tipo'] in ('tuit', 'contador'):
+        for t in p['tops']:
+            if x['in'] < t[1] and t[0] < x['out']:
+                fallos.append(f"{max(x['in'], t[0]):.1f} s: el {x['tipo']} se pisa con el titular \"{t[2]}\"")
 for x in p.get('extras', []):
     if not 0.4 < x['out'] - x['in'] < 9: fallos.append(f"{x['in']:.1f} s: {x['tipo']} dura {x['out'] - x['in']:.1f} s (0,4-9)")
 

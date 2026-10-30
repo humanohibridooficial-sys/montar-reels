@@ -28,6 +28,11 @@ E += [('SFX-boom.wav', plan['num'][0], -5)] if plan['num'] else []              
 E += [('SFX-P-tic.wav', t + 0.1, -8) for t in plan['panel'][:-1]]                            # cada punto de la lista
 E += [('SFX-P-tic.wav', t[0], -10) for t in plan['tops'][1:]]                                # titular nuevo arriba
 E += [('SFX-P-cierre.wav', plan['follow'][1], -5)]                                           # pulsa Seguir
+SFX_EXTRA = {   # recursos del 30-10: (fichero, desfase, dB)
+    'tinte': ('SFX-P-golpe-grave.wav', 0.0, -7), 'tuit': ('SFX-pop.wav', 0.0, -6), 'cortinilla': ('SFX-whoosh.wav', -0.1, -4),
+    'contador': ('SFX-P-tic.wav', 0.0, -6), 'marca': ('SFX-tic.wav', 0.05, -8), 'congelado': ('SFX-P-absorcion.wav', 0.0, -4),
+    'detras': ('SFX-boom.wav', 0.0, -9), 'delante': ('SFX-P-barrido.wav', -0.12, -6)}
+E += [(SFX_EXTRA[x['tipo']][0], x['in'] + SFX_EXTRA[x['tipo']][1], SFX_EXTRA[x['tipo']][2]) for x in plan.get('extras', [])]
 E = sorted(E, key=lambda e: e[1])
 # un tic que coincide con otro efecto sobra: suena doble
 E = [e for i, e in enumerate(E) if not (e[0] == 'SFX-P-tic.wav' and any(abs(e[1] - x[1]) < 0.25 for j, x in enumerate(E) if j != i and (x[0] != 'SFX-P-tic.wav' or j < i)))]

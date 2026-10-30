@@ -4,12 +4,13 @@
 # Ficha: video, keep [[a,b],...] en segundos de la toma, fix {palabra: corregida}, subsTop, origin,
 #   broll [{id, file, ss, in: cue, out: cue, modo: ''|'split'}], tops [[cue, cue, linea1, linea2, cursiva]],
 #   panel {items: [[cue, h1, h2, bala, broll_id]], fin: cue}, byn [cue, cue], tachado {texto, in, raya, out},
-#   num {texto, in, out}, leaks [cue], claves [...], serif [...], follow cue.  Una cue es "palabra", "palabra#2"
+#   num {texto, in, out}, leaks [cue], claves [...], serif [...], follow cue,
+#   extras [{tipo, in: cue, out: cue, ...}] (recursos del 30-10, ver el apartado 5).  Una cue es "palabra", "palabra#2"
 #   (la segunda vez que sale en el montaje), "palabra#2>" (su final) o un número (segundo del montaje).
-import json, subprocess, re, sys, shutil, pathlib
+import json, subprocess, re, sys, shutil, pathlib, html
 
 N = sys.argv[1]
-from rutas import CONTENIDO, TOMAS, FICHAS, PALABRAS, VOZ, RENDER, PLANTILLA
+from rutas import CONTENIDO, TOMAS, FICHAS, PALABRAS, VOZ, RENDER, PLANTILLA, SCRIPTS, PY_SILUETA
 from estilo import CSS, JS
 F = json.load(open(FICHAS / f'{N}.json', encoding='utf-8'))
 P = RENDER / f'p{N}'
@@ -157,6 +158,61 @@ if PN:
     panel = [cue(it[0]) for it in PN['items']] + [cue(PN['fin'])]
     for k, it in enumerate(PN['items']):
         spans.append([it[4], panel[k], panel[k + 1], 'card'])
+# ---- 5. recursos nuevos (30-10), cada uno un elemento de "extras" en la ficha ----------------------------------
+# tinte {color: rojo|azul|verde} · tuit {nombre, usuario, texto con **clave**} · cortinilla {texto: 2-3 palabras, la
+# última en dorado} · contador {texto, de} · marca {forma: circulo|flecha, x, y (0-1 de la pantalla), texto} ·
+# congelado {texto} · detras {texto, color, y} · delante {file, ss, lado}. Todos llevan in y out.
+e = html.escape
+EXTRAS, XHTML, XTALK = [], [], []
+for i, x in enumerate(F.get('extras', [])):
+    t0, t1 = cue(x['in']), cue(x['out'])
+    tipo = x['tipo']
+    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color')}, 'in': t0, 'out': t1})
+    pista = f'data-start="{t0}" data-duration="{round(t1 - t0, 3)}" data-media-start="0" data-track-index="{40 + i}" muted playsinline'
+    if tipo == 'tinte':
+        XHTML.append(f'<div class="tinte {x.get("color", "rojo")}" id="x-{i}"></div>')
+    elif tipo == 'tuit':
+        tx = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', e(x['texto']))
+        XHTML.append(f'<div class="tuit" id="x-{i}"><div class="cab"><div class="av">{e(x["nombre"][:1])}</div><div><div class="nm">{e(x["nombre"])}</div>'
+                     f'<div class="hn">{e(x["usuario"])}</div></div></div><div class="tx">{tx}</div></div>')
+    elif tipo == 'cortinilla':
+        ws = x['texto'].split()
+        XHTML.append(f'<div class="cort" id="x-{i}"><div class="bd"></div><div class="ws">'
+                     + ''.join(f'<span class="w{" k" if k == len(ws) - 1 else ""}">{e(w)}</span>' for k, w in enumerate(ws)) + '</div></div>')
+    elif tipo == 'contador':
+        XHTML.append(f'<div class="cont" id="x-{i}"><span class="n">{e(str(x["texto"]))}</span><span class="d">/{e(str(x["de"]))}</span></div>')
+    elif tipo == 'marca':
+        cx, cy = round(x['x'] * 1080), round(x['y'] * 1920)
+        if x.get('forma', 'circulo') == 'circulo':
+            r = x.get('r', 130)
+            dib = f'<ellipse class="tr" pathLength="1" stroke-dasharray="1" cx="{cx}" cy="{cy}" rx="{r}" ry="{round(r * 0.8)}" transform="rotate(-8 {cx} {cy})"/>'
+            ox, oy = cx, cy - r - 30
+        else:   # la flecha llega en curva desde el lado con más sitio y se para antes del punto
+            sx = -1 if cx > 540 else 1
+            ox, oy = cx + sx * 300, cy - 300
+            ex, ey = cx + sx * 45, cy - 45
+            dib = (f'<path class="tr" pathLength="1" stroke-dasharray="1" d="M{ox} {oy} Q{cx + sx * 260} {cy - 40} {ex} {ey}"/>'
+                   f'<path class="cb" d="M{ex - sx * 8} {ey + 8} L{ex + sx * 52} {ey - 18} L{ex + sx * 18} {ey - 52} Z"/>')
+        if x.get('texto'):
+            w_ = 50 + 36 * len(x['texto'])
+            dib += (f'<rect class="cb" x="{ox - w_ // 2}" y="{oy - 100}" width="{w_}" height="86" rx="14"/>'
+                    f'<text x="{ox}" y="{oy - 33}" text-anchor="middle">{e(x["texto"].upper())}</text>')
+        XHTML.append(f'<svg class="marca" id="x-{i}" viewBox="0 0 1080 1920">{dib}</svg>')
+    elif tipo == 'congelado':
+        run('ffmpeg', '-v', 'error', '-y', '-ss', str(t0), '-i', str(P / 'assets/talk.mp4'), '-frames:v', '1', '-q:v', '2', str(P / f'assets/x-{i}.jpg'))
+        XTALK.append(f'<img class="frz" id="xi-{i}" src="assets/x-{i}.jpg">')
+        XHTML.append(f'<div class="flash" id="xf-{i}"></div>' + (f'<div class="frzt" id="x-{i}">{e(x["texto"])}</div>' if x.get('texto') else ''))
+    elif tipo == 'detras':   # palabra gigante entre el fondo y tu silueta: va dentro del marco de la toma y sigue sus reencuadres
+        run(str(PY_SILUETA), str(SCRIPTS / 'palabra_detras.py'), str(P / 'assets/talk.mp4'), str(t0), str(t1), x['texto'].upper(),
+            str(P / f'assets/x-{i}.mp4'), x.get('color', '#E0B83C'), str(x.get('y', 430)))
+        XTALK.append(f'<div class="tile" id="x-{i}"><video src="assets/x-{i}.mp4" {pista}></video></div>')
+    elif tipo == 'delante':   # tú recortado delante del clip del que hablas
+        run(str(PY_SILUETA), str(SCRIPTS / 'delante_del_clip.py'), str(P / 'assets/talk.mp4'), str(t0), str(t1), str(CONTENIDO / x['file']),
+            str(P / f'assets/x-{i}.mp4'), x.get('lado', 'centro'), 'auto', str(x.get('ss', 0)))
+        XHTML.append(f'<div class="tile" id="x-{i}" style="z-index:1"><video src="assets/x-{i}.mp4" {pista}></video></div>')
+    else:
+        raise KeyError(f'extra {i}: el tipo {tipo!r} no existe')
+
 tiles = '\n'.join(
     f'  <div class="tile {c}" id="t-{k}"><video id="v-{k}" src="assets/broll/{k}.mp4" data-start="{t0}" data-duration="{round(t1 - t0, 3)}" '
     f'data-media-start="0" data-track-index="{2 + n}" muted playsinline></video></div>'
@@ -167,8 +223,8 @@ if PN:
                   + '<div class="bl">' + ''.join(f'<div class="b"><i></i>{it[3]}</div>' for it in PN['items']) + '</div></div>')
 TC, NU = F.get('tachado'), F.get('num')
 s = s.replace('  <video id="talk" class="clip" data-om-id="talk" data-var-src="talk" data-start="0" data-track-index="0" muted playsinline></video>',
-              '  <div id="talkwrap"><video id="talk" class="clip" data-om-id="talk" data-var-src="talk" data-start="0" data-track-index="0" muted playsinline></video></div>\n'
-              + PANEL_HTML + '\n' + tiles + '\n  <div id="tops"></div>\n  <div id="subs"></div>\n'
+              '  <div id="talkwrap"><video id="talk" class="clip" data-om-id="talk" data-var-src="talk" data-start="0" data-track-index="0" muted playsinline></video>' + ''.join(XTALK) + '</div>\n'
+              + PANEL_HTML + '\n' + tiles + '\n  ' + '\n  '.join(XHTML) + '\n  <div id="tops"></div>\n  <div id="subs"></div>\n'
               + (f'  <div id="num">{NU["texto"]}</div>\n' if NU else '')
               + (f'  <div id="tachado"><span>{TC["texto"]}<b></b></span></div>\n' if TC else '')
               + '  <div id="follow"><div class="av">FF</div><div><div class="nm">nutretufutbol</div><div class="hn">@nutretufutbol</div></div>'
@@ -198,6 +254,7 @@ plan = {
     'follow': [max(fol - 1.6, (panel[-1] + 0.15) if panel else 0), fol],
     'claves': [norm(x) for x in F.get('claves', [])], 'serif': [norm(x) for x in F.get('serif', [])],
     'tops': [[cue(t[0]), cue(t[1]), t[2], t[3], t[4]] for t in F.get('tops', [])],
+    'extras': EXTRAS,
     'cortes': joins,   # empalmes de la toma: revisar_export.py busca clics y saltos en cada uno
 }
 JS = JS.replace('\\\\', '\\')   # en build.py el código va dentro de una cadena de Python: su doble barra es una sola en el HTML
@@ -214,7 +271,8 @@ for a_, b_ in [
     ("  OM.sfx('thud', PLAN.num[0] + 0.05, { gain: 0.5 });\n", ""),
     ("  tl.fromTo(tc, { opacity: 0, y: 20 }", "  if (PLAN.tachado) tl.fromTo(tc, { opacity: 0, y: 20 }"),
     ("  const ventanas = [[PLAN.tachado[0], PLAN.tachado[2]], [PLAN.num[0], PLAN.num[1]], [p0, p3]];",
-     "  const ventanas = [PLAN.tachado && [PLAN.tachado[0], PLAN.tachado[2]], PLAN.num, PN.length && [PN[0], PN[PN.length - 1]]].filter(Boolean);"),
+     "  const ventanas = [PLAN.tachado && [PLAN.tachado[0], PLAN.tachado[2]], PLAN.num, PN.length && [PN[0], PN[PN.length - 1]],\n"
+     "    ...PLAN.extras.filter((x) => ['tuit', 'cortinilla'].includes(x.tipo)).map((x) => [x.in, x.out])].filter(Boolean);"),
     ("  OM.music({ style: 'cinematic', drop: PLAN.num[0], ending: 'button' });\n", ""),
 ]:
     assert a_ in JS, a_[:60]

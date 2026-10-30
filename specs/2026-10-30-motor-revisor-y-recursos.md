@@ -83,3 +83,10 @@ dorada grande. "Juegas en una" salía pálido porque el fotograma estaba a mitad
   - Camino entero con `montar.sh 75`: puerta OK, render, mezcla, revisión OK (−16,5 LUFS, pico −2,1), entrega y anotación en `usados.json`.
   - Arreglado de paso (fallo de la PR 49): las tomas del móvil (m1-m7) están en la raíz de `edicion`.
   - `revisor-montaje` (repo y `~/.claude/agents`) lee primero `qc.json` y `hoja.jpg`, y el objetivo de volumen pasa a ser −17 a −15 LUFS.
+- 30-10, parte B escrita, SIN verificar en vídeo:
+  - Los 8 recursos están en `estilo.py` (CSS y animación), `montar.py` (`extras` en la ficha), `mezcla.py` (un efecto por recurso) y `puerta_plan.py` (cuentan como evento; el tuit y el contador fallan si pisan un titular).
+  - La 75 sin `extras` sigue pasando la puerta.
+  - Prueba con los 8 sobre la 75 (ficha en el scratchpad de la sesión): `montar.py` acabó y generó el congelado, la palabra detrás (`palabra_detras.py`) y el tú delante del clip (`delante_del_clip.py`, escala 0,81).
+  - El render lo paró Claude Code por falta de memoria del sistema. La ficha 75 se restauró a mano (md5 igual que la original).
+  - MediaPipe se instaló en `montar-reels/.venv` (requirements.txt). `motor/config.json` acepta `scripts` y `python_silueta`.
+  - Siguiente paso: relanzar la prueba con la memoria libre, mirar la hoja y los fotogramas de cada recurso, y pasarla por `revisor-montaje`.

@@ -39,6 +39,34 @@ CSS = '''
   #tops .t1 { font: 800 62px/1.1 Inter, sans-serif; color: #fff; }
   #tops .t2 { font: 900 112px/1 Inter, sans-serif; color: #E0B83C; text-transform: uppercase; -webkit-text-stroke: 2px #070D16; paint-order: stroke fill; }
   #tops .t2.s { font: italic 600 124px/1 Playfair, serif; text-transform: none; margin-top: 16px; }
+  /* ---- recursos nuevos (30-10), sacados de los referentes de mi-estilo/recursos.md y vestidos con la marca ---- */
+  .tinte { position: absolute; inset: 0; opacity: 0; z-index: 2; mix-blend-mode: color; pointer-events: none; }
+  .tinte.rojo { background: #E5322D; } .tinte.azul { background: #2E6BFF; } .tinte.verde { background: #2FA35B; }
+  .tuit { position: absolute; left: 50%; top: 300px; width: 880px; margin-left: -440px; opacity: 0; z-index: 8; box-sizing: border-box;
+    background: #070D16; border: 3px solid #2E6BFF; border-radius: 34px; padding: 34px 40px; box-shadow: 0 24px 60px #000a; }
+  .tuit .cab { display: flex; align-items: center; gap: 22px; margin-bottom: 22px; }
+  .tuit .av { width: 84px; height: 84px; border-radius: 50%; background: #1B2638; flex: none; display: grid; place-items: center;
+    font: 400 40px/1 Anton, sans-serif; color: #8A96A8; }
+  .tuit .nm { font: 800 40px/1.1 Inter, sans-serif; color: #fff; }
+  .tuit .hn { font: 500 30px/1.2 Inter, sans-serif; color: #8A96A8; }
+  .tuit .tx { font: 600 50px/1.25 Inter, sans-serif; color: #fff; }
+  .tuit .tx b { color: #E0B83C; font-weight: 800; }
+  .cort { position: absolute; inset: 0; z-index: 9; opacity: 0; overflow: hidden; pointer-events: none; }
+  .cort .bd { position: absolute; inset: 0; background: #2E6BFF; }
+  .cort .ws { position: absolute; left: 6%; right: 6%; top: 50%; transform: translateY(-50%); text-align: center; }
+  .cort .w { display: block; font: 400 170px/0.98 Anton, sans-serif; color: #fff; text-transform: uppercase; opacity: 0; }
+  .cort .w.k { color: #E0B83C; -webkit-text-stroke: 3px #070D16; paint-order: stroke fill; }
+  .cont { position: absolute; left: 6%; top: 330px; z-index: 7; opacity: 0; display: flex; align-items: baseline; gap: 4px;
+    background: #070D16E6; border: 3px solid #E0B83C; border-radius: 24px; padding: 8px 26px 12px; }
+  .cont .n { font: 400 104px/1 Anton, sans-serif; color: #E0B83C; } .cont .d { font: 400 50px/1 Anton, sans-serif; color: #fff; }
+  .marca { position: absolute; inset: 0; width: 1080px; height: 1920px; z-index: 6; opacity: 0; pointer-events: none; overflow: visible; }
+  .marca .tr { fill: none; stroke: #E0B83C; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 4px 10px #000a); }
+  .marca .cb { fill: #E0B83C; filter: drop-shadow(0 4px 10px #000a); }
+  .marca text { font: 400 64px Anton, sans-serif; fill: #070D16; }
+  .frz { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+  .frzt { position: absolute; left: 50%; top: 420px; transform: translateX(-50%); z-index: 7; opacity: 0; white-space: nowrap;
+    background: #E0B83C; color: #070D16; font: 400 76px/1 Anton, sans-serif; padding: 16px 30px 12px; border-radius: 16px; box-shadow: 0 16px 40px #0009; }
+  .flash { position: absolute; inset: 0; z-index: 9; background: #fff; opacity: 0; pointer-events: none; }
 '''
 
 JS = '''
@@ -128,6 +156,41 @@ JS = '''
     const t1 = Math.min(nb ? nb[0].start : LEN, bk[bk.length - 1].end + 0.6, corte);
     tl.fromTo(el, { opacity: 0, y: 16, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.14, ease: 'back.out(2)', immediateRender: false }, t0)
       .set(el, { opacity: 0 }, t1);
+  });
+  // Recursos nuevos (30-10): cada uno entra con su palabra y sale en su "out".
+  PLAN.extras.forEach((x, i) => {
+    const el = $id('x-' + i), t0 = x.in, t1 = x.out;
+    const sale = (e) => tl.set(e, { opacity: 0 }, t1);
+    if (x.tipo === 'tinte') {
+      tl.fromTo(el, { opacity: 0 }, { opacity: 0.55, duration: 0.12, ease: 'power1.out', immediateRender: false }, t0)
+        .to(el, { opacity: 0, duration: 0.15, ease: 'power1.in' }, t1 - 0.15);
+    } else if (x.tipo === 'tuit' || x.tipo === 'contador') {
+      tl.fromTo(el, { opacity: 0, y: -30, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: 'back.out(1.8)', immediateRender: false }, t0);
+      sale(el);
+    } else if (x.tipo === 'cortinilla') {   // banda que barre, palabras que caen una a una, y la banda se va
+      const bd = el.querySelector('.bd'), ws = el.querySelectorAll('.w');
+      tl.set(el, { opacity: 1 }, t0).fromTo(bd, { xPercent: -101 }, { xPercent: 0, duration: 0.22, ease: 'power3.in', immediateRender: false }, t0);
+      const paso = Math.min(0.2, (t1 - t0 - 0.6) / Math.max(1, ws.length));
+      ws.forEach((w, k) => tl.fromTo(w, { opacity: 0, y: 50, scale: 1.25 }, { opacity: 1, y: 0, scale: 1, duration: 0.18, ease: 'back.out(2)', immediateRender: false }, t0 + 0.22 + k * paso));
+      tl.to(ws, { opacity: 0, duration: 0.1 }, t1 - 0.24).to(bd, { xPercent: 101, duration: 0.22, ease: 'power3.in' }, t1 - 0.22);
+      sale(el);
+    } else if (x.tipo === 'marca') {   // el trazo se dibuja; en la flecha, después la punta y el rótulo
+      const tr = el.querySelectorAll('.tr'), cb = el.querySelectorAll('.cb, text');
+      tl.set(el, { opacity: 1 }, t0).fromTo(tr, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.35, ease: 'power2.out', immediateRender: false }, t0);
+      if (cb.length) tl.fromTo(cb, { opacity: 0 }, { opacity: 1, duration: 0.12, immediateRender: false }, t0 + 0.3);
+      sale(el);
+    } else if (x.tipo === 'congelado') {   // la imagen se para, destello blanco y rótulo; la voz sigue
+      const img = $id('xi-' + i), fl = $id('xf-' + i);
+      tl.set(img, { opacity: 1, filter: 'saturate(0.55) contrast(1.08)' }, t0)
+        .fromTo(img, { scale: 1 }, { scale: 1.05, duration: t1 - t0, ease: 'none', immediateRender: false }, t0)
+        .fromTo(fl, { opacity: 0.85 }, { opacity: 0, duration: 0.3, ease: 'power2.out', immediateRender: false }, t0);
+      if (el) { tl.fromTo(el, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(2.2)', immediateRender: false }, t0 + 0.12); sale(el); }
+      sale(img);
+    } else if (x.tipo === 'detras' || x.tipo === 'delante') {
+      tl.set(el, { opacity: 1 }, t0);
+      if (x.tipo === 'delante') tl.fromTo(el, { scale: 1.06 }, { scale: 1, duration: 0.35, ease: 'power3.out', immediateRender: false }, t0);
+      sale(el);
+    }
   });
   // Tarjeta de perfil: entra tras el destello y "Seguir" se pulsa en "sígueme".
   const fw = $id('follow');
