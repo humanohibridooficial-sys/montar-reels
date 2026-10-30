@@ -5,6 +5,11 @@ description: Edita reels verticales 9:16 a partir de tomas grabadas con el móvi
 
 # Montar reels
 
+> **Desde el 30-10 el camino es el motor** (`{{REPO}}\motor`): `python motor/preparar.py <n> <toma>`, el agente
+> `director-montaje` escribe la ficha y la pasa por `motor/puerta_plan.py`, `sh motor/montar.sh <n>` saca el mp4 y
+> el agente `revisor-montaje` lo juzga. Ver "El camino de una pieza" en el README. Lo que sigue describe el camino
+> de CapCut, archivado.
+
 Sistema de edición en `{{REPO}}`. Todos los comandos se lanzan desde `{{REPO}}\scripts` con el Python del
 entorno: `{{REPO}}\.venv\Scripts\python.exe`. Las rutas (trabajo, CapCut, fuentes, colores) salen de
 `{{REPO}}\config.json`; no escribas rutas a mano en los scripts.

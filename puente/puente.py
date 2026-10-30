@@ -21,6 +21,14 @@ VIDEO = re.compile(r"\.(mp4|mov|m4v)$", re.I)
 DIAS_TOMAS = 14
 MAX_TOMAS = 30  # los más nuevos: en Ads y contenido hay cientos de vídeos (179 en 14 días el 12-10)
 PY = sys.executable.replace("pythonw.exe", "python.exe").replace("\\", "/")
+# El motor (30-10) es el camino de "Montar": CapCut está archivado. Sus carpetas salen de motor/config.json.
+MONTAR_SH = os.path.join(RAIZ, "motor", "montar.sh").replace("\\", "/")
+try:
+    sys.path.insert(0, os.path.join(RAIZ, "motor"))
+    import rutas as motor_rutas  # noqa: E402
+    DIRS_MOTOR = [str(motor_rutas.DATOS), str(motor_rutas.RENDER)]
+except Exception:  # sin motor/config.json el puente arranca igual; "Montar" lo dirá al fallar
+    DIRS_MOTOR = []
 DIR_TRABAJOS = os.path.join(RAIZ, "trabajo", "_puente")
 os.makedirs(DIR_TRABAJOS, exist_ok=True)
 TRABAJOS: dict[str, dict] = {}
@@ -62,6 +70,18 @@ def herramientas() -> list[str]:
     # (prueba del 15-10: el director no pudo lanzar montar_reel.py). El mismo arreglo que en herramientas_fabrica.
     return ["Read", "Write", "Edit", "Glob", "Grep", "Task", "Agent",
             f"Bash({PY} *)", "Bash(ffmpeg *)", "Bash(ffprobe *)"]
+
+
+def herramientas_montar() -> list[str]:
+    """Las de siempre más el motor, solo con su ruta exacta."""
+    return herramientas() + [f"Bash(sh {MONTAR_SH} *)"]
+
+
+def nombre_pieza(toma: str) -> str:
+    """Nombre corto de la pieza para el motor: el número de cámara de las DJI (..._75_null_video -> 75) o el nombre del fichero."""
+    b = os.path.splitext(os.path.basename(toma))[0]
+    p = b.split("_")
+    return p[3] if b.startswith("DJI_") and len(p) > 3 else re.sub(r"[^A-Za-z0-9-]+", "-", b)[:24].strip("-")
 
 
 def linea_de_evento(ev: dict) -> list[str]:
@@ -199,14 +219,19 @@ def orden_montar(d: dict, toma: str) -> str:
                           (".encuadre.json", "la medida del encuadre (.encuadre.json)")) if os.path.isfile(base + e)]
     junto = f"Junto a la toma están {', '.join(hay)}. " if hay else ""
     falta = "" if os.path.isfile(base + ".guion.txt") else "No hay guion de Negocio: sácalo de la toma y dilo en NO PUDE. "
+    n = nombre_pieza(toma)
     return (
         f"Monta el reel '{d.get('tema') or 'sin tema'}' (pieza {d.get('hueco')}, día {d.get('fecha')}) con la toma {toma}. "
         + junto + falta + f"Manda Kaizen: el director-montaje lee antes {FABRICA}/KAIZEN.md (apartado 1 y la regla de los "
         "reels de Problemas y Deseos) y, si algo choca, gana KAIZEN.md. "
-        "Primero el agente director-montaje: tono, hoja de montaje y spec. Después monta el "
-        f"proyecto de CapCut con `{PY} scripts/montar_reel.py <spec>` (desde la raíz de montar-reels). No esperes al "
-        "export: el usuario lo hará en CapCut. Acaba con tres líneas: PROYECTO: <nombre del borrador de CapCut>, "
-        "TONO: <tono y por qué> y NO PUDE: <lo que no se pudo hacer, o 'nada'>."
+        f"Se monta con el motor de montar-reels (CapCut está archivado), desde la raíz de montar-reels, pieza {n}: "
+        f"1) `{PY} motor/preparar.py {n} '{toma}'` (voz limpia, palabras y borrador de ficha); "
+        f"2) el agente director-montaje escribe la ficha {n} y no la entrega hasta que `{PY} motor/puerta_plan.py {n}` diga OK; "
+        f"3) `sh {MONTAR_SH} {n}` renderiza, mezcla, revisa el fichero y deja el mp4 en la carpeta de salida solo si pasa; "
+        "4) el agente revisor-montaje juzga ese mp4. Si devuelve fallos de los puntos 1, 3, 4 o 6, vuelve al director "
+        "con el informe y repite 2 a 4, como mucho 3 veces. "
+        "Acaba con cuatro líneas: VIDEO: <ruta del mp4 en la carpeta de salida>, TONO: <tono y por qué>, "
+        "VEREDICTO: se puede enseñar / no se puede enseñar, y NO PUDE: <lo que no se pudo hacer, o 'nada'>."
     )
 
 
@@ -791,7 +816,8 @@ class Puente(BaseHTTPRequestHandler):
             subprocess.run([PY, os.path.join(RAIZ, "scripts", "medir_toma.py"), toma], cwd=os.path.join(RAIZ, "scripts"),
                            capture_output=True, env=dict(os.environ, PYTHONIOENCODING="utf-8"),
                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-            return self._json(200, {"id": lanzar("montar", orden_montar(d, toma), toma, dirs=[TOMAS, config.CAPCUT, FABRICA])})
+            return self._json(200, {"id": lanzar("montar", orden_montar(d, toma), toma, permitidas=herramientas_montar(),
+                                                  dirs=[TOMAS, FABRICA, *DIRS_MOTOR])})
         if self.path == "/revisar":
             export = d.get("export", "")
             if not export or not dentro_de_tomas(export) or not os.path.isfile(export):
@@ -801,7 +827,7 @@ class Puente(BaseHTTPRequestHandler):
                 return self._json(200, {"id": ya, "ya_estaba": True})
             # P3 de Negocio sencillo: el export elegido para revisar es el terminado; tu PC lo sube a Negocio a la vez.
             lanzar_subida(str(d.get("proyectoId") or ""), str(d.get("hueco") or ""), export)
-            return self._json(200, {"id": lanzar("revisar", orden_revisar(d, export), export, dirs=[TOMAS, config.CAPCUT, FABRICA])})
+            return self._json(200, {"id": lanzar("revisar", orden_revisar(d, export), export, dirs=[TOMAS, FABRICA, *DIRS_MOTOR])})
         if self.path == "/fabrica":
             return self._fabrica(d)
         if self.path == "/ganchos":
