@@ -11,22 +11,20 @@ LIB = REUTILIZABLES
 MUSICA = LIB / 'MUSICA' / F.get('musica', 'PX-the_mountain-football-556097.mp3')
 MUSICA_DESDE = F.get('musicaDesde', 0.0)
 FONDO_DB = F.get('fondoDb', -15)  # 29-10 Luismi: todo sonaba muy alto
+SFX_BAJA = 10  # 30-10 Luismi: "música sí o sí, efectos de sonido solo como matiz" (antes 4; sin tic en cada reencuadre ni titular)
 plan = json.load(open(P / 'plan.json', encoding='utf-8'))
 LEN = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', str(P / 'assets/voice.wav')],
                            capture_output=True, text=True).stdout)
 
-zoom = [t for t, _ in plan['zoom']][1:]
 # (fichero, segundo, ganancia dB): todo cuadrado a un evento visual del montaje
 E = []
 E += [('SFX-P-subida.wav', 0.0, -8)]                                                        # arranca con el gancho
 E += [('SFX-P-barrido.wav', t0 - 0.12, -6) for k, t0, t1, c in plan['spans'] if c != 'card']  # entra cada b-roll
-E += [('SFX-P-tic.wav', t, -14) for t in zoom if not any(abs(t - x) < 0.3 for x in plan['leaks'] + (plan['num'] or [])[:1])]  # cambios de plano
 E += [('SFX-P-latido.wav', plan['byn'][0], -4)] if plan['byn'] else []                       # blanco y negro: tensión
 E += [('SFX-brillo.wav', t - 0.2, -6) for t in plan['leaks']]                                # destellos
 E += [('SFX-P-golpe.wav', plan['tachado'][1], -5)] if plan['tachado'] else []                # cae la raya roja
 E += [('SFX-boom.wav', plan['num'][0], -5)] if plan['num'] else []                           # la cifra gigante
 E += [('SFX-P-tic.wav', t + 0.1, -8) for t in plan['panel'][:-1]]                            # cada punto de la lista
-E += [('SFX-P-tic.wav', t[0], -10) for t in plan['tops'][1:]]                                # titular nuevo arriba
 E += [('SFX-P-cierre.wav', plan['follow'][1], -5)]                                           # pulsa Seguir
 SFX_EXTRA = {   # recursos del 30-10: (fichero, desfase, dB)
     'tinte': ('SFX-P-golpe-grave.wav', 0.0, -7), 'tuit': ('SFX-pop.wav', 0.0, -6), 'cortinilla': ('SFX-whoosh.wav', -0.1, -4),
@@ -54,7 +52,7 @@ fc = [
     '[mus][sc]sidechaincompress=threshold=0.04:ratio=3:attack=20:release=350:makeup=1[musd]',
 ]
 for i, (f, t, g) in enumerate(E):
-    fc.append(f'[{3 + i}:a]aresample=48000,aformat=channel_layouts=stereo,volume={g - 4}dB,adelay={int(max(t, 0) * 1000)}:all=1[e{i}]')
+    fc.append(f'[{3 + i}:a]aresample=48000,aformat=channel_layouts=stereo,volume={g - SFX_BAJA}dB,adelay={int(max(t, 0) * 1000)}:all=1[e{i}]')
 fc.append('[voz][musd]' + ''.join(f'[e{i}]' for i in range(len(E))) + f'amix=inputs={2 + len(E)}:normalize=0:duration=first,'
           'loudnorm=I=-16:TP=-2:LRA=9[out]')
 subprocess.run(['ffmpeg', '-v', 'error', '-y', *ins, '-filter_complex', ';'.join(fc), '-map', '0:v', '-map', '[out]',
