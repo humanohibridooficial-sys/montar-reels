@@ -47,3 +47,10 @@ Máquina (`puente/puente.py`) y la skill `editor-reels-ff360` siguen mandando a 
   - Pieza = número de cámara de la DJI o el nombre del fichero.
   - La salida (`edicion/Nuevos 27`) está dentro de la carpeta de tomas del puente, así que "Revisar" y la subida a Negocio siguen igual.
   - Pruebas del puente: las 3 pasan, igual que en main.
+- 30-10, fase 4 hecha:
+  - La skill `editor-reels-ff360` (en `~/.claude/skills`, fuera del repo) tiene el flujo del motor. Se mantienen sus reglas, estilo, portadas y entrega; CapCut queda en "archivado". Copia de la versión anterior en el scratchpad de la sesión.
+  - README: el camino de una pieza y la lista de scripts que solo usa CapCut.
+  - `docs/PROCESO-EDICION.md` y `skill/SKILL.md` llevan la nota de archivado.
+  - No se mueve ni se borra ningún script de CapCut.
+- Sin probar de principio a fin: el botón "Montar" desde Negocio con una toma nueva real, con el director escribiendo la ficha solo. Las piezas están probadas por separado: preparar con la 75, puerta y render con las fichas de prueba, y las pruebas del puente.
+- Visto de paso, sin tocar: `config.json` de la raíz apunta `carpeta_trabajo` y `carpeta_piezas` a `Ads y contenido/0710`, que se movió a `edicion`. Solo afecta al camino de CapCut.

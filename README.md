@@ -1,8 +1,9 @@
 # Editor de reels con Claude Code
 
-Convierte las tomas que grabas con el móvil en reels verticales terminados: limpia el audio y la imagen, transcribe,
-corta silencios y repeticiones, pone subtítulos, monta el proyecto en CapCut (o saca el vídeo final sin CapCut) y
-revisa volumen y zona segura de anuncio. Además **aprende tu forma de editar** a partir de tus reels y de los reels
+Convierte las tomas que grabas con el móvil en reels verticales terminados: limpia la voz, transcribe, corta
+silencios y repeticiones, pone subtítulos, rótulos, b-roll y hasta 14 recursos sacados de reels de referencia, música
+y efectos, y saca el mp4 final con el **motor** (`motor/`), que antes de entregar revisa el plan y el fichero.
+CapCut quedó archivado el 30-10 (ver "Archivado: CapCut" abajo). Además **aprende tu forma de editar** a partir de tus reels y de los reels
 de una cuenta que quieras imitar (tu "cuenta fantasma").
 
 Tú hablas con Claude Code en español ("edita este reel", "quita del 12 al 15", "aprende de mis reels") y él lanza
@@ -69,12 +70,22 @@ Claude trabaja **una pieza cada vez** y espera tu OK antes de pasar a la siguien
 - **¿Exporta solo?** No: CapCut no deja exportar de forma automática. Exportas tú, o usas el vídeo final sin CapCut.
 - **Va lento al cortar o subtitular**: si tienes tarjeta NVIDIA, pon `"codificador": "nvenc"` en `config.json`.
 
+## El camino de una pieza (motor)
+
+1. `python motor/preparar.py <n> <toma.mp4>`: voz limpia, palabras y borrador de ficha (pieza nueva).
+2. El agente `director-montaje` completa la ficha y la pasa por `python motor/puerta_plan.py <n>`.
+3. `sh motor/montar.sh <n>`: puerta, render, mezcla, revisión del fichero y mp4 en la carpeta de salida si pasa.
+4. El agente `revisor-montaje` juzga el mp4 con `qc.json` y `hoja.jpg`; si falla, vuelta al director.
+
+Entornos: el `.venv` del repo (MediaPipe), `~/.venvs/df` (DeepFilterNet, Python 3.11) y `~/.venvs/fw`
+(faster-whisper). Rutas en `motor/config.json`.
+
 ## Qué hay dentro
 
 | Carpeta | Qué |
 |---|---|
-| `scripts/` | Los scripts de edición (ver `docs/PROCESO-EDICION.md`) |
-| `ejemplos/spec_ejemplo.py` | Un reel real como molde para montar en CapCut |
+| `scripts/` | Utilidades que usa el motor (`palabra_detras.py`, `medir_toma.py`, `config.py`, `transcribir.py`) y el camino viejo de CapCut (ver abajo) |
+| `ejemplos/spec_ejemplo.py` | Archivado: un reel real como molde para montar en CapCut |
 | `herramientas/` | Búsqueda de B-roll en Pexels |
 | `mi-estilo/` | Tu estilo y lo que Claude aprende de ti |
 | `skill/` | La skill de Claude Code (el instalador la copia) |
@@ -82,6 +93,14 @@ Claude trabaja **una pieza cada vez** y espera tu OK antes de pasar a la siguien
 | `motor/` | Render directo sin CapCut: ficha de la pieza -> HyperFrames de Huashu -> mezcla -> mp4. `sh motor/montar.sh <n>`. Rutas en `motor/config.json` (copia `config.ejemplo.json`). Las fichas, transcripciones y voces van fuera del repo, en `carpeta_datos` |
 
 No se suben a GitHub: `config.json`, `.env`, `.venv/`, `vendor/`, `modelos/`, `fuentes/`, `trabajo/` ni tus vídeos.
+
+## Archivado: CapCut (hasta el 30-10)
+
+Sigue en el repo sin tocar, por si hiciera falta, pero ya no es el camino. Solo los usa el camino de CapCut:
+`scripts/montar_reel.py`, `capas_lib.py`, `cambiar_clip.py`, `anadir_musica.py`, `anadir_sonido.py`, `podar_sonido.py`,
+`aprender_corte.py`, `subtitular.py`, `cortes.py`, `limpiar.py`, `composicion.py`, `delante_del_clip.py`, `puertas.py`,
+`rotulos_lib.py`, `tarjetas_v2.py` y `ejemplos/spec_ejemplo.py`, más VectCutAPI en `vendor/`. Los pasos de CapCut de la
+instalación (plantilla `PLANTILLA-REELS`) y los "problemas típicos" de CapCut de arriba solo aplican a ese camino.
 
 ## Licencias de lo que se descarga
 

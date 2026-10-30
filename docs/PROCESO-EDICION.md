@@ -1,5 +1,8 @@
 # Proceso de edición de reels (tanda 0710, 07/08-10-2026)
 
+> **Archivado (30-10):** este es el proceso con CapCut. El camino actual es el motor: ver "El camino de una pieza"
+> en el README. Las medidas de aquí (volumen, cortes, transcripción) siguen valiendo como referencia.
+
 Datos medidos editando una tanda real de 10 reels (6 orgánicos y 4 anuncios).
 
 ## Qué hay aquí
