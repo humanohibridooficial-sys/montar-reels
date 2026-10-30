@@ -28,7 +28,7 @@ CSS = '''
     background: #fff; border-radius: 30px; padding: 24px 28px; box-shadow: 0 20px 50px #0006; box-sizing: border-box; }
   #follow .av { width: 96px; height: 96px; border-radius: 50%; background: #070D16; display: grid; place-items: center; font: 400 40px/1 Anton, sans-serif; color: #E0B83C; flex: none; }
   #follow .nm { font: 800 40px/1.1 Inter, sans-serif; color: #111; }
-  #follow .hn { font: 500 26px/1.25 Inter, sans-serif; color: #6B7079; max-width: 390px; }
+  #follow .hn { font: 500 26px/1.25 Inter, sans-serif; color: #6B7079; max-width: 350px; }   /* a 390 tocaba el botón "Siguiendo" */
   #follow .av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
   #follow .bt { position: absolute; right: 28px; top: 50%; margin-top: -36px; height: 72px; padding: 0 34px; border-radius: 18px; display: grid; place-items: center;
     font: 800 34px/1 Inter, sans-serif; }

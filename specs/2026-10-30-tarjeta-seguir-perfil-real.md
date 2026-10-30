@@ -17,3 +17,6 @@ ponía un círculo con "FF" y "@nutretufutbol" dos veces.
 
 ## Bitácora
 - 30-10: la captura del perfil trae la burbuja "Nota…" de Instagram encima de la cabeza; no sirve de foto. Se pide a Luismi la foto original.
+- 30-10: la foto sale de la captura: círculo que empieza bajo la burbuja (crop 178 en 72,60) y el punto de la burbuja tapado con el cielo de al lado (`#D0D8E2`). Está en `motor-datos/perfil/foto.jpg`.
+- `montar.sh 75` de principio a fin: puerta y revisión OK. La tarjeta lleva foto, usuario y nombre en dos líneas y pasa a "Siguiendo".
+- El nombre tocaba el botón "Siguiendo": su ancho máximo baja de 390 a 350 px. Este último cambio no se ha renderizado.
