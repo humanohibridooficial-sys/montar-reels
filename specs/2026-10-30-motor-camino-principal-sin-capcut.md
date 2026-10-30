@@ -38,3 +38,12 @@ Máquina (`puente/puente.py`) y la skill `editor-reels-ff360` siguen mandando a 
     - voz limpia de la misma duración (43,65 s);
     - unos 36 s en total.
   - Restos de la prueba borrados y `palabras.json` restaurado.
+- 30-10, fases 2 y 3 hechas:
+  - `director-montaje` (repo e instalado en `~/.claude/agents`) escribe la ficha del motor con el catálogo de los 14 `extras` y no la entrega hasta que la puerta dice OK.
+  - Botón "Montar" del puente:
+    - hace preparar, director, `montar.sh` y revisor, con vuelta al director (como mucho 3 veces);
+    - acaba con VIDEO, TONO, VEREDICTO y NO PUDE;
+    - permiso solo para `sh <repo>/motor/montar.sh` y carpetas del motor en vez de la de CapCut.
+  - Pieza = número de cámara de la DJI o el nombre del fichero.
+  - La salida (`edicion/Nuevos 27`) está dentro de la carpeta de tomas del puente, así que "Revisar" y la subida a Negocio siguen igual.
+  - Pruebas del puente: las 3 pasan, igual que en main.
