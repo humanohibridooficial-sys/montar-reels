@@ -111,6 +111,8 @@ JS = '''
   PLAN.spans.forEach(([k, t0, t1, c]) => {
     const el = $id('t-' + k);
     tl.addLabel('scene:broll-' + k, t0);
+    // 31-10: como el titular del gancho, un set en 0 no pinta el fotograma 0 (salía la cara 33 ms y luego el b-roll)
+    if (t0 < 0.02) el.style.opacity = 1;
     if (c === 'split') {   // b-roll arriba; el plano a cámara y los subtítulos bajan
       tl.set(el, { opacity: 1 }, t0).fromTo(el, { y: -60 }, { y: 0, duration: 0.3, ease: 'power3.out', immediateRender: false }, t0);
       tl.set(tw, { y: 340 }, t0).set(tw, { y: 0 }, t1).set('#subs', { y: 330 }, t0).set('#subs', { y: 0 }, t1);
