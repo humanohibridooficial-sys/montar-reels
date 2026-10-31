@@ -171,7 +171,10 @@ SUBS = F.get('subsTop', 1040)
 _enc = SRC.with_suffix('.encuadre.json')
 _cab = json.load(open(_enc, encoding='utf-8'))['cabeza_arriba_pct'] * 19.2 if _enc.exists() else 9999
 FOLLOW_TOP = F.get('followTop', 300 if _cab > 300 + 132 + 30 else SUBS)
-CSS = CSS.replace('top: 1040px; height: 260px', f'top: {SUBS}px; height: 260px').replace('#follow { position: absolute; left: 50%; top: 300px;', f'#follow {{ position: absolute; left: 50%; top: {FOLLOW_TOP}px;').replace('transform-origin: 50% 42%', f"transform-origin: {F.get('origin', '50% 40%')}")
+# Lo mismo con los titulares (revisor 43, 31-10): su franja (300-480 px) cae sobre la cabeza si esta empieza arriba;
+# entonces van donde el subtítulo y el subtítulo se oculta mientras están. 'topsTop' en la ficha lo fuerza.
+TOPS_TOP = F.get('topsTop', 300 if _cab > 480 + 30 else SUBS)
+CSS = CSS.replace('top: 1040px; height: 260px', f'top: {SUBS}px; height: 260px').replace('#follow { position: absolute; left: 50%; top: 300px;', f'#follow {{ position: absolute; left: 50%; top: {FOLLOW_TOP}px;').replace('#tops { position: absolute; left: 6%; right: 6%; top: 300px;', f'#tops {{ position: absolute; left: 6%; right: 6%; top: {TOPS_TOP}px;').replace('transform-origin: 50% 42%', f"transform-origin: {F.get('origin', '50% 40%')}")
 s = s.replace('  #pack { position: absolute; inset: 0; pointer-events: none; }', CSS + '  #pack { position: absolute; inset: 0; pointer-events: none; }')
 
 spans = [[b['id'], cue(b['in']), round(cue(b['out']) + 0.12, 3), b.get('modo', '')] for b in F.get('broll', [])]
@@ -323,7 +326,7 @@ plan = {
     # destapaba la cortinilla al salir y se quedaba 3,4 s).
     'follow': [max([fol - 0.8, (panel[-1] + 0.15) if panel else 0]
                    + [x['out'] + 0.1 for x in EXTRAS if x['tipo'] in ('cortinilla', 'logo', 'mapa', 'lista') and x['out'] <= fol]), fol],
-    'followEnSubs': FOLLOW_TOP != 300,
+    'followEnSubs': FOLLOW_TOP != 300, 'topsEnSubs': TOPS_TOP != 300,
     'claves': [norm(x) for x in F.get('claves', [])], 'serif': [norm(x) for x in F.get('serif', [])],
     'tops': [[cue(t[0]), cue(t[1]), t[2], t[3], t[4]] for t in F.get('tops', [])],
     'extras': EXTRAS,

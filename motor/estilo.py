@@ -128,6 +128,10 @@ JS = '''
     el.innerHTML = `<div class="t1">${esc(a)}</div><div class="t2${serif ? ' s' : ''}">${esc(b)}</div>`;
     tops.appendChild(el);
     if (t0 === 0) el.style.opacity = 1;   // un set en 0 no pinta el fotograma 0: se deja visible de base
+    if (PLAN.topsEnSubs) {   // 31-10: el titular ocupa el sitio del subtítulo: este se oculta mientras está
+      if (t0 === 0) $id('subs').style.opacity = 0; else tl.set('#subs', { opacity: 0 }, t0);
+      tl.set('#subs', { opacity: 1 }, t1);
+    }
     else tl.fromTo(el, { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: 0.22, ease: 'back.out(1.8)', immediateRender: false }, t0);
     tl.set(el, { opacity: 0 }, t1);
   });
