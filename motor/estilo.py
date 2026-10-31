@@ -55,7 +55,7 @@ CSS = '''
   .tuit .tx { font: 600 44px/1.22 Inter, sans-serif; color: #fff; }
   .tuit .tx b { color: #E0B83C; font-weight: 800; }
   .cort { position: absolute; inset: 0; z-index: 9; opacity: 0; overflow: hidden; pointer-events: none; }
-  .cort .bd { position: absolute; inset: 0; background: #0E1F3A; border-right: 18px solid #2E6BFF; }   /* estilo.md: azul solo de filo */
+  .cort .bd { position: absolute; inset: 0 -18px 0 0; background: #0E1F3A; border-right: 18px solid #2E6BFF; }   /* 31-10: quieta, el filo quedaba aparcado en el borde */   /* estilo.md: azul solo de filo */
   .cort .ws { position: absolute; left: 6%; right: 6%; top: 50%; transform: translateY(-50%); text-align: center; }
   .cort .w { display: block; font: 400 170px/0.98 Anton, sans-serif; color: #fff; text-transform: uppercase; opacity: 0; }
   .cort .w.k { color: #E0B83C; -webkit-text-stroke: 3px #070D16; paint-order: stroke fill; }
@@ -269,6 +269,7 @@ JS = '''
   });
   // Tarjeta de perfil: entra tras el destello y "Seguir" se pulsa en "sígueme".
   const fw = $id('follow');
+  if (PLAN.followEnSubs) tl.set('#subs', { opacity: 0 }, PLAN.follow[0]);   // 31-10: la tarjeta va donde el subtítulo
   tl.fromTo(fw, { opacity: 0, y: -40, scale: 0.85 }, { opacity: 1, y: 0, scale: 0.85, duration: 0.35, ease: 'back.out(1.8)', immediateRender: false }, PLAN.follow[0])
     .fromTo(fw.querySelector('.b1'), { scale: 1 }, { scale: 0.88, duration: 0.08, yoyo: true, repeat: 1, immediateRender: false }, PLAN.follow[1])
     .set(fw.querySelector('.b1'), { opacity: 0 }, PLAN.follow[1] + 0.16).set(fw.querySelector('.b2'), { opacity: 1 }, PLAN.follow[1] + 0.16);
