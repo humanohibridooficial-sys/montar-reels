@@ -31,7 +31,8 @@ for n in "$@"; do
   rm -rf "$P/.om/cache/frames"
   PYTHONIOENCODING=utf-8 python revisar_export.py $n "$P/out/p$n-final.mp4" || { echo "$n NO SE ENTREGA: mira $P/out/qc.json"; continue; }
   PYTHONIOENCODING=utf-8 python puerta_plan.py $n --anotar > /dev/null || true
-  cp "$P/out/p$n-final.mp4" "$DEST/$n-$(slug $n).mp4"
-  echo "$n HECHO -> $DEST/$n-$(slug $n).mp4"
+  F=$(PYTHONIOENCODING=utf-8 python destino.py "$DEST" $n "$(slug $n)")
+  cp "$P/out/p$n-final.mp4" "$F"
+  echo "$n HECHO -> $F"
   echo "   para el revisor-montaje: $P/out/hoja.jpg y $P/out/qc.json"
 done
