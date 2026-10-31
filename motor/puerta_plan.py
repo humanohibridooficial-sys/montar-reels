@@ -83,7 +83,9 @@ for x in p.get('extras', []):
 gancho = sorted({tipo for t, tipo in ev if t < 2.0 and tipo not in ('zoom', 'clave')})
 recursos = sorted({tipo for _, tipo in ev if tipo not in ('zoom', 'clave', 'seguir')})
 usados = json.load(open(USADOS, encoding='utf-8')) if USADOS.exists() else []
-for u in [u for u in usados if u['pieza'] != N][-3:]:
+# 31-10: las opciones A y B de un trial (27a y 27b) son a propósito el mismo montaje con otro gancho: entre ellas no se comparan.
+hermana = lambda p: re.sub(r'[ab]$', '', p) == re.sub(r'[ab]$', '', N)
+for u in [u for u in usados if not hermana(u['pieza'])][-3:]:
     r = set(u['recursos'])
     jac = len(r & set(recursos)) / max(1, len(r | set(recursos)))
     if u['gancho'] == gancho and jac >= 0.9:
