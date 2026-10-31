@@ -1,4 +1,4 @@
-# Monta una pieza de Nuevos 27 con el estilo de los ejemplos (Carla y los otros tres), sobre la plantilla talking-head
+# Monta una pieza de "1 TOMAS EN BRUTO" con el estilo de los ejemplos (Carla y los otros tres), sobre la plantilla talking-head
 # de Huashu. Todo lo propio de cada pieza vive en su ficha piezas/<n>.json; esto es común.
 #   python montar.py 76        -> deja p76/ listo para "om render" (y p76/plan.json para mezcla.py)
 # Ficha: video, keep [[a,b],...] en segundos de la toma, fix {palabra: corregida}, subsTop, origin,
