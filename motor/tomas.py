@@ -12,7 +12,9 @@ TOMAS = NUEVAS
 
 def video(n):
     """Lo que va en la ficha: ruta relativa a 'Ads y contenido'."""
-    return f'VID_20260915_{_MOVIL[n]}.mp4' if n in _MOVIL else f'Nuevos 27/{_DJI[n]}'
+    # 31-10: todas las tomas, DJI y del móvil, viven juntas en carpeta_tomas ("1 TOMAS EN BRUTO")
+    f = f'VID_20260915_{_MOVIL[n]}.mp4' if n in _MOVIL else _DJI[n]
+    return f'{CARPETA_TOMAS.relative_to(CONTENIDO).as_posix()}/{f}'
 
 
 def ruta(n):

@@ -46,7 +46,7 @@ cansado o el banquillo; "lo que comes el sábado" -> un plato de pasta, no "comi
 1. **La biblioteca**: `python {{REPO}}/motor/broll.py biblioteca "palabras de la frase"`. Los clips se llaman como la
    frase que acompañaron (`03_en-el-70-no-llegas_...`); usa uno solo si de verdad enseña tu frase.
 2. **Pexels**, si en la biblioteca no hay: `python {{REPO}}/motor/broll.py pexels "query concreta en inglés" <nombre-de-la-frase>`.
-   Baja hasta 4 vídeos verticales a `00-PIEZAS-REUTILIZABLES/b-roll-pexels/` con una hoja de 3 fotogramas cada uno.
+   Baja hasta 4 vídeos verticales a `3 RECURSOS/b-roll-pexels/` con una hoja de 3 fotogramas cada uno.
 3. **Mira la hoja con Read antes de usarlo.** Descártalo si salen niños pequeños (el avatar es juvenil de 16-18 y sus
    padres), logos o marcas visibles, o si no se ve lo que dices. Mejor sin b-roll que con uno que no cuenta la frase.
 Solo Pexels o la biblioteca (todo puede acabar en anuncio): nada de TikTok, memes, partidos de televisión ni
@@ -59,7 +59,7 @@ que dice el rótulo, no la frase.
 
 Base (siempre): `titulo`, `video`, `keep`, `quitar`, `tops` [[cue, cue, línea pequeña, línea grande, cursiva]]
 (el primero con cue 0 es el gancho del fotograma 0), `claves` y `serif` (palabras del subtítulo en dorado o en
-cursiva), `follow` (cue de "sígueme"), `subsTop`, `musica` (de `00-PIEZAS-REUTILIZABLES/MUSICA`).
+cursiva), `follow` (cue de "sígueme"), `subsTop`, `musica` (de `3 RECURSOS/MUSICA`).
 
 Recursos de base (opcionales): `broll` [{id, file, ss, in, out, modo: ''|'split'|'card'}], `byn` [cue, cue],
 `leaks` [cue], `tachado` {texto, in, raya, out}, `num` {texto, in, out}, `panel` {items, fin}.
