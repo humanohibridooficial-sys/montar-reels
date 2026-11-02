@@ -886,7 +886,25 @@ class Puente(BaseHTTPRequestHandler):
         return self._json(200, {"id": lanzar_fabrica(accion, corrida, hueco, d.get("pieza"), d.get("motivo"))})
 
 
+def bajar_avatar() -> None:
+    """Antes de escribir, la lista numerada del avatar de Negocio a ~/.fabrica/avatar/avatar.json (02-11, spec hh-kpi
+    2026-11-02-maquina-dashboard): la Fábrica escribe con la MISMA que usan el calendario y Creación. Si Negocio no
+    contesta, se escribe con la que hay: nunca para un encargo por esto, solo lo apunta."""
+    node = shutil.which("node")
+    if not node or not os.path.isfile(NEGOCIO_MJS):
+        return
+    try:
+        r = subprocess.run([node, NEGOCIO_MJS, "avatar"], capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", timeout=10, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        texto = (r.stdout or r.stderr).strip()
+    except subprocess.TimeoutExpired:
+        texto = "AVISO: Negocio no dio el avatar en 10 s; se escribe con el que hay."
+    if texto:
+        print(texto.splitlines()[-1][:200], flush=True)
+
+
 def lanzar_fabrica(accion: str, corrida: str, hueco: str, pieza, motivo) -> str:
+    bajar_avatar()
     # Lo de la pieza va en un fichero, no dentro de la orden: el motivo lo escribe Luismi a mano.
     carpeta = os.path.join(SALIDA_FABRICA, "_puente")
     os.makedirs(carpeta, exist_ok=True)
