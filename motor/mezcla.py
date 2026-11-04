@@ -11,7 +11,9 @@ LIB = REUTILIZABLES
 MUSICA = LIB / 'MUSICA' / F.get('musica', 'PX-the_mountain-football-556097.mp3')
 MUSICA_DESDE = F.get('musicaDesde', 0.0)
 FONDO_DB = F.get('fondoDb', -15)  # 29-10 Luismi: todo sonaba muy alto
-SFX_BAJA = 10  # 30-10 Luismi: "música sí o sí, efectos de sonido solo como matiz" (antes 4; sin tic en cada reencuadre ni titular)
+SFX_BAJA = F.get('sfxBaja', 10)  # 30-10 Luismi: "música sí o sí, efectos de sonido solo como matiz" (antes 4; sin tic en cada reencuadre ni titular)
+# 04-11 Luismi (reel 86): "más efectos que enganchen". La ficha puede subirlos (sfxBaja), poner un golpe en cada palabra
+# dorada (golpeClaves) y una subida antes de la tarjeta de Seguir (riserCta). Sin esas claves, todo como antes.
 plan = json.load(open(P / 'plan.json', encoding='utf-8'))
 LEN = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', str(P / 'assets/voice.wav')],
                            capture_output=True, text=True).stdout)
@@ -26,6 +28,16 @@ E += [('SFX-P-golpe.wav', plan['tachado'][1], -5)] if plan['tachado'] else []   
 E += [('SFX-boom.wav', plan['num'][0], -5)] if plan['num'] else []                           # la cifra gigante
 E += [('SFX-P-tic.wav', t + 0.1, -8) for t in plan['panel'][:-1]]                            # cada punto de la lista
 E += [('SFX-P-cierre.wav', plan['follow'][1], -5)]                                           # pulsa Seguir
+if F.get('golpeClaves'):   # la palabra dorada cae con un golpe (la primera vez que suena cada clave)
+    import re
+    norm = lambda x: re.sub(r'[^\wáéíóúüñ]', '', x.lower())
+    vistas = set()
+    for w in json.load(open(P / 'assets/voice.words.json', encoding='utf-8'))['words']:
+        k = norm(w['word'])
+        if k in plan['claves'] and k not in vistas:
+            vistas.add(k); E.append(('SFX-P-golpe.wav', w['start'], -6))
+if F.get('riserCta'):
+    E.append(('SFX-riser.wav', max(plan['follow'][0] - 1.0, 0), -6))                        # sube hacia el CTA
 SFX_EXTRA = {   # recursos del 30-10: (fichero, desfase, dB)
     'tinte': ('SFX-P-golpe-grave.wav', 0.0, -7), 'tuit': ('SFX-pop.wav', 0.0, -6), 'cortinilla': ('SFX-whoosh.wav', -0.1, -4),
     'contador': ('SFX-P-tic.wav', 0.0, -6), 'marca': ('SFX-tic.wav', 0.05, -8), 'congelado': ('SFX-P-absorcion.wav', 0.0, -4),
