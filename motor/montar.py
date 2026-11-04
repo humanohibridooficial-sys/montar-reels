@@ -293,13 +293,20 @@ if (PERFIL / 'perfil.json').exists():
 AVATAR = 'FF'
 if (PERFIL / 'foto.jpg').exists():
     shutil.copy(PERFIL / 'foto.jpg', P / 'assets/perfil.jpg'); AVATAR = '<img src="assets/perfil.jpg">'
+FOLLOW_HTML = (f'  <div id="follow"><div class="av">{AVATAR}</div><div class="tx"><div class="nm">{e(PF["usuario"])}</div><div class="hn">{e(PF["nombre"])}</div></div>'
+               '<div class="bt b1">Seguir</div><div class="bt b2">Siguiendo</div></div>')
+# Con "followImg": true en la ficha, la tarjeta es la captura real del perfil de Instagram (Luismi 04-11: "en el
+# sígueme mete lo del pantallazo de Instagram") con el botón Seguir debajo, como en la app.
+if F.get('followImg') and (PERFIL / 'perfil-ig.png').exists():
+    shutil.copy(PERFIL / 'perfil-ig.png', P / 'assets/perfil-ig.png')
+    FOLLOW_HTML = ('  <div id="follow" class="ig"><img class="cap" src="assets/perfil-ig.png">'
+                   '<div class="fila"><div class="bt b1">Seguir</div><div class="bt b2">Siguiendo</div></div></div>')
 s = s.replace('  <video id="talk" class="clip" data-om-id="talk" data-var-src="talk" data-start="0" data-track-index="0" muted playsinline></video>',
               '  <div id="talkwrap"><video id="talk" class="clip" data-om-id="talk" data-var-src="talk" data-start="0" data-track-index="0" muted playsinline></video>' + ''.join(XTALK) + '</div>\n'
               + PANEL_HTML + '\n' + tiles + '\n  ' + '\n  '.join(XHTML) + '\n  <div id="tops"></div>\n  <div id="subs"></div>\n'
               + (f'  <div id="num">{NU["texto"]}</div>\n' if NU else '')
               + (f'  <div id="tachado"><span>{TC["texto"]}<b></b></span></div>\n' if TC else '')
-              + f'  <div id="follow"><div class="av">{AVATAR}</div><div class="tx"><div class="nm">{e(PF["usuario"])}</div><div class="hn">{e(PF["nombre"])}</div></div>'
-              '<div class="bt b1">Seguir</div><div class="bt b2">Siguiendo</div></div>\n  <div id="leak"></div>')
+              + FOLLOW_HTML + '\n  <div id="leak"></div>')
 
 # Reencuadres: un tamaño distinto en cada frase nueva (tras punto, coma larga o empalme), como sus cambios de cámara.
 ESC = F.get('esc', [1.0, 1.15, 1.05, 1.22])

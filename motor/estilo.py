@@ -34,6 +34,10 @@ CSS = '''
     font: 800 34px/1 Inter, sans-serif; }
   #follow .b1 { background: #2E6BFF; color: #fff; }
   #follow .b2 { background: #EFEFEF; color: #111; opacity: 0; }
+  #follow.ig { display: block; width: 760px; margin-left: -380px; background: #0C1014; padding: 14px; border-radius: 26px; }
+  #follow.ig .cap { display: block; width: 100%; border-radius: 14px; }
+  #follow.ig .fila { position: relative; height: 64px; margin-top: 8px; }
+  #follow.ig .bt { left: 0; right: 0; top: 0; margin-top: 0; height: 64px; border-radius: 14px; font-size: 30px; }
   .tile.split { inset: auto; left: 0; top: 0; width: 1080px; height: 820px; -webkit-mask-image: linear-gradient(#000 82%, #0000); }
   /* 300 px y no 210: KAIZEN §1 pide libre el 15 % de arriba (288 px). Revisor 30-10, 41b */
   #tops { position: absolute; left: 6%; right: 6%; top: 300px; pointer-events: none; z-index: 7; }
