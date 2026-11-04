@@ -175,6 +175,11 @@ FOLLOW_TOP = F.get('followTop', 300 if _cab > 300 + 132 + 30 else SUBS)
 # entonces van donde el subtítulo y el subtítulo se oculta mientras están. 'topsTop' en la ficha lo fuerza.
 TOPS_TOP = F.get('topsTop', 300 if _cab > 480 + 30 else SUBS)
 CSS = CSS.replace('top: 1040px; height: 260px', f'top: {SUBS}px; height: 260px').replace('#follow { position: absolute; left: 50%; top: 300px;', f'#follow {{ position: absolute; left: 50%; top: {FOLLOW_TOP}px;').replace('#tops { position: absolute; left: 6%; right: 6%; top: 300px;', f'#tops {{ position: absolute; left: 6%; right: 6%; top: {TOPS_TOP}px;').replace('transform-origin: 50% 42%', f"transform-origin: {F.get('origin', '50% 40%')}")
+# Subtítulos grandes (Luismi 04-11, reel 86: "mejora subtítulos"): con "subsGrandes": true, más tamaño y contorno.
+if F.get('subsGrandes'):
+    CSS = (CSS.replace('#subs .l1 { font: 800 54px/1.15 Inter', '#subs .l1 { -webkit-text-stroke: 1.5px #070D16; paint-order: stroke fill; font: 900 62px/1.12 Inter')
+              .replace('#subs .l2 { font: 900 96px/1.02 Inter', '#subs .l2 { font: 900 104px/1.0 Inter')
+              .replace('#subs .l2.s { font: italic 600 112px/1.0 Playfair', '#subs .l2.s { font: italic 600 118px/1.0 Playfair'))
 s = s.replace('  #pack { position: absolute; inset: 0; pointer-events: none; }', CSS + '  #pack { position: absolute; inset: 0; pointer-events: none; }')
 
 spans = [[b['id'], cue(b['in']), round(cue(b['out']) + 0.12, 3), b.get('modo', '')] for b in F.get('broll', [])]
