@@ -34,7 +34,7 @@ CSS = '''
     font: 800 34px/1 Inter, sans-serif; }
   #follow .b1 { background: #2E6BFF; color: #fff; }
   #follow .b2 { background: #EFEFEF; color: #111; opacity: 0; }
-  #follow.ig { display: block; width: 880px; margin-left: -440px; background: #0C1014; padding: 14px; border-radius: 26px; }
+  #follow.ig { display: block; width: 760px; margin-left: -380px; background: #0C1014; padding: 14px; border-radius: 26px; }
   #follow.ig .cap { display: block; width: 100%; border-radius: 14px; }
   #follow.ig .fila { position: relative; height: 64px; margin-top: 8px; }
   #follow.ig .bt { left: 0; right: 0; top: 0; margin-top: 0; height: 64px; border-radius: 14px; font-size: 30px; }
