@@ -35,7 +35,7 @@ if F.get('golpeClaves'):   # la palabra dorada cae con un golpe (la primera vez 
     for w in json.load(open(P / 'assets/voice.words.json', encoding='utf-8'))['words']:
         k = norm(w['word'])
         if k in plan['claves'] and k not in vistas:
-            vistas.add(k); E.append(('SFX-P-golpe.wav', w['start'], -6))
+            vistas.add(k); E.append(('SFX-P-golpe.wav', w['start'], F.get('golpeDb', {}).get(k, -6)))   # golpeDb: {"palabra": dB}
 if F.get('riserCta'):
     E.append(('SFX-riser.wav', max(plan['follow'][0] - 1.0, 0), -6))                        # sube hacia el CTA
 SFX_EXTRA = {   # recursos del 30-10: (fichero, desfase, dB)
