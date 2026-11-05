@@ -20,6 +20,8 @@ LICENCIAS = {
     'mixkit': 'Mixkit Stock Video Free License: uso comercial libre, sin atribución',
     'youtube': 'Creative Commons Attribution (CC BY): uso comercial CITANDO AL AUTOR en el caption',
 }
+# yt-dlp va con otro Python: si hereda PYTHONHOME (el Python de uv lo fija) falla con "Could not import runpy"
+ENV_YT = {k: v for k, v in __import__('os').environ.items() if k != 'PYTHONHOME'}
 slug = lambda s: re.sub(r'[^a-z0-9]+', '-', unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().lower()).strip('-')[:50]
 
 
@@ -106,7 +108,7 @@ def youtube(q, n):
     # OJO: hay canales que marcan CC partidos de la tele que no son suyos: vale solo lo grabado por el propio canal.
     url = 'https://www.youtube.com/results?' + urllib.parse.urlencode({'search_query': q}) + '&sp=EgIwAQ%253D%253D'
     r = subprocess.run(['yt-dlp', '--dump-json', '--skip-download', '--no-warnings', '--playlist-end', str(n * 3), url],
-                       capture_output=True, text=True, encoding='utf-8')
+                       capture_output=True, text=True, encoding='utf-8', env=ENV_YT)
     out = []
     for l in r.stdout.splitlines():
         try:
@@ -141,7 +143,7 @@ def buscar(q, es=None, n=4):
             if c['prev']:
                 _bajar(c['prev'], mp4)
             else:   # YouTube: solo 20 s en baja calidad para la hoja
-                subprocess.run(['yt-dlp', '-q', '--no-warnings', '-f', 'worst[ext=mp4]/worst', '--download-sections', '*0-20', '-o', str(mp4), c['full']], check=True)
+                subprocess.run(['yt-dlp', '-q', '--no-warnings', '-f', 'worst[ext=mp4]/worst', '--download-sections', '*0-20', '-o', str(mp4, env=ENV_YT), c['full']], check=True)
             jpg = mp4.with_suffix('.jpg')
             # 5 fotogramas repartidos por el clip (fps según su duración); el rótulo va con PIL: en drawtext los ":" de
             # "fuente:id" son separadores de opciones y el filtro falla
@@ -175,7 +177,7 @@ def bajar(q, ref, nombre=None):
     dest.mkdir(parents=True, exist_ok=True)
     out = dest / f"{slug(nombre or q)}_{c['fuente']}-{c['id']}.mp4"
     if c['fuente'] == 'youtube':
-        subprocess.run(['yt-dlp', '-q', '-f', 'bv*[height<=1920][ext=mp4]+ba/b[ext=mp4]/b', '--merge-output-format', 'mp4', '-o', str(out), c['full']], check=True)
+        subprocess.run(['yt-dlp', '-q', '-f', 'bv*[height<=1920][ext=mp4]+ba/b[ext=mp4]/b', '--merge-output-format', 'mp4', '-o', str(out, env=ENV_YT), c['full']], check=True)
     else:
         _bajar(c['full'], out)
     with open(dest / 'LICENCIA.txt', 'a', encoding='utf-8') as f:
