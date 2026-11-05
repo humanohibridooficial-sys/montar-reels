@@ -42,9 +42,9 @@ SFX_EXTRA = {   # recursos del 30-10: (fichero, desfase, dB)
     'tinte': ('SFX-P-golpe-grave.wav', 0.0, -7), 'tuit': ('SFX-pop.wav', 0.0, -6), 'cortinilla': ('SFX-whoosh.wav', -0.1, -4),
     'contador': ('SFX-P-tic.wav', 0.0, -6), 'marca': ('SFX-tic.wav', 0.05, -8), 'congelado': ('SFX-P-absorcion.wav', 0.0, -4),
     'detras': ('SFX-boom.wav', 0.0, -9), 'pizarra': ('SFX-whoosh.wav', -0.05, -6), 'barrido': ('SFX-P-barrido.wav', -0.08, -5),
-    'logo': ('SFX-brillo.wav', 0.0, -4)}
+    'logo': ('SFX-brillo.wav', 0.0, -4), 'marcador': ('SFX-P-tic.wav', 0.0, -6)}
 SFX_PUNTO = {'lista': ('SFX-P-tic.wav', -8), 'pildora': ('SFX-pop.wav', -8), 'pizarra': ('SFX-pop.wav', -12), 'mapa': ('SFX-tic.wav', -8),
-             'tarjetas': ('SFX-P-barrido.wav', -9)}   # uno por cada punto, palabra, jugador o tarjeta
+             'tarjetas': ('SFX-P-barrido.wav', -9), 'marcador': ('SFX-P-golpe.wav', -6)}   # uno por cada punto, palabra, jugador o tarjeta
 E += [(SFX_EXTRA[x['tipo']][0], x['in'] + SFX_EXTRA[x['tipo']][1], SFX_EXTRA[x['tipo']][2]) for x in plan.get('extras', []) if x['tipo'] in SFX_EXTRA]
 E += [(SFX_PUNTO[x['tipo']][0], t, SFX_PUNTO[x['tipo']][1]) for x in plan.get('extras', []) if x['tipo'] in SFX_PUNTO for t in x.get('items', [])]
 E = sorted(E, key=lambda e: e[1])
