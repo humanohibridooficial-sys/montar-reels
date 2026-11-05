@@ -183,6 +183,10 @@ if F.get('subsGrandes'):
 # Cuerpo de la línea grande del titular (revisor 84, 05-11): con "topsT2": 72 cabe "NO ES MEJOR QUE TÚ" en una línea.
 if F.get('topsT2'):
     CSS = CSS.replace('#tops .t2 { font: 900 112px/1 Inter', f"#tops .t2 {{ font: 900 {int(F['topsT2'])}px/1 Inter")
+# Cuerpo de los puntos de la lista (Luismi 05-11, reel 84: "se lee pequeña"): con "listaCuerpo": 88, más grande y en negrita.
+if F.get('listaCuerpo'):
+    CSS = CSS.replace('font: 600 64px/1.15 Inter, sans-serif; color: #fff; margin-bottom: 22px;',
+                      f"font: 800 {int(F['listaCuerpo'])}px/1.12 Inter, sans-serif; color: #fff; margin-bottom: 22px;")
 s = s.replace('  #pack { position: absolute; inset: 0; pointer-events: none; }', CSS + '  #pack { position: absolute; inset: 0; pointer-events: none; }')
 
 spans = [[b['id'], cue(b['in']), round(cue(b['out']) + 0.12, 3), b.get('modo', '')] for b in F.get('broll', [])]
