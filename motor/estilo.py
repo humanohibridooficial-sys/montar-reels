@@ -83,6 +83,19 @@ CSS = '''
   .pil { position: absolute; left: 50%; top: 1090px; transform: translateX(-50%); z-index: 7; opacity: 0; display: grid; place-items: center;
     background: #E0B83C; border-radius: 999px; padding: 14px 44px 10px; box-shadow: 0 14px 34px #0008; min-width: 200px; }
   .pil .pw { grid-area: 1 / 1; font: 400 72px/1 Anton, sans-serif; color: #0E1F3A; text-transform: uppercase; opacity: 0; white-space: nowrap; }
+  /* Marcador (Luismi 05-11, molde del ADS-01 de junio: "EL CAMPO: CLUB / LA CASA: ¿?" que pasa a TÚ). Dos casillas;
+     la de la derecha empieza con una incógnita y se completa con lo que dice. 772 px: no entra en la columna de botones. */
+  .mcd { position: absolute; left: 50%; top: 880px; transform: translateX(-50%); z-index: 7; opacity: 0; display: flex; gap: 12px;
+    filter: drop-shadow(0 14px 30px #0009); }
+  .mcd .cl { width: 380px; }
+  .mcd .et { font: 800 26px/1 Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase; text-align: center; padding: 11px 0 9px; }
+  .mcd .a .et { background: #E0B83C; color: #0E1F3A; }
+  .mcd .b .et { background: #1B3566; color: #D8DEEA; }
+  .mcd .vl { background: #0E1F3AEE; height: 104px; display: grid; place-items: center; }
+  .mcd .vl span { grid-area: 1 / 1; font: 400 50px/1 Anton, sans-serif; text-transform: uppercase; white-space: nowrap; }
+  .mcd .a .vl span { color: #E0B83C; }
+  .mcd .b .v0 { color: #FFFFFF; }
+  .mcd .b .v1 { color: #E0B83C; opacity: 0; }
   .piz { position: absolute; left: 50%; top: 170px; width: 450px; height: 300px; margin-left: -225px; z-index: 7; opacity: 0; perspective: 900px; }
   .piz .pz3 { width: 100%; height: 100%; transform-origin: 50% 100%; }
   .piz svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 20px 30px #000a); }
@@ -236,6 +249,15 @@ JS = '''
     } else if (x.tipo === 'lista') {
       tl.set(el, { opacity: 1 }, t0);
       el.querySelectorAll('.li').forEach((li, k) => tl.fromTo(li, { opacity: 0, x: -36 }, { opacity: 1, x: 0, duration: 0.22, ease: 'back.out(1.8)', immediateRender: false }, x.items[k]));
+      sale(el);
+    } else if (x.tipo === 'marcador') {   // entra con la incógnita; en su palabra, la casilla de la derecha se completa
+      const v0 = el.querySelector('.b .v0'), v1 = el.querySelector('.b .v1'), cb = el.querySelector('.b');
+      tl.fromTo(el, { opacity: 0, y: 30, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: 'back.out(1.8)', immediateRender: false }, t0);
+      if (x.items.length) {
+        const tc = x.items[0];
+        tl.set(v0, { opacity: 0 }, tc).fromTo(v1, { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.24, ease: 'back.out(2.2)', immediateRender: false }, tc)
+          .fromTo(cb, { scale: 1.08 }, { scale: 1, duration: 0.2, ease: 'power2.out', immediateRender: false }, tc);
+      }
       sale(el);
     } else if (x.tipo === 'pildora') {
       const pw = el.querySelectorAll('.pw');

@@ -257,6 +257,13 @@ for i, x in enumerate(F.get('extras', [])):
     elif tipo == 'lista':   # puntos sobre el propio plano, cada uno al nombrarlo
         XHTML.append(f'<div class="lst" id="x-{i}">' + (f'<div class="lt">{e(x["titulo"])}</div>' if x.get('titulo') else '')
                      + ''.join(f'<div class="li"><i></i><span>{re.sub(r"[*][*](.+?)[*][*]", r"<b>\1</b>", e(c[1]))}</span></div>' for c in subs) + '</div>')
+    elif tipo == 'marcador':   # {izq: [etiqueta, valor], der: [etiqueta, incógnita], palabras: [[cue, valor que la completa]], y}
+        iz, de = x['izq'], x['der']
+        final = subs[0][1] if subs else de[1]
+        XHTML.append(f'<div class="mcd" id="x-{i}"' + (f' style="top:{int(x["y"])}px"' if 'y' in x else '') + '>'
+                     f'<div class="cl a"><div class="et">{e(iz[0])}</div><div class="vl"><span>{e(iz[1])}</span></div></div>'
+                     f'<div class="cl b"><div class="et">{e(de[0])}</div><div class="vl"><span class="v0">{e(de[1])}</span>'
+                     f'<span class="v1">{e(final)}</span></div></div></div>')
     elif tipo == 'pildora':   # una palabra en la píldora, y cambia con cada una que dice
         XHTML.append(f'<div class="pil" id="x-{i}">' + ''.join(f'<span class="pw">{e(c[1])}</span>' for c in subs) + '</div>')
     elif tipo == 'pizarra':   # campo que se levanta sobre la cabeza; los jugadores salen uno a uno

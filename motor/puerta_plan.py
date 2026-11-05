@@ -49,7 +49,7 @@ if p['tachado'] and not p['tachado'][0] < p['tachado'][1] < p['tachado'][2]: fal
 if p['panel'] and p['panel'] != sorted(p['panel']): fallos.append('panel desordenado')
 # Dos cosas en la franja de arriba a la vez se pisan: el titular, el tuit y el contador comparten sitio.
 for x in p.get('extras', []):
-    if x['tipo'] in ('tuit', 'contador', 'pizarra', 'mapa'):
+    if x['tipo'] in ('tuit', 'contador', 'pizarra', 'mapa', 'marcador'):
         for t in p['tops']:
             if x['in'] < t[1] and t[0] < x['out']:
                 fallos.append(f"{max(x['in'], t[0]):.1f} s: el {x['tipo']} se pisa con el titular \"{t[2]}\"")
