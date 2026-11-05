@@ -101,8 +101,12 @@ def mixkit(q, n):
 
 
 def youtube(q, n):
-    # CC BY: el campo "license" de la ficha de YouTube. Solo los que lo llevan; la cita del autor es obligatoria.
-    r = subprocess.run(['yt-dlp', '--dump-json', '--skip-download', '--no-warnings', f'ytsearch{n * 5}:{q}'], capture_output=True, text=True, encoding='utf-8')
+    # CC BY: el campo "license" de la ficha de YouTube; la cita del autor es obligatoria. Se busca con el filtro de
+    # Creative Commons de YouTube (sp=EgIwAQ): con "ytsearch" normal no salía ni uno (control: Big Buck Bunny sí lo da).
+    # OJO: hay canales que marcan CC partidos de la tele que no son suyos: vale solo lo grabado por el propio canal.
+    url = 'https://www.youtube.com/results?' + urllib.parse.urlencode({'search_query': q}) + '&sp=EgIwAQ%253D%253D'
+    r = subprocess.run(['yt-dlp', '--dump-json', '--skip-download', '--no-warnings', '--playlist-end', str(n * 3), url],
+                       capture_output=True, text=True, encoding='utf-8')
     out = []
     for l in r.stdout.splitlines():
         try:
