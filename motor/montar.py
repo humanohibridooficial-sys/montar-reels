@@ -180,6 +180,9 @@ if F.get('subsGrandes'):
     CSS = (CSS.replace('#subs .l1 { font: 800 54px/1.15 Inter', '#subs .l1 { -webkit-text-stroke: 1.5px #070D16; paint-order: stroke fill; font: 900 62px/1.12 Inter')
               .replace('#subs .l2 { font: 900 96px/1.02 Inter', '#subs .l2 { font: 900 104px/1.0 Inter')
               .replace('#subs .l2.s { font: italic 600 112px/1.0 Playfair', '#subs .l2.s { font: italic 600 118px/1.0 Playfair'))
+# Cuerpo de la línea grande del titular (revisor 84, 05-11): con "topsT2": 72 cabe "NO ES MEJOR QUE TÚ" en una línea.
+if F.get('topsT2'):
+    CSS = CSS.replace('#tops .t2 { font: 900 112px/1 Inter', f"#tops .t2 {{ font: 900 {int(F['topsT2'])}px/1 Inter")
 s = s.replace('  #pack { position: absolute; inset: 0; pointer-events: none; }', CSS + '  #pack { position: absolute; inset: 0; pointer-events: none; }')
 
 spans = [[b['id'], cue(b['in']), round(cue(b['out']) + 0.12, 3), b.get('modo', '')] for b in F.get('broll', [])]
