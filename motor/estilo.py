@@ -136,7 +136,9 @@ JS = '''
       if (t0 === 0) $id('subs').style.opacity = 0; else tl.set('#subs', { opacity: 0 }, t0);
       tl.set('#subs', { opacity: 1 }, t1);
     }
-    else tl.fromTo(el, { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: 0.22, ease: 'back.out(1.8)', immediateRender: false }, t0);
+    // 05-11 (revisor 84): la entrada iba en el else y un titular en el sitio del subtítulo con t0 > 0 no salía nunca
+    // (ocultaba el subtítulo y no entraba nada). El del fotograma 0 con topsEnSubs ya está visible de base.
+    if (!PLAN.topsEnSubs || t0 > 0) tl.fromTo(el, { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: 0.22, ease: 'back.out(1.8)', immediateRender: false }, t0);
     tl.set(el, { opacity: 0 }, t1);
   });
   // Pantalla clara: cabecera que cambia con cada punto y lista que se va completando.
