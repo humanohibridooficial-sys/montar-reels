@@ -115,9 +115,14 @@ for b in B:
 
 # ---- 3. palabras ---------------------------------------------------------------------------------------
 FIX = F.get('fix', {})
+# "borrarPalabras": inicios (s de la toma) de palabras que no van al subtítulo. Whisper a veces estira una muletilla
+# sobre la palabra de antes y el "quitar" no la saca (marca3: "es tocamos", el "es" no suena tras el corte).
+BORRAR = {round(t, 2) for t in F.get('borrarPalabras', [])}
 words = []
 for seg in json.load(open(PALABRAS, encoding='utf-8'))[f'{N}-limpio.wav']:
     for w in seg['words']:
+        if round(w['start'], 2) in BORRAR:
+            continue
         s, e = nuevo(w['start']), nuevo(w['end'])
         if s is None and e is None:
             continue
@@ -183,6 +188,12 @@ if F.get('subsGrandes'):
 # Cuerpo de la línea grande del titular (revisor 84, 05-11): con "topsT2": 72 cabe "NO ES MEJOR QUE TÚ" en una línea.
 if F.get('topsT2'):
     CSS = CSS.replace('#tops .t2 { font: 900 112px/1 Inter', f"#tops .t2 {{ font: 900 {int(F['topsT2'])}px/1 Inter")
+# Dorado en caja marino (revisor marca3, 06-11): con algo dorado al fondo (el trofeo de Radio MARCA) el dorado no se despega.
+# Con "doradoEnCaja": true, la línea grande del titular y las claves del subtítulo van en caja marino, como el clip 2.
+if F.get('doradoEnCaja'):
+    _caja = ' display: inline-block; background: #0E1F3A; padding: 8px 22px 10px; border-radius: 12px; -webkit-text-stroke: 0; text-shadow: none;'
+    CSS = (CSS.replace('#tops .t2 { font:', '#tops .t2 {' + _caja + ' font:', 1)
+              .replace('#subs .l2 { font:', '#subs .l2 {' + _caja + ' font:', 1))
 # Cuerpo de los puntos de la lista (Luismi 05-11, reel 84: "se lee pequeña"): con "listaCuerpo": 88, más grande y en negrita.
 if F.get('listaCuerpo'):
     CSS = CSS.replace('font: 600 64px/1.15 Inter, sans-serif; color: #fff; margin-bottom: 22px;',
