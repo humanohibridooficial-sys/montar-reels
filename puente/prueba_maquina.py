@@ -35,6 +35,24 @@ ok(f"Bash({puente.PY_PIL} {carpeta}/montar_pdf.py)" in puente.herramientas_maqui
 ok(not any(x in ("Skill", "Task", "Agent", "PowerShell") for a in ("ideas", "pieza") for x in puente.herramientas_maquina(a, "reel", carpeta)),
    "nunca Skill, Task ni Agent")
 
+# Spec hh-kpi 2026-11-08-atlas-negocio-independiente: el proyecto Atlas va a su Fábrica; lo demás, a La Máquina.
+ok(puente.fabrica_de(puente.PROYECTO_ATLAS) == puente.ATLAS and puente.fabrica_de(OTRO) == puente.NINO,
+   "Atlas va a ~/.fabrica-atlas y otro proyecto a ~/.fabrica-nino")
+ok(puente.carpeta_maquina(H, "c1", puente.ATLAS).startswith(puente.SALIDA_ATLAS.replace("\\", "/"))
+   and puente.carpeta_maquina(H, "c1").startswith(puente.SALIDA_MAQUINA.replace("\\", "/")), "cada uno deja la pieza en su carpeta de salida")
+for tipo in puente.TIPOS_MAQUINA:
+    bash = [x for x in puente.herramientas_maquina("pieza", tipo, carpeta, puente.ATLAS) if x.startswith("Bash(")]
+    ok(bash and all(x.startswith(f"Bash({puente.PY_PIL} {puente.ATLAS}/skills/") or "montar_pdf" in x for x in bash),
+       f"Atlas, pieza {tipo}: solo scripts de la Fábrica de Atlas")
+for a in ("ideas", "pieza"):
+    oa = puente.orden_maquina(a, "carrusel", carpeta, puente.ATLAS)
+    of = puente.orden_maquina(a, "carrusel", carpeta)
+    ok("REGLAS-KAIZEN" in of and puente.NINO in of, f"{a}: control, la orden de FF360 sí lleva Kaizen y su carpeta")
+    ok("Kaizen" not in oa and puente.NINO not in oa and "/avatar" not in oa and "nutretufutbol" not in oa,
+       f"{a}: la orden de Atlas no lleva nada de FF360 (ni Kaizen, ni su carpeta, ni su avatar)")
+    ok(f"{puente.ATLAS}/config.json" in oa and "instagram.com" in oa and "cámara" in oa,
+       f"{a}: la de Atlas lee su config, prohíbe instagram.com y dice que sale Luismi a cámara")
+
 for a in ("ideas", "pieza"):
     o = puente.orden_maquina(a, "carrusel", carpeta)
     # Cambiado a sabiendas (29-10, Luismi: "avatar y reglas de Kaizen"): de Kaizen, solo el avatar y REGLAS-KAIZEN.md;
