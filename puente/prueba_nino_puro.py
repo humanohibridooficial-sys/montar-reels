@@ -1,7 +1,7 @@
 # Prueba de la copia de Nino puro (spec hh-kpi 2026-10-28-negocio-sencillo-dos-mundos, P5 M1).
 #   python puente/prueba_nino_puro.py
-# Monta unas skills falsas con un parche K falso en una carpeta temporal: no toca ~/.claude ni ~/.fabrica.
-import difflib, os, sys, tempfile
+# Monta unas skills falsas con el bloque K en una carpeta temporal: no toca ~/.claude ni ~/.fabrica.
+import os, sys, tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import nino_puro  # noqa: E402
@@ -29,20 +29,17 @@ def escribir(p, t):
 base = tempfile.mkdtemp(prefix="nino-")
 origen, nino, fab = (os.path.join(base, x) for x in ("skills", "fabrica-nino", "fabrica"))
 LIMPIO = "---\nname: carrusel\n---\n\n# CARRUSEL\r\nLee ~/.fabrica/config.json antes de nada.\r\n"
-BLOQUE = "\n> **FF360: manda Kaizen.** Lee `~/.fabrica/KAIZEN.md`.\n"
+# Como lo deja ~/.fabrica/parches/kaizen_bloque.py: línea en blanco + líneas "> " justo tras el frontmatter.
+BLOQUE = "\n> **FF360: manda Kaizen (Luismi, 17-10).** Antes de nada, lee entero\n> `~/.fabrica/KAIZEN.md`.\n"
 CON_K = LIMPIO.replace("---\n\n#", "---\n" + BLOQUE + "\n#")
 for s in nino_puro.SKILLS:
-    escribir(os.path.join(origen, s, "SKILL.md"), CON_K if s == "carrusel" else f"# {s}\nnada\n")
+    escribir(os.path.join(origen, s, "SKILL.md"), CON_K if s == "carrusel" else f"---\nname: {s}\n---\n{BLOQUE}\n# {s}\nnada\n")
 escribir(os.path.join(origen, "guion-viral", "scripts", "qa.py"),
          'CFG = Path.home() / ".fabrica" / "config.json"\nA = "~/.claude/skills/goated-ads/SKILL.md"\n'
          'B = "~/.claude/skills/chatgpt-image-ad/x.py"\nC = "~/.claude/skills/carrusel-ff360/x"\n'
          'D = "com.luismi.fabrica.diaria.plist"\nE = r"C:\\Users\\x\\.claude\\skills\\ugc\\a"\n')
 with open(os.path.join(origen, "carrusel", "fuente.ttf"), "wb") as f:
     f.write(b"\x00\xff.fabrica\xfe")
-diff = "".join(difflib.unified_diff(LIMPIO.splitlines(True), CON_K.splitlines(True),
-                                    "a/carrusel/SKILL.md", "b/carrusel/SKILL.md"))
-parche = os.path.join(base, "04.diff")
-escribir(parche, diff)
 config = os.path.join(base, "config-maquina.json")
 escribir(config, '{"marca": {"nombre": "FF360"}}\n')
 env = os.path.join(fab, ".env")
@@ -54,11 +51,12 @@ escribir(os.path.join(fab, "avatar", "sacar.py"), "print('no va')\n")
 escribir(os.path.join(fab, "KAIZEN.md"), "# K\n## 0. Como se decide\ncero\n## 2. Avatar\nel avatar\n## 3. Voz y guiones\n"
          "la estructura de Kaizen\n## 4. Lo que nunca se hace\nnunca el precio\n## 5. Colores\n")
 
-h = nino_puro.construir(origen, nino, parche, config, env, fab)
+h = nino_puro.construir(origen, nino, config, env, fab)
 cs = os.path.join(nino, "skills")
 ok(h["restos"] == {"kaizen": 0, "fabrica_ff360": 0, "skill_con_parche": 0}, f"la copia queda pura: {h['restos']}")
 car = leer(os.path.join(cs, "carrusel", "SKILL.md"))
 ok("Kaizen" not in car and "# CARRUSEL" in car, "sin el bloque de Kaizen y con el resto de la skill")
+ok(car == LIMPIO.replace(".fabrica/", ".fabrica-nino/"), "queda exactamente como antes del bloque (sin líneas de más)")
 ok("~/.fabrica-nino/config.json" in car, "lee la config de ~/.fabrica-nino")
 ok("\r\n" in car, "respeta los finales de línea (CRLF)")
 qa = leer(os.path.join(cs, "guion-viral", "scripts", "qa.py"))
@@ -81,25 +79,25 @@ ok(os.path.samefile(env, os.path.join(nino, ".env")) and h.get("env") == "enlaza
 # Cambiado a sabiendas (29-10): antes la config no se pisaba; ahora sale siempre de la plantilla del repo, para que no se
 # quede una vieja (la de Atlas del primer día).
 escribir(os.path.join(nino, "config.json"), '{"marca": {"nombre": "Atlas"}}\n')
-h2 = nino_puro.construir(origen, nino, parche, config, env, fab)
+h2 = nino_puro.construir(origen, nino, config, env, fab)
 ok("Atlas" not in leer(os.path.join(nino, "config.json")), "una config vieja se cambia por la de la plantilla")
 ok(os.path.isfile(os.path.join(cs, "vsl", "SKILL.md")), "la segunda vez rehace la copia entera")
 
-# Si las skills se actualizan y el parche ya no encaja, no se hace nada y la copia buena se queda.
+# Si una skill llega sin el bloque K (se actualizó y no se corrió reaplicar.py), no se hace nada y la copia buena se queda.
 escribir(os.path.join(origen, "carrusel", "SKILL.md"), "# otra version\n")
 try:
-    nino_puro.construir(origen, nino, parche, config, env, fab)
-    ok(False, "un parche que no encaja tendría que parar")
+    nino_puro.construir(origen, nino, config, env, fab)
+    ok(False, "una skill sin bloque K tendría que parar")
 except RuntimeError as e:
-    ok("no sale limpio" in str(e), "un parche que no encaja para")
+    ok("no traen el bloque K" in str(e) and "carrusel" in str(e), "una skill sin bloque K para y dice cuál")
 ok("# CARRUSEL" in leer(os.path.join(cs, "carrusel", "SKILL.md")), "y la copia buena de antes sigue")
 escribir(os.path.join(origen, "carrusel", "SKILL.md"), CON_K)
 
 # Control: sin reescribir rutas, la comprobación TIENE que saltar (si no, el "0 restos" de arriba no prueba nada).
 bueno = nino_puro.reescribir
-nino_puro.reescribir = lambda t: t
+nino_puro.reescribir = lambda t, *a: t
 try:
-    nino_puro.construir(origen, nino, parche, config, env, fab)
+    nino_puro.construir(origen, nino, config, env, fab)
     ok(False, "sin reescribir tendría que parar")
 except RuntimeError as e:
     ok("no queda pura" in str(e), "sin reescribir rutas, para (control positivo)")
