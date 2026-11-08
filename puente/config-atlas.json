@@ -1,0 +1,94 @@
+{
+  "_comentario": "LA FABRICA de Atlas (spec hh-kpi 2026-11-08-atlas-negocio-independiente). fabrica_atlas.py la copia a ~/.fabrica-atlas/config.json SOLO si no existe: despues manda lo que deje fabrica-init. Nino tal cual, sin nada del otro negocio. Luismi sale a camara: sin avatar ni voz clonada. API keys NUNCA aqui.",
+  "version": 1,
+  "nivel": "esencial",
+  "marca": {
+    "nombre": "Atlas Coach",
+    "handle": "@atlas.training.app",
+    "colores": {
+      "primario": "#3B82F6",
+      "secundario": "#FFFFFF",
+      "fondo": "#12204C",
+      "marcador": "#1A3462"
+    },
+    "_colores": "PROVISIONAL (P2 del spec): fondo y marcador de hh-kpi lib/atlas-contenido/paletas.ts (provisional: true), primario = acento de Atlas en lib/centro-apps.ts. 'secundario' es la TINTA del texto en las skills de la Fabrica, no un acento. Se confirma en el fabrica-init de Atlas.",
+    "zona_segura": {
+      "arriba": 0.15,
+      "abajo": 0.35,
+      "lados": 0.06
+    },
+    "fuente_titulo": "Anton",
+    "fuente_cuerpo": "Poppins",
+    "mascota": null,
+    "tono": "Coach que habla de negocio claro: directo, concreto, sin humo y sin promesas de cifras. Espanol de Espana.",
+    "trato": "tuteo",
+    "idiomas": [
+      "es"
+    ]
+  },
+  "nicho": {
+    "tema": "Entrenadores personales y nutricionistas que quieren llevar su negocio online sin vivir pegados al movil",
+    "subtemas": [
+      "Captar clientes sin depender del boca a boca",
+      "Ahorrar horas en planes, seguimiento y check-ins",
+      "Retener clientes mas meses",
+      "Cobrar y vender online sin ser vendedor",
+      "Usar la IA en tu negocio de coaching"
+    ],
+    "subreddits": [
+      "personaltraining",
+      "nutrition",
+      "Entrepreneur"
+    ],
+    "cuentas_x": [],
+    "canales_youtube": [],
+    "webs": [
+      "https://atlascoach.pro"
+    ]
+  },
+  "stack": {
+    "ffmpeg": true,
+    "remotion": false,
+    "elevenlabs": {
+      "tiene": false,
+      "modo": null,
+      "voice_id": null
+    },
+    "heygen": {
+      "tiene": false,
+      "modo": null,
+      "avatar_id": null
+    },
+    "higgsfield": false,
+    "sandcastles": false,
+    "supabase": false,
+    "airtable": false,
+    "manychat": false,
+    "kie": false
+  },
+  "salidas": {
+    "reel": true,
+    "youtube": false,
+    "carrusel": true,
+    "pdfs": false,
+    "ugc": false,
+    "seo": false
+  },
+  "cta": {
+    "keyword": "",
+    "link": "https://atlascoach.pro",
+    "oferta": ""
+  },
+  "local": {
+    "ciudad": "",
+    "zonas": [],
+    "telefono": "",
+    "pais": "ES"
+  },
+  "rutas": {
+    "output": "~/fabrica-output/atlas"
+  },
+  "escalera": [
+    "carrusel_pdfs"
+  ]
+}

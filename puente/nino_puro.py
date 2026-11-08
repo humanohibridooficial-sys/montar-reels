@@ -2,19 +2,22 @@
 #   python puente/nino_puro.py            -> rehace ~/.fabrica-nino/skills desde ~/.claude/skills
 #   python puente/nino_puro.py --comprobar -> solo mira la copia que hay, sin tocar nada
 # Luismi, 29-10: "para la maquina de nino, manda nino, para la de FF360 cerebro kaizen estructura nino".
-# Las skills de ~/.claude/skills llevan el parche K (~/.fabrica/parches/04-kaizen-manda.diff) y leen ~/.fabrica, que
-# es FF360. Esta copia quita el parche con `git apply -R` (no a mano) y lleva todo lo de ~/.fabrica a ~/.fabrica-nino,
-# con su historial y su ledger. Las originales no se tocan: FF360(K) sigue igual.
+# Las skills de ~/.claude/skills llevan el bloque K ("FF360: manda Kaizen", lo pone ~/.fabrica/parches/kaizen_bloque.py)
+# y leen ~/.fabrica, que es FF360. Esta copia quita el bloque y lleva todo lo de ~/.fabrica a ~/.fabrica-nino, con su
+# historial y su ledger. Las originales no se tocan: FF360(K) sigue igual.
+# 08-11: el bloque se quita por texto y no con `git apply -R` de 04-kaizen-manda.diff, que dejó de encajar con la v1.14.1
+# de Nino y se retiró. Lo mismo lo usa puente/fabrica_atlas.py (spec hh-kpi 2026-11-08-atlas-negocio-independiente).
 # 29-10 (Luismi: La Máquina es "FF360, con mi avatar", con "avatar y reglas de Kaizen"): la marca es la de FF360
 # (config-maquina.json), el avatar es el de ~/.fabrica/avatar y las reglas fijas son los apartados 2 (avatar) y 4 (lo que
 # nunca se hace) de ~/.fabrica/KAIZEN.md, copiados cada vez a REGLAS-KAIZEN.md. La estructura (apartado 3) es de Nino.
-import argparse, os, re, shutil, subprocess, sys
+import argparse, os, re, shutil, sys
 
 CASA = os.path.expanduser("~")
 ORIGEN = os.path.join(CASA, ".claude", "skills")
 FABRICA = os.path.join(CASA, ".fabrica")
 NINO = os.path.join(CASA, ".fabrica-nino")
-PARCHE_K = os.path.join(FABRICA, "parches", "04-kaizen-manda.diff")
+# La primera línea del bloque K. El bloque son las líneas seguidas que empiezan por ">" a partir de ella.
+MARCA_K = "FF360: manda Kaizen"
 CONFIG_MAQUINA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config-maquina.json")
 # Los apartados de KAIZEN.md que valen en La Máquina, por su número de título ("## 2. Avatar...", "## 4. Lo que nunca...").
 APARTADOS_KAIZEN = ("2", "4")
@@ -34,9 +37,26 @@ RE_SKILL = re.compile(r"\.claude([/\\]{1,2})skills\1(" + _NOMBRES + r")(?![\w-])
 RE_KAIZEN = re.compile(r"kaizen", re.I)
 
 
-def reescribir(texto: str) -> str:
-    texto = RE_SKILL.sub(lambda m: f".fabrica-nino{m.group(1)}skills{m.group(1)}{m.group(2)}", texto)
-    return RE_FABRICA.sub(".fabrica-nino", texto)
+def re_skill(skills) -> re.Pattern:
+    return re.compile(r"\.claude([/\\]{1,2})skills\1(" + "|".join(map(re.escape, skills)) + r")(?![\w-])")
+
+
+def reescribir(texto: str, carpeta: str = ".fabrica-nino", patron: re.Pattern = RE_SKILL) -> str:
+    texto = patron.sub(lambda m: f"{carpeta}{m.group(1)}skills{m.group(1)}{m.group(2)}", texto)
+    return RE_FABRICA.sub(carpeta, texto)
+
+
+def quitar_bloque_k(texto: str):
+    """(texto sin el bloque K, si lo había). Quita sus líneas "> ..." y la línea en blanco que lo precede."""
+    lineas = texto.split("\n")
+    for i, linea in enumerate(lineas):
+        if linea.startswith(">") and MARCA_K in linea:
+            fin = i
+            while fin < len(lineas) and lineas[fin].startswith(">"):
+                fin += 1
+            ini = i - 1 if i > 0 and lineas[i - 1].strip() == "" else i
+            return "\n".join(lineas[:ini] + lineas[fin:]), True
+    return texto, False
 
 
 def textos(raiz: str):
@@ -52,22 +72,46 @@ def textos(raiz: str):
                 continue
 
 
-def restos(raiz: str) -> dict:
+def restos(raiz: str, patron: re.Pattern = RE_SKILL) -> dict:
     """Lo que no puede quedar en la copia. Todo a 0 = Nino puro."""
     r = {"kaizen": 0, "fabrica_ff360": 0, "skill_con_parche": 0}
     for _, t in textos(raiz):
         r["kaizen"] += len(RE_KAIZEN.findall(t))
         r["fabrica_ff360"] += len(RE_FABRICA.findall(t))
-        r["skill_con_parche"] += len(RE_SKILL.findall(t))
+        r["skill_con_parche"] += len(patron.findall(t))
     return r
 
 
-def git_apply(diff: str, cwd: str, *extra) -> tuple[bool, str]:
-    # Igual que ~/.fabrica/parches/reaplicar.py: sin subir a un repo de arriba y sin reescribir los finales de línea.
-    env = dict(os.environ, GIT_CEILING_DIRECTORIES=os.path.dirname(cwd))
-    r = subprocess.run(["git", "-c", "core.autocrlf=false", "apply", *extra, diff], cwd=cwd, env=env,
-                       capture_output=True, text=True)
-    return r.returncode == 0, (r.stderr or r.stdout).strip()
+def copia_limpia(origen: str, skills: list, nueva: str, carpeta: str) -> int:
+    """Copia `skills` de origen a `nueva`, sin el bloque K y con las rutas en `carpeta`. Devuelve ficheros cambiados.
+    Cada SKILL.md tiene que traer el bloque: si falta, las originales no son las de FF360(K) y mejor parar."""
+    shutil.rmtree(nueva, ignore_errors=True)
+    for s in skills:
+        shutil.copytree(os.path.join(origen, s), os.path.join(nueva, s),
+                        ignore=shutil.ignore_patterns(".git", "__pycache__"))
+    sin_bloque = []
+    for s in skills:
+        p = os.path.join(nueva, s, "SKILL.md")
+        with open(p, encoding="utf-8", newline="") as fh:
+            t, habia = quitar_bloque_k(fh.read())
+        if not habia:
+            sin_bloque.append(s)
+            continue
+        with open(p, "w", encoding="utf-8", newline="") as fh:
+            fh.write(t)
+    if sin_bloque:
+        shutil.rmtree(nueva, ignore_errors=True)
+        raise RuntimeError("Estas skills no traen el bloque K (¿falta python ~/.fabrica/parches/reaplicar.py?): "
+                           + ", ".join(sin_bloque))
+    patron = re_skill(skills)
+    cambiados = 0
+    for p, t in textos(nueva):
+        n = reescribir(t, carpeta, patron)
+        if n != t:
+            with open(p, "w", encoding="utf-8", newline="") as fh:
+                fh.write(n)
+            cambiados += 1
+    return cambiados
 
 
 def reglas_kaizen(texto: str) -> str:
@@ -83,13 +127,11 @@ def reglas_kaizen(texto: str) -> str:
     return cabeza + "".join(t.rstrip() + "\n\n" for t in elegidos)
 
 
-def construir(origen=ORIGEN, nino=NINO, parche=PARCHE_K, config=CONFIG_MAQUINA, env_ff360=None, fabrica=FABRICA) -> dict:
+def construir(origen=ORIGEN, nino=NINO, config=CONFIG_MAQUINA, env_ff360=None, fabrica=FABRICA) -> dict:
     """Rehace nino/skills desde cero. Devuelve lo que quedó (restos) y lo que se hizo."""
     faltan = [s for s in SKILLS if not os.path.isdir(os.path.join(origen, s))]
     if faltan:
         raise RuntimeError("Faltan skills en %s: %s" % (origen, ", ".join(faltan)))
-    if not os.path.isfile(parche):
-        raise RuntimeError("No encuentro el parche K: %s" % parche)
     avatar = os.path.join(fabrica, "avatar")
     if not os.path.isfile(os.path.join(avatar, "avatar.json")):
         raise RuntimeError("No encuentro el avatar: %s" % os.path.join(avatar, "avatar.json"))
@@ -98,27 +140,7 @@ def construir(origen=ORIGEN, nino=NINO, parche=PARCHE_K, config=CONFIG_MAQUINA, 
 
     skills = os.path.join(nino, "skills")
     nueva = skills + ".nueva"
-    shutil.rmtree(nueva, ignore_errors=True)
-    for s in SKILLS:
-        shutil.copytree(os.path.join(origen, s), os.path.join(nueva, s),
-                        ignore=shutil.ignore_patterns(".git", "__pycache__"))
-
-    ok, err = git_apply(parche, nueva, "--check", "-R")
-    if not ok:
-        shutil.rmtree(nueva, ignore_errors=True)
-        raise RuntimeError("El parche K no sale limpio de las skills (¿se actualizaron?): " + err)
-    ok, err = git_apply(parche, nueva, "-R")
-    if not ok:
-        shutil.rmtree(nueva, ignore_errors=True)
-        raise RuntimeError("No se pudo quitar el parche K: " + err)
-
-    cambiados = 0
-    for p, t in textos(nueva):
-        n = reescribir(t)
-        if n != t:
-            with open(p, "w", encoding="utf-8", newline="") as fh:
-                fh.write(n)
-            cambiados += 1
+    cambiados = copia_limpia(origen, SKILLS, nueva, ".fabrica-nino")
 
     quedan = restos(nueva)
     if any(quedan.values()):
