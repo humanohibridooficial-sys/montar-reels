@@ -370,7 +370,8 @@ plan = {
     # destapaba la cortinilla al salir y se quedaba 3,4 s).
     'follow': [max([fol - 0.8, (panel[-1] + 0.15) if panel else 0]
                    + [x['out'] + 0.1 for x in EXTRAS if x['tipo'] in ('cortinilla', 'logo', 'mapa', 'lista') and x['out'] <= fol]), fol],
-    'followEnSubs': FOLLOW_TOP != 300, 'topsEnSubs': TOPS_TOP != 300,
+    # "sinTarjeta": true (87, 09-11): la tarjeta va fuera de pantalla (followTop 3000) y no debe esconder los subtítulos del CTA.
+    'followEnSubs': FOLLOW_TOP != 300 and not F.get('sinTarjeta'), 'topsEnSubs': TOPS_TOP != 300,
     'claves': [norm(x) for x in F.get('claves', [])], 'serif': [norm(x) for x in F.get('serif', [])],
     'tops': [[cue(t[0]), cue(t[1]), t[2], t[3], t[4]] for t in F.get('tops', [])],
     'extras': EXTRAS,
