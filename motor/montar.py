@@ -342,16 +342,23 @@ s = s.replace('  <video id="talk" class="clip" data-om-id="talk" data-var-src="t
 ESC = F.get('esc', [1.0, 1.15, 1.05, 1.22])
 zoom, k, last = [[0, F.get('zoom0', 1.12)]], 1, 0
 joins = [round(sum(b - a for a, b in KEEP[:n]), 3) for n in range(1, len(KEEP))]
+# "punch" (ficha): cues donde el plano se acerca de golpe, para no dejar más de 2,5 s de cara igual (revisor 82, 09-11).
+PUNCH = sorted(cue(c) for c in F.get('punch', []))
 for n, w in enumerate(words[1:], 1):
+    while PUNCH and PUNCH[0] <= w['start'] + 1e-6:
+        last = PUNCH.pop(0); zoom.append([last, round(min(zoom[-1][1] + 0.14, 1.3), 2)])
     prev = words[n - 1]
     gap = w['start'] - prev['end']
-    nueva = re.search(r'[.,?!]$', prev['word']) or gap > 0.3 or any(abs(w['start'] - j) < 0.2 for j in joins)
+    # Revisor 82 (09-11): tras un empalme el salto caía en la palabra, 4 fotogramas después del corte: va en el corte.
+    cut = next((j for j in joins if 0 <= w['start'] - j < 0.2), None)
+    nueva = re.search(r'[.,?!]$', prev['word']) or gap > 0.3 or cut is not None
+    t = cut if cut is not None and cut > last else w['start']
     # 2,6 y no 3: salta en la palabra siguiente, y la puerta del plan no deja pasar más de 3 s sin un cambio.
     # Si whisper estira una palabra (un "lo..." de 2 s), la siguiente llega tarde: se cambia a mitad de palabra.
     while w['start'] - last > 3.0:
         last = round(last + 2.6, 3); zoom.append([last, ESC[k % len(ESC)]]); k += 1
-    if (nueva and w['start'] - last >= 1.8) or w['start'] - last > 2.6:
-        zoom.append([w['start'], ESC[k % len(ESC)]]); k += 1; last = w['start']
+    if (nueva and w['start'] - last >= 1.8) or w['start'] - last > 2.6 or (cut is not None and F.get('punch') and t - last >= 0.8):
+        zoom.append([t, ESC[k % len(ESC)]]); k += 1; last = t
 fol = cue(F['follow'])
 plan = {
     'spans': spans, 'panel': panel, 'zoom': zoom,
