@@ -21,8 +21,16 @@ def run(*a):
 
 # Tramos finales: los de la ficha, menos lo que dice "quitar" (muletillas, repeticiones) y menos las pausas
 # de más de 0,35 s que mide la voz limpia, que se dejan en ~0,22 s (ritmo de los ejemplos).
+# "pausaGiro" (ficha, opcional): segundos de la toma donde empieza la palabra del giro ("necesitas", "lo que
+# hago"...). El silencio grabado justo antes se deja en ~0,65 s en vez de ~0,22 (método Miralles; prueba del
+# 09-11 en 3-4 reels antes de dejarlo fijo: medido, el hueco antes del giro quedaba en 0,0-0,4 s).
+GIROS = F.get('pausaGiro', [])
 def recortar(keep, quitar, pausas):
-    fuera = sorted([list(q) for q in quitar] + [[s + 0.12, e - 0.10] for s, e in pausas if e - s > 0.35])
+    def tramo(s, e):
+        if any(0 <= g - e <= 0.3 for g in GIROS):
+            return [s + 0.10, e - 0.55] if e - s > 0.75 else None
+        return [s + 0.12, e - 0.10]
+    fuera = sorted([list(q) for q in quitar] + [t for s, e in pausas if e - s > 0.35 for t in [tramo(s, e)] if t])
     out = []
     for a, b in keep:
         cur = a
