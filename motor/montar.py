@@ -94,10 +94,14 @@ FPS = 30
 KEEP = [[round(round(a * FPS) / FPS, 4), round(round(b * FPS) / FPS, 4)] for a, b in KEEP]
 LEN = round(sum(b - a for a, b in KEEP), 3)
 sel = '+'.join(f'between(n,{round(a * FPS)},{round(b * FPS) - 1})' for a, b in KEEP)
-parts = f"[0:v]fps={FPS},select='{sel}',setpts=N/{FPS}/TB[v];" + ''.join(
+# "cierre" (ficha, opcional, 10-11 marca4): segundos sin voz tras la última palabra. La imagen se queda en su último
+# fotograma y el audio en silencio; el b-roll y los rótulos del cierre entran con cue numérica (> fin de la voz).
+CIERRE = float(F.get('cierre', 0))
+parts = f"[0:v]fps={FPS},select='{sel}',setpts=N/{FPS}/TB" + (f',tpad=stop_mode=clone:stop_duration={CIERRE}' if CIERRE else '') + '[v];' + ''.join(
     f'[1:a]atrim={a}:{b},asetpts=PTS-STARTPTS,afade=t=in:d=0.015,afade=t=out:st={round(b - a - 0.015, 3)}:d=0.015[a{i}];'
     for i, (a, b) in enumerate(KEEP))
-cat = ''.join(f'[a{i}]' for i in range(len(KEEP))) + f'concat=n={len(KEEP)}:v=0:a=1[a]'
+cat = ''.join(f'[a{i}]' for i in range(len(KEEP))) + f'concat=n={len(KEEP)}:v=0:a=1' + (f',apad=pad_dur={CIERRE}' if CIERRE else '') + '[a]'
+LEN = round(LEN + CIERRE, 3)
 run('ffmpeg', '-v', 'error', '-y', '-i', str(SRC), '-i', str(VOZ / f'{N}-limpio.wav'), '-filter_complex', parts + cat,
     '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-crf', '17', '-preset', 'medium', '-pix_fmt', 'yuv420p',
     '-c:a', 'aac', '-b:a', '192k', str(P / 'assets/talk.mp4'))
