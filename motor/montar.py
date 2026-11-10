@@ -68,7 +68,9 @@ _b = KEEP[-1][1]
 _fin = [float(s) for s, e in re.findall(r'silence_start: ([\d.]+)[\s\S]*?silence_end: ([\d.]+)', _sd)
         if float(e) > _b and _b - 0.6 < float(s) < _b + 1.0]
 if _fin and not F.get('finExacto'):
-    KEEP[-1][1] = round(_fin[0] + 0.15, 3)
+    # "cola" (ficha, opcional): segundos de silencio tras la última palabra. Con apretar activo el motor deja ~0,15 s
+    # y la cola se queda corta (pieza 90, 09-11): las piezas piden 0,5-0,8 s sin tener que apagar apretar.
+    KEEP[-1][1] = round(_fin[0] + F.get('cola', 0.15), 3)
 
 if not (P / 'vendor').exists():
     shutil.copytree(PLANTILLA / 'vendor', P / 'vendor')
