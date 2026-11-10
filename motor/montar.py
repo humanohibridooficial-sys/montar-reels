@@ -356,7 +356,9 @@ joins = [round(sum(b - a for a, b in KEEP[:n]), 3) for n in range(1, len(KEEP))]
 PUNCH = sorted(cue(c) for c in F.get('punch', []))
 for n, w in enumerate(words[1:], 1):
     while PUNCH and PUNCH[0] <= w['start'] + 1e-6:
-        last = PUNCH.pop(0); zoom.append([last, round(min(zoom[-1][1] + 0.14, 1.3), 2)])
+        z = zoom[-1][1] + 0.14   # punch-in; si pasa del tope (zoomMax), va al tope o, si ya está en él, se abre a 1,0
+        tope = F.get('zoomMax', 1.3)
+        last = PUNCH.pop(0); zoom.append([last, round(z if z <= tope else (tope if tope - zoom[-1][1] >= 0.06 else 1.0), 2)])
     prev = words[n - 1]
     gap = w['start'] - prev['end']
     # Revisor 82 (09-11): tras un empalme el salto caía en la palabra, 4 fotogramas después del corte: va en el corte.
