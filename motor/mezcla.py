@@ -50,6 +50,36 @@ E += [(SFX_PUNTO[x['tipo']][0], t, SFX_PUNTO[x['tipo']][1]) for x in plan.get('e
 E = sorted(E, key=lambda e: e[1])
 # un tic que coincide con otro efecto sobra: suena doble
 E = [e for i, e in enumerate(E) if not (e[0] == 'SFX-P-tic.wav' and any(abs(e[1] - x[1]) < 0.25 for j, x in enumerate(E) if j != i and (x[0] != 'SFX-P-tic.wav' or j < i)))]
+# 10-11 Luismi (reel 92): también suenan los titulares y los punch de la ficha (sonidos del pack 2.0, SFX-V-*).
+# Se apagan con sfxTitular / sfxPunch: false. Los reencuadres van callados salvo sfxReencuadre: true (revisor 92: un
+# reencuadre es un corte invisible; si suena, delata el truco). Nunca dos efectos a menos de 0,25 s: los de antes ganan
+# siempre, y entre los nuevos, titular > punch > reencuadre. (segundo del golpe, fichero, desfase hasta el golpe, dB)
+NUEVOS = []
+if F.get('sfxTitular', True):
+    NUEVOS += [(t[0], 'SFX-V-titular.wav', -0.23, -9) for t in plan['tops']]
+if F.get('sfxPunch', True):
+    # ni punch pegado a la subida de la tarjeta de Seguir (revisor 92: el de 37,8 s se comía el riser)
+    NUEVOS += [(t, 'SFX-V-punch.wav', 0.0, -8) for t in plan.get('punch', []) if t < plan['follow'][0] - 1.0 - 1.5]
+if F.get('sfxReencuadre', False):
+    NUEVOS += [(t, 'SFX-V-reencuadre.wav', -0.31, -15) for t in plan.get('reencuadres', [])]
+# Un efecto nuevo no tapa la voz: si en su golpe y su cola (-0,1 a +0,3 s) hay voz, se adelanta a la respiración anterior (hasta
+# 0,3 s); si no la hay, se queda en su sitio 8 dB más bajo.
+import numpy as np
+_v = np.frombuffer(subprocess.run(['ffmpeg', '-v', 'error', '-i', str(P / 'assets/voice.wav'), '-ac', '1', '-ar', '8000', '-f', 's16le', '-'],
+                                  capture_output=True).stdout, np.int16).astype(np.float32) / 32768
+def _voz(a, b):   # dB RMS de la voz entre a y b
+    x = _v[max(0, int(a * 8000)):max(0, int(b * 8000))]
+    return 20 * np.log10(np.sqrt((x ** 2).mean()) + 1e-9) if len(x) else -120.0
+VOZ_HAY = -38   # dB RMS: por encima, está hablando
+for t, f, d, g in NUEVOS:   # ya van en orden de importancia
+    if not all(abs(t - x[1]) >= 0.25 for x in E):
+        continue
+    hueco = next((s for s in np.arange(0, 0.301, 0.05) if _voz(t - s - 0.1, t - s + 0.3) < VOZ_HAY), None)
+    if hueco is None:
+        E.append((f, t + d, g - 8))
+    else:
+        E.append((f, t - hueco + d, g))
+E = sorted(E, key=lambda e: e[1])
 
 ins = ['-i', sys.argv[1], '-i', str(P / 'assets/voice.wav'), '-ss', str(MUSICA_DESDE), '-i', str(MUSICA)]
 for f, _, _ in E:

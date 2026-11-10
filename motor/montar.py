@@ -360,6 +360,7 @@ joins = [round(sum(b - a for a, b in KEEP[:n]), 3) for n in range(1, len(KEEP))]
 PUNCH = sorted(cue(c) for c in F.get('punch', []))
 # "reencuadres" (ficha, 10-11 revisor marca4): cues donde el plano alterna de escala (ESC), sin el salto acumulado del punch.
 REENC = sorted(cue(c) for c in F.get('reencuadres', []))
+SONIDO = {'punch': list(PUNCH), 'reencuadres': list(REENC)}   # 10-11: para los efectos de mezcla.py (solo van a plan.json)
 for n, w in enumerate(words[1:], 1):
     while REENC and REENC[0] <= w['start'] + 1e-6:
         last = REENC.pop(0); zoom.append([last, ESC[k % len(ESC)]]); k += 1
@@ -422,7 +423,7 @@ JS = JS.replace('__PLAN__', json.dumps(plan, ensure_ascii=False))
 s = s.replace("  tl.set({}, {}, LEN);                                            // the film is as long as the talk",
               JS + "\n  OM.music({ off: true });\n  tl.set({}, {}, LEN);                                            // the film is as long as the talk")
 (P / 'index.html').write_text(s, encoding='utf-8')
-json.dump(plan, open(P / 'plan.json', 'w', encoding='utf-8'), ensure_ascii=False)
+json.dump({**plan, **SONIDO}, open(P / 'plan.json', 'w', encoding='utf-8'), ensure_ascii=False)
 # La plantilla carga assets/sound.wav; con la música apagada no se genera, así que se deja uno en silencio.
 run('ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-t', str(LEN), str(P / 'assets/sound.wav'))
 print('LEN', LEN, '| palabras', len(words), '| zoom', len(zoom), '| b-roll', len(spans))
