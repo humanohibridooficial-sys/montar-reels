@@ -49,6 +49,8 @@ CSS = '''
   /* sin z-index: va por orden debajo de titulares y subtítulos, que no se tiñen (30-10: con z-index 2 el dorado salía naranja) */
   .tinte { position: absolute; inset: 0; opacity: 0; mix-blend-mode: color; pointer-events: none; }
   .tinte.rojo { background: #E5322D; } .tinte.azul { background: #2E6BFF; } .tinte.verde { background: #2FA35B; }
+  /* 10-11 (revisor marca4): velo oscuro tras los rótulos sobre b-roll claro; oscurece, no tiñe */
+  .tinte.velo { mix-blend-mode: normal; background: linear-gradient(180deg, #070D16 0%, #070D16 40%, #070D1600 62%); }
   .tuit { position: absolute; left: 50%; top: 300px; width: 860px; margin-left: -430px; opacity: 0; z-index: 8; box-sizing: border-box;
     background: #070D16; border: 3px solid #2E6BFF; border-radius: 30px; padding: 24px 34px; box-shadow: 0 24px 60px #000a; }
   .tuit .cab { display: flex; align-items: center; gap: 20px; margin-bottom: 14px; }

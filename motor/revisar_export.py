@@ -39,9 +39,17 @@ if tp > PICO:
     fallos.append({'s': 0, 'que': f'pico {tp} dBTP (máximo {PICO}): satura'})
 
 # 4. Silencios: en la voz, pausas que el recorte no quitó; en la mezcla, que falte la música.
+#    Las pausas antes del giro ("pausaGiro" en la ficha, 09-11) son a propósito: se admiten tantas de hasta 0,9 s como giros haya.
+from rutas import FICHAS
+_ficha = json.load(open(FICHAS / f'{N}.json', encoding='utf-8'))
+_giros = len(_ficha.get('pausaGiro', []))
+# "cierre" (10-11): los segundos sin voz del final son a propósito; en la voz no cuentan, en la mezcla sí (tiene que sonar la música).
+_cierre = float(_ficha.get('cierre', 0))
 for pista, umbral, d, que in [(str(P / 'assets/voice.wav'), -38, 0.6, 'pausa sin cortar en la voz'), (MP4, -45, 0.4, 'silencio en la mezcla')]:
     for a, b in re.findall(r'silence_start: ([\d.]+)[\s\S]*?silence_end: ([\d.]+)', ff('-i', pista, '-vn', '-af', f'silencedetect=noise={umbral}dB:d={d}', '-f', 'null', '-')):
-        if float(a) < LEN - 0.8:   # el final de la voz, tras el "sígueme", no cuenta
+        if float(a) < LEN - (_cierre if que.startswith('pausa') else 0) - 0.8:   # el final de la voz, tras el "sígueme", no cuenta
+            if que.startswith('pausa') and _giros and float(b) - float(a) <= 0.9:
+                _giros -= 1; medidas.setdefault('pausas_giro', []).append(round(float(a), 2)); continue
             fallos.append({'s': round(float(a), 1), 'que': f'{que} de {float(b) - float(a):.2f} s'})
 
 # 5. Cada empalme: un clic es un salto brusco de la señal. El mayor salto entre muestras en los 5 ms del empalme frente

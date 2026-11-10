@@ -21,8 +21,16 @@ def run(*a):
 
 # Tramos finales: los de la ficha, menos lo que dice "quitar" (muletillas, repeticiones) y menos las pausas
 # de más de 0,35 s que mide la voz limpia, que se dejan en ~0,22 s (ritmo de los ejemplos).
+# "pausaGiro" (ficha, opcional): segundos de la toma donde empieza la palabra del giro ("necesitas", "lo que
+# hago"...). El silencio grabado justo antes se deja en ~0,65 s en vez de ~0,22 (método Miralles; prueba del
+# 09-11 en 3-4 reels antes de dejarlo fijo: medido, el hueco antes del giro quedaba en 0,0-0,4 s).
+GIROS = F.get('pausaGiro', [])
 def recortar(keep, quitar, pausas):
-    fuera = sorted([list(q) for q in quitar] + [[s + 0.12, e - 0.10] for s, e in pausas if e - s > 0.35])
+    def tramo(s, e):
+        if any(0 <= g - e <= 0.3 for g in GIROS):
+            return [s + 0.10, e - 0.55] if e - s > 0.75 else None
+        return [s + 0.12, e - 0.10]
+    fuera = sorted([list(q) for q in quitar] + [t for s, e in pausas if e - s > 0.35 for t in [tramo(s, e)] if t])
     out = []
     for a, b in keep:
         cur = a
@@ -60,7 +68,9 @@ _b = KEEP[-1][1]
 _fin = [float(s) for s, e in re.findall(r'silence_start: ([\d.]+)[\s\S]*?silence_end: ([\d.]+)', _sd)
         if float(e) > _b and _b - 0.6 < float(s) < _b + 1.0]
 if _fin and not F.get('finExacto'):
-    KEEP[-1][1] = round(_fin[0] + 0.15, 3)
+    # "cola" (ficha, opcional): segundos de silencio tras la última palabra. Con apretar activo el motor deja ~0,15 s
+    # y la cola se queda corta (pieza 90, 09-11): las piezas piden 0,5-0,8 s sin tener que apagar apretar.
+    KEEP[-1][1] = round(_fin[0] + F.get('cola', 0.15), 3)
 
 if not (P / 'vendor').exists():
     shutil.copytree(PLANTILLA / 'vendor', P / 'vendor')
@@ -84,10 +94,14 @@ FPS = 30
 KEEP = [[round(round(a * FPS) / FPS, 4), round(round(b * FPS) / FPS, 4)] for a, b in KEEP]
 LEN = round(sum(b - a for a, b in KEEP), 3)
 sel = '+'.join(f'between(n,{round(a * FPS)},{round(b * FPS) - 1})' for a, b in KEEP)
-parts = f"[0:v]fps={FPS},select='{sel}',setpts=N/{FPS}/TB[v];" + ''.join(
+# "cierre" (ficha, opcional, 10-11 marca4): segundos sin voz tras la última palabra. La imagen se queda en su último
+# fotograma y el audio en silencio; el b-roll y los rótulos del cierre entran con cue numérica (> fin de la voz).
+CIERRE = float(F.get('cierre', 0))
+parts = f"[0:v]fps={FPS},select='{sel}',setpts=N/{FPS}/TB" + (f',tpad=stop_mode=clone:stop_duration={CIERRE}' if CIERRE else '') + '[v];' + ''.join(
     f'[1:a]atrim={a}:{b},asetpts=PTS-STARTPTS,afade=t=in:d=0.015,afade=t=out:st={round(b - a - 0.015, 3)}:d=0.015[a{i}];'
     for i, (a, b) in enumerate(KEEP))
-cat = ''.join(f'[a{i}]' for i in range(len(KEEP))) + f'concat=n={len(KEEP)}:v=0:a=1[a]'
+cat = ''.join(f'[a{i}]' for i in range(len(KEEP))) + f'concat=n={len(KEEP)}:v=0:a=1' + (f',apad=pad_dur={CIERRE}' if CIERRE else '') + '[a]'
+LEN = round(LEN + CIERRE, 3)
 run('ffmpeg', '-v', 'error', '-y', '-i', str(SRC), '-i', str(VOZ / f'{N}-limpio.wav'), '-filter_complex', parts + cat,
     '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-crf', '17', '-preset', 'medium', '-pix_fmt', 'yuv420p',
     '-c:a', 'aac', '-b:a', '192k', str(P / 'assets/talk.mp4'))
@@ -342,16 +356,30 @@ s = s.replace('  <video id="talk" class="clip" data-om-id="talk" data-var-src="t
 ESC = F.get('esc', [1.0, 1.15, 1.05, 1.22])
 zoom, k, last = [[0, F.get('zoom0', 1.12)]], 1, 0
 joins = [round(sum(b - a for a, b in KEEP[:n]), 3) for n in range(1, len(KEEP))]
+# "punch" (ficha): cues donde el plano se acerca de golpe, para no dejar más de 2,5 s de cara igual (revisor 82, 09-11).
+PUNCH = sorted(cue(c) for c in F.get('punch', []))
+# "reencuadres" (ficha, 10-11 revisor marca4): cues donde el plano alterna de escala (ESC), sin el salto acumulado del punch.
+REENC = sorted(cue(c) for c in F.get('reencuadres', []))
+SONIDO = {'punch': list(PUNCH), 'reencuadres': list(REENC)}   # 10-11: para los efectos de mezcla.py (solo van a plan.json)
 for n, w in enumerate(words[1:], 1):
+    while REENC and REENC[0] <= w['start'] + 1e-6:
+        last = REENC.pop(0); zoom.append([last, ESC[k % len(ESC)]]); k += 1
+    while PUNCH and PUNCH[0] <= w['start'] + 1e-6:
+        z = zoom[-1][1] + 0.14   # punch-in; si pasa del tope (zoomMax), va al tope o, si ya está en él, se abre a 1,0
+        tope = F.get('zoomMax', 1.3)
+        last = PUNCH.pop(0); zoom.append([last, round(z if z <= tope else (tope if tope - zoom[-1][1] >= 0.06 else 1.0), 2)])
     prev = words[n - 1]
     gap = w['start'] - prev['end']
-    nueva = re.search(r'[.,?!]$', prev['word']) or gap > 0.3 or any(abs(w['start'] - j) < 0.2 for j in joins)
+    # Revisor 82 (09-11): tras un empalme el salto caía en la palabra, 4 fotogramas después del corte: va en el corte.
+    cut = next((j for j in joins if 0 <= w['start'] - j < 0.2), None)
+    nueva = re.search(r'[.,?!]$', prev['word']) or gap > 0.3 or cut is not None
+    t = cut if cut is not None and cut > last else w['start']
     # 2,6 y no 3: salta en la palabra siguiente, y la puerta del plan no deja pasar más de 3 s sin un cambio.
     # Si whisper estira una palabra (un "lo..." de 2 s), la siguiente llega tarde: se cambia a mitad de palabra.
     while w['start'] - last > 3.0:
         last = round(last + 2.6, 3); zoom.append([last, ESC[k % len(ESC)]]); k += 1
-    if (nueva and w['start'] - last >= 1.8) or w['start'] - last > 2.6:
-        zoom.append([w['start'], ESC[k % len(ESC)]]); k += 1; last = w['start']
+    if (nueva and w['start'] - last >= 1.8) or w['start'] - last > 2.6 or (cut is not None and F.get('punch') and t - last >= 0.8):
+        zoom.append([t, ESC[k % len(ESC)]]); k += 1; last = t
 fol = cue(F['follow'])
 plan = {
     'spans': spans, 'panel': panel, 'zoom': zoom,
@@ -363,7 +391,8 @@ plan = {
     # destapaba la cortinilla al salir y se quedaba 3,4 s).
     'follow': [max([fol - 0.8, (panel[-1] + 0.15) if panel else 0]
                    + [x['out'] + 0.1 for x in EXTRAS if x['tipo'] in ('cortinilla', 'logo', 'mapa', 'lista') and x['out'] <= fol]), fol],
-    'followEnSubs': FOLLOW_TOP != 300, 'topsEnSubs': TOPS_TOP != 300,
+    # "sinTarjeta": true (87, 09-11): la tarjeta va fuera de pantalla (followTop 3000) y no debe esconder los subtítulos del CTA.
+    'followEnSubs': FOLLOW_TOP != 300 and not F.get('sinTarjeta'), 'topsEnSubs': TOPS_TOP != 300,
     'claves': [norm(x) for x in F.get('claves', [])], 'serif': [norm(x) for x in F.get('serif', [])],
     'tops': [[cue(t[0]), cue(t[1]), t[2], t[3], t[4]] for t in F.get('tops', [])],
     'extras': EXTRAS,
@@ -394,7 +423,7 @@ JS = JS.replace('__PLAN__', json.dumps(plan, ensure_ascii=False))
 s = s.replace("  tl.set({}, {}, LEN);                                            // the film is as long as the talk",
               JS + "\n  OM.music({ off: true });\n  tl.set({}, {}, LEN);                                            // the film is as long as the talk")
 (P / 'index.html').write_text(s, encoding='utf-8')
-json.dump(plan, open(P / 'plan.json', 'w', encoding='utf-8'), ensure_ascii=False)
+json.dump({**plan, **SONIDO}, open(P / 'plan.json', 'w', encoding='utf-8'), ensure_ascii=False)
 # La plantilla carga assets/sound.wav; con la música apagada no se genera, así que se deja uno en silencio.
 run('ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-t', str(LEN), str(P / 'assets/sound.wav'))
 print('LEN', LEN, '| palabras', len(words), '| zoom', len(zoom), '| b-roll', len(spans))
