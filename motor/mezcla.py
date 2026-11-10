@@ -62,23 +62,41 @@ if F.get('sfxPunch', True):
     NUEVOS += [(t, 'SFX-V-punch.wav', 0.0, -8) for t in plan.get('punch', []) if t < plan['follow'][0] - 1.0 - 1.5]
 if F.get('sfxReencuadre', False):
     NUEVOS += [(t, 'SFX-V-reencuadre.wav', -0.31, -15) for t in plan.get('reencuadres', [])]
-# Un efecto nuevo no tapa la voz: si en su golpe y su cola (-0,1 a +0,3 s) hay voz, se adelanta a la respiración anterior (hasta
-# 0,3 s); si no la hay, se queda en su sitio 8 dB más bajo.
+# Ningún efecto tapa la voz (revisor 92): si en su golpe y su cola (-0,1 a +0,3 s del golpe real del sonido) hay voz,
+# baja SOLO lo necesario para quedar MARGEN dB por debajo de ella en esa ventana; si ya tiene ese margen, no se toca.
+# Los nuevos (titular, punch) y el cierre de la tarjeta antes se adelantan, si pueden, a la respiración anterior (hasta 0,3 s).
+# La subida del gancho y los de cada punto (pop, tic) marcan una palabra y no se mueven. El golpe y el barrido no entran.
 import numpy as np
-_v = np.frombuffer(subprocess.run(['ffmpeg', '-v', 'error', '-i', str(P / 'assets/voice.wav'), '-ac', '1', '-ar', '8000', '-f', 's16le', '-'],
-                                  capture_output=True).stdout, np.int16).astype(np.float32) / 32768
+def _pcm(path):
+    return np.frombuffer(subprocess.run(['ffmpeg', '-v', 'error', '-i', str(path), '-ac', '1', '-ar', '8000', '-f', 's16le', '-'],
+                                        capture_output=True).stdout, np.int16).astype(np.float32) / 32768
+_v = _pcm(P / 'assets/voice.wav')
+_db = lambda x: 20 * np.log10(np.sqrt((x ** 2).mean()) + 1e-9) if len(x) else -120.0
 def _voz(a, b):   # dB RMS de la voz entre a y b
-    x = _v[max(0, int(a * 8000)):max(0, int(b * 8000))]
-    return 20 * np.log10(np.sqrt((x ** 2).mean()) + 1e-9) if len(x) else -120.0
-VOZ_HAY = -38   # dB RMS: por encima, está hablando
+    return _db(_v[max(0, int(a * 8000)):max(0, int(b * 8000))])
+VOZ_HAY, MARGEN = -38, 8   # dB RMS: por encima, está hablando; dB que el efecto queda bajo la voz
+_SON = {}
+def _son(f):   # (segundo del golpe dentro del fichero, dB RMS del golpe y su cola a ganancia 0)
+    if f not in _SON:
+        a = _pcm(LIB / f); k = int(np.argmax(np.abs(a))) if len(a) else 0
+        _SON[f] = (k / 8000, float(_db(a[max(0, k - 800):k + 2400])))
+    return _SON[f]
+def _sin_tapar(f, inicio, g, mover):
+    pk, nivel = _son(f)
+    if mover:
+        hueco = next((s for s in np.arange(0, 0.301, 0.05) if _voz(inicio + pk - s - 0.1, inicio + pk - s + 0.3) < VOZ_HAY), None)
+        if hueco is not None:
+            return (f, inicio - hueco, g)
+    voz = _voz(inicio + pk - 0.1, inicio + pk + 0.3)
+    if voz < VOZ_HAY:
+        return (f, inicio, g)
+    return (f, inicio, round(float(min(g, g + (voz - MARGEN) - (nivel + g - SFX_BAJA))), 1))
 for t, f, d, g in NUEVOS:   # ya van en orden de importancia
-    if not all(abs(t - x[1]) >= 0.25 for x in E):
-        continue
-    hueco = next((s for s in np.arange(0, 0.301, 0.05) if _voz(t - s - 0.1, t - s + 0.3) < VOZ_HAY), None)
-    if hueco is None:
-        E.append((f, t + d, g - 8))
-    else:
-        E.append((f, t - hueco + d, g))
+    if all(abs(t - x[1]) >= 0.25 for x in E):
+        E.append(_sin_tapar(f, t + d, g, True))
+MOVIBLES = {'SFX-P-cierre.wav'}
+FIJOS = {'SFX-P-subida.wav', 'SFX-pop.wav', 'SFX-tic.wav', 'SFX-P-tic.wav'}
+E = [_sin_tapar(f, t, g, f in MOVIBLES) if f in MOVIBLES | FIJOS else (f, t, g) for f, t, g in E]
 E = sorted(E, key=lambda e: e[1])
 
 ins = ['-i', sys.argv[1], '-i', str(P / 'assets/voice.wav'), '-ss', str(MUSICA_DESDE), '-i', str(MUSICA)]
