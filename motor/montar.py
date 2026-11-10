@@ -358,7 +358,11 @@ zoom, k, last = [[0, F.get('zoom0', 1.12)]], 1, 0
 joins = [round(sum(b - a for a, b in KEEP[:n]), 3) for n in range(1, len(KEEP))]
 # "punch" (ficha): cues donde el plano se acerca de golpe, para no dejar más de 2,5 s de cara igual (revisor 82, 09-11).
 PUNCH = sorted(cue(c) for c in F.get('punch', []))
+# "reencuadres" (ficha, 10-11 revisor marca4): cues donde el plano alterna de escala (ESC), sin el salto acumulado del punch.
+REENC = sorted(cue(c) for c in F.get('reencuadres', []))
 for n, w in enumerate(words[1:], 1):
+    while REENC and REENC[0] <= w['start'] + 1e-6:
+        last = REENC.pop(0); zoom.append([last, ESC[k % len(ESC)]]); k += 1
     while PUNCH and PUNCH[0] <= w['start'] + 1e-6:
         z = zoom[-1][1] + 0.14   # punch-in; si pasa del tope (zoomMax), va al tope o, si ya está en él, se abre a 1,0
         tope = F.get('zoomMax', 1.3)

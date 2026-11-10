@@ -45,7 +45,7 @@ SFX_EXTRA = {   # recursos del 30-10: (fichero, desfase, dB)
     'logo': ('SFX-brillo.wav', 0.0, -4), 'marcador': ('SFX-P-tic.wav', 0.0, -6)}
 SFX_PUNTO = {'lista': ('SFX-P-tic.wav', -8), 'pildora': ('SFX-pop.wav', -8), 'pizarra': ('SFX-pop.wav', -12), 'mapa': ('SFX-tic.wav', -8),
              'tarjetas': ('SFX-P-barrido.wav', -9), 'marcador': ('SFX-P-golpe.wav', -6)}   # uno por cada punto, palabra, jugador o tarjeta
-E += [(SFX_EXTRA[x['tipo']][0], x['in'] + SFX_EXTRA[x['tipo']][1], SFX_EXTRA[x['tipo']][2]) for x in plan.get('extras', []) if x['tipo'] in SFX_EXTRA]
+E += [(SFX_EXTRA[x['tipo']][0], x['in'] + SFX_EXTRA[x['tipo']][1], SFX_EXTRA[x['tipo']][2]) for x in plan.get('extras', []) if x['tipo'] in SFX_EXTRA and x.get('color') != 'velo']   # el velo no es un evento
 E += [(SFX_PUNTO[x['tipo']][0], t, SFX_PUNTO[x['tipo']][1]) for x in plan.get('extras', []) if x['tipo'] in SFX_PUNTO for t in x.get('items', [])]
 E = sorted(E, key=lambda e: e[1])
 # un tic que coincide con otro efecto sobra: suena doble
