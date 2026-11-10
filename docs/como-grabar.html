@@ -107,6 +107,29 @@
     <li>No mires el teleprompter en la palabra clave.</li>
   </ul>
 
+  <h2>9. Cómo se dice: las marcas del guion</h2>
+  <p>El guion de <code>/guion</code> trae marcas entre corchetes. El texto dice qué decir; la marca dice cómo.
+  Ábrelo en el móvil con <code>python scripts/guion_movil.py guion.txt</code>: sale una página con las marcas en color.</p>
+  <ul>
+    <li><b>[RÁPIDO]</b> el gancho y el problema: más rápido y con energía.</li>
+    <li><b>[PAUSA]</b> 1 segundo callado, mirando a la lente, justo antes de "necesitas". El montaje la conserva, pero no la crea: si no la grabas, no existe.</li>
+    <li><b>[DESPACIO]</b> desde la solución hasta el final: más lento y tranquilo, sin bajar el volumen.</li>
+    <li><b>[ACABA]</b> la última palabra, igual de fuerte que la primera. Sobre todo en la palabra clave del final.</li>
+    <li><b>[PALMAS]</b> palmas abiertas al dar la solución. Entre frases, las manos bajan; no se juntan delante.</li>
+  </ul>
+
+  <h2>10. Después de grabar: revisa cada toma</h2>
+  <p>Antes de mandar una toma a montaje:
+  <code>python scripts/revisar_entrega.py &lt;toma.mp4&gt; --guion guion.txt</code>.
+  Da <b>VALE</b>, <b>VALE CON AVISOS</b> o <b>REPETIR</b>, con el motivo y el segundo.</p>
+  <ul>
+    <li><b>Te hace repetir:</b> si el arranque no son las primeras palabras del guion o las repites, si no hay pausa de medio segundo antes de "necesitas" y si la última frase se apaga.</li>
+    <li><b>Te avisa:</b> si la solución no va más despacio que el problema, si los finales caen, si no es 4K, si la barbilla queda baja y no caben los rótulos, si juntas las manos delante y si te mueves hacia la cámara sin hablar.</li>
+    <li><b>No lo mide (míralo tú):</b> logos de otras marcas en la ropa, luz detrás de ti, cámara por debajo de la cara, muletillas, y si suena natural.</li>
+  </ul>
+  <p class="pie">Escribe <code>&lt;toma&gt;.entrega.json</code> al lado de la toma. La primera vez tarda (transcribe la toma);
+  con <code>"whisper_dispositivo": "cuda"</code> en config.json va mucho más rápido si hay tarjeta NVIDIA.</p>
+
   <h2>Antes de darle a grabar</h2>
   <ul class="check">
     <li>4K a 30 fps</li>
