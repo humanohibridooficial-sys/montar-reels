@@ -26,7 +26,9 @@ for n in "$@"; do
     [ -n "$R" ] && break
   done
   [ -z "$R" ] && { echo "$n RENDER FALLIDO (mira $P/out.log)"; continue; }
-  PYTHONIOENCODING=utf-8 python mezcla.py $n "$R" "$P/out/p$n-final.mp4" > /dev/null || { echo "$n MEZCLA FALLIDA"; continue; }
+  # 11-11: overlays, transiciones y elementos del pack van encima del render, con ffmpeg (sin "pack" en la ficha, copia)
+  PYTHONIOENCODING=utf-8 python capas.py $n "$R" "$P/out/p$n-capas.mp4" || { echo "$n CAPAS DEL PACK FALLIDAS"; continue; }
+  PYTHONIOENCODING=utf-8 python mezcla.py $n "$P/out/p$n-capas.mp4" "$P/out/p$n-final.mp4" > /dev/null || { echo "$n MEZCLA FALLIDA"; continue; }
   # Huashu guarda cada fotograma de cada render (13-17 GB por pieza): el 28-10 llenó el disco C. Hecha la pieza, sobra.
   rm -rf "$P/.om/cache/frames"
   PYTHONIOENCODING=utf-8 python revisar_export.py $n "$P/out/p$n-final.mp4" || { echo "$n NO SE ENTREGA: mira $P/out/qc.json"; continue; }

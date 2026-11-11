@@ -114,7 +114,10 @@ CSS = '''
   .tcol .tc { width: 190px; height: 338px; border-radius: 24px; overflow: hidden; opacity: 0; border: 3px solid #E0B83C; box-shadow: 0 16px 36px #0009; }
   .tcol .tc video { width: 100%; height: 100%; object-fit: cover; }
   .logo { position: absolute; left: 0; right: 0; top: 1050px; z-index: 8; opacity: 0; text-align: center; }
-  .logo span { display: inline-block; font: italic 400 190px/1 Anton, sans-serif; color: #E0B83C; letter-spacing: .01em;
+  /* 11-11 (marca4r): el recorte del revelado (clip-path) cortaba la tilde de "Sígueme" y la punta de la cursiva: el
+     relleno da aire al recorte y el margen negativo lo devuelve, así el texto no se mueve */
+  .logo span { display: inline-block; padding: .2em .18em .08em .08em; margin: -.2em -.18em -.08em -.08em;
+    font: italic 400 190px/1 Anton, sans-serif; color: #E0B83C; letter-spacing: .01em;
     -webkit-text-stroke: 4px #070D16; paint-order: stroke fill; text-shadow: 0 14px 40px #000c; }
   .logo .ch { position: absolute; top: 10px; bottom: 10px; width: 14px; margin-left: -7px; border-radius: 7px; opacity: 0;
     background: radial-gradient(#fffbe6, #ffd25a 45%, #ffb30000 75%); filter: blur(4px); }

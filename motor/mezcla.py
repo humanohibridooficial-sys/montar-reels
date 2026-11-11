@@ -47,6 +47,8 @@ SFX_PUNTO = {'lista': ('SFX-P-tic.wav', -8), 'pildora': ('SFX-pop.wav', -8), 'pi
              'tarjetas': ('SFX-P-barrido.wav', -9), 'marcador': ('SFX-P-golpe.wav', -6)}   # uno por cada punto, palabra, jugador o tarjeta
 E += [(SFX_EXTRA[x['tipo']][0], x['in'] + SFX_EXTRA[x['tipo']][1], SFX_EXTRA[x['tipo']][2]) for x in plan.get('extras', []) if x['tipo'] in SFX_EXTRA and x.get('color') != 'velo']   # el velo no es un evento
 E += [(SFX_PUNTO[x['tipo']][0], t, SFX_PUNTO[x['tipo']][1]) for x in plan.get('extras', []) if x['tipo'] in SFX_PUNTO for t in x.get('items', [])]
+# 11-11: las transiciones del pack suenan con un whoosh que llega a tope en el corte; los overlays y elementos, callados
+E += [('SFX-whoosh.wav', x['en'] - 0.15, -8) for x in plan.get('pack', []) if x['tipo'] == 'transicion']
 E = sorted(E, key=lambda e: e[1])
 # un tic que coincide con otro efecto sobra: suena doble
 E = [e for i, e in enumerate(E) if not (e[0] == 'SFX-P-tic.wav' and any(abs(e[1] - x[1]) < 0.25 for j, x in enumerate(E) if j != i and (x[0] != 'SFX-P-tic.wav' or j < i)))]
