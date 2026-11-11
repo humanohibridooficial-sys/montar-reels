@@ -2,7 +2,7 @@
 # de Huashu. Todo lo propio de cada pieza vive en su ficha piezas/<n>.json; esto es común.
 #   python montar.py 76        -> deja p76/ listo para "om render" (y p76/plan.json para mezcla.py)
 # Ficha: video, keep [[a,b],...] en segundos de la toma, fix {palabra: corregida}, subsTop, origin,
-#   broll [{id, file, ss, in: cue, out: cue, modo: ''|'split'}], tops [[cue, cue, linea1, linea2, cursiva]],
+#   broll [{id, file, ss, in: cue, out: cue, modo: ''|'split'}], tops [[cue, cue, linea1, linea2, cursiva]] ("\n" o "|" parte la línea),
 #   panel {items: [[cue, h1, h2, bala, broll_id]], fin: cue}, byn [cue, cue], tachado {texto, in, raya, out},
 #   num {texto, in, out}, leaks [cue], claves [...], serif [...], follow cue,
 #   extras [{tipo, in: cue, out: cue, ...}] (recursos del 30-10, ver el apartado 5).  Una cue es "palabra", "palabra#2"
@@ -221,6 +221,28 @@ if F.get('doradoEnCaja'):
 if F.get('listaCuerpo'):
     CSS = CSS.replace('font: 600 64px/1.15 Inter, sans-serif; color: #fff; margin-bottom: 22px;',
                       f"font: 800 {int(F['listaCuerpo'])}px/1.12 Inter, sans-serif; color: #fff; margin-bottom: 22px;")
+# Saltos de línea en los titulares (11-11, 63r): un "\n" o un "|" en el texto de un top parte la línea ahí, en vez
+# del corte automático. Solo se toca el CSS de la línea que lo usa; sin saltos, el HTML sale igual que antes.
+TOPS = [list(t[:2]) + [str(t[2]).replace('|', '\n'), str(t[3]).replace('|', '\n')] + list(t[4:]) for t in F.get('tops', [])]
+for k_, cl_ in ((2, 't1'), (3, 't2')):
+    if any('\n' in t[k_] for t in TOPS):
+        CSS = CSS.replace(f'#tops .{cl_} {{ ', f'#tops .{cl_} {{ white-space: pre-line; ', 1)
+# Columna de tarjetas (11-11, 63r): "ancho", "alto", "separacion", "y" (px) y "x" (px, o "6%") en el extra "tarjetas".
+# Sin ellos, 190x338, separación 16, y 360 y x 6 %, como siempre. La columna es una regla de CSS para todas: si dos
+# columnas de la misma pieza piden medidas distintas, se para aquí.
+TCOL_DEF = {'ancho': 190, 'alto': 338, 'separacion': 16, 'y': 360, 'x': '6%'}
+TCOL = [{k: x.get(k, v) for k, v in TCOL_DEF.items()} for x in F.get('extras', []) if x['tipo'] == 'tarjetas']
+if any(c != TCOL[0] for c in TCOL):
+    raise ValueError(f'tarjetas: dos columnas con medidas distintas en la misma pieza ({TCOL})')
+TCOL = TCOL[0] if TCOL else TCOL_DEF
+_px = lambda v: f'{v}px' if isinstance(v, (int, float)) else str(v)
+if TCOL != TCOL_DEF:
+    for a_, b_ in [('.tcol { position: absolute; top: 360px; width: 190px; z-index: 6; display: flex; flex-direction: column; gap: 16px; }',
+                    f".tcol {{ position: absolute; top: {_px(TCOL['y'])}; width: {_px(TCOL['ancho'])}; z-index: 6; display: flex; flex-direction: column; gap: {_px(TCOL['separacion'])}; }}"),
+                   ('.tcol.der { right: 6%; } .tcol.izq { left: 6%; }', f".tcol.der {{ right: {_px(TCOL['x'])}; }} .tcol.izq {{ left: {_px(TCOL['x'])}; }}"),
+                   ('.tcol .tc { width: 190px; height: 338px;', f".tcol .tc {{ width: {_px(TCOL['ancho'])}; height: {_px(TCOL['alto'])};")]:
+        assert a_ in CSS, a_[:40]
+        CSS = CSS.replace(a_, b_)
 s = s.replace('  #pack { position: absolute; inset: 0; pointer-events: none; }', CSS + '  #pack { position: absolute; inset: 0; pointer-events: none; }')
 
 spans = [[b['id'], cue(b['in']), round(cue(b['out']) + 0.12, 3), b.get('modo', '')] for b in F.get('broll', [])]
@@ -238,9 +260,9 @@ if PN:
 # El "in" es la palabra que dice el rótulo, no la frase: la puerta del plan falla si entra a destiempo.
 # Segunda tanda (30-10): lista {titulo, items [[cue, texto con **clave**]]} · pildora {palabras [[cue, palabra]]} ·
 # pizarra {jugadores [[cue, x, y]] (0-1 del campo)} · mapa {palabras [[cue, palabra]]} · tarjetas {lado izq|der,
-# clips [[cue, file, ss]]} · barrido {in; out opcional} · logo {texto}.
+# clips [[cue, file, ss]], y opcional ancho, alto, separacion, y, x en px} · barrido {in; out opcional} · logo {texto}.
 e = html.escape
-EXTRAS, XHTML, XTALK = [], [], []
+EXTRAS, XHTML, XTALK, TCAJAS = [], [], [], []
 for i, x in enumerate(F.get('extras', [])):
     t0 = cue(x['in'])
     t1 = cue(x['out']) if 'out' in x else round(t0 + 0.4, 3)
@@ -320,6 +342,12 @@ for i, x in enumerate(F.get('extras', [])):
                      f'<path d="{d}" class="ml" mask="url(#mm-{i})"/></svg>'
                      + ''.join(f'<div class="mw" style="left:{px}px;top:{py}px">{e(c[1])}</div>' for (px, py), c in zip(pos, subs)) + '</div>')
     elif tipo == 'tarjetas':   # columna de clips verticales a un lado; él sigue hablando en el centro
+        # Caja de la columna en px (borde de 3 px por lado incluido), para que la puerta la mida contra la zona segura.
+        # Va solo a plan.json (no al HTML): las piezas que no usan las opciones sacan el mismo index.html que antes.
+        _x = float(TCOL['x'][:-1]) * 10.8 if isinstance(TCOL['x'], str) else float(TCOL['x'])
+        _an, _al = TCOL['ancho'] + 6, TCOL['alto'] + 6
+        _x0 = _x if x.get('lado', 'izq') == 'izq' else 1080 - _x - _an
+        TCAJAS.append({'in': t0, 'lado': x.get('lado', 'izq'), 'caja': [round(_x0), TCOL['y'], round(_x0 + _an), TCOL['y'] + len(subs) * _al + (len(subs) - 1) * TCOL['separacion']]})
         XHTML.append(f'<div class="tcol {x.get("lado", "izq")}" id="x-{i}">' + ''.join(
             f'<div class="tc"><video src="assets/broll/x{i}-{k}.mp4" data-start="{c[0]}" data-duration="{round(t1 - c[0], 3)}" '
             f'data-media-start="0" data-track-index="{60 + i * 5 + k}" muted playsinline></video></div>' for k, c in enumerate(subs)) + '</div>')
@@ -429,7 +457,7 @@ plan = {
     # "sinTarjeta": true (87, 09-11): la tarjeta va fuera de pantalla (followTop 3000) y no debe esconder los subtítulos del CTA.
     'followEnSubs': FOLLOW_TOP != 300 and not F.get('sinTarjeta'), 'topsEnSubs': TOPS_TOP != 300,
     'claves': [norm(x) for x in F.get('claves', [])], 'serif': [norm(x) for x in F.get('serif', [])],
-    'tops': [[cue(t[0]), cue(t[1]), t[2], t[3], t[4]] for t in F.get('tops', [])],
+    'tops': [[cue(t[0]), cue(t[1]), t[2], t[3], t[4]] for t in TOPS],
     'extras': EXTRAS,
     'cortes': joins,   # empalmes de la toma: revisar_export.py busca clics y saltos en cada uno
     'pack': PACKS, 'lut': LUT, 'brollIA': BROLL_IA, 'subsTop': SUBS,   # 11-11: para capas.py y la puerta del plan
@@ -459,7 +487,7 @@ JS = JS.replace('__PLAN__', json.dumps(plan, ensure_ascii=False))
 s = s.replace("  tl.set({}, {}, LEN);                                            // the film is as long as the talk",
               JS + "\n  OM.music({ off: true });\n  tl.set({}, {}, LEN);                                            // the film is as long as the talk")
 (P / 'index.html').write_text(s, encoding='utf-8')
-json.dump({**plan, **SONIDO}, open(P / 'plan.json', 'w', encoding='utf-8'), ensure_ascii=False)
+json.dump({**plan, **SONIDO, 'tarjetas': TCAJAS}, open(P / 'plan.json', 'w', encoding='utf-8'), ensure_ascii=False)
 # La plantilla carga assets/sound.wav; con la música apagada no se genera, así que se deja uno en silencio.
 run('ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-t', str(LEN), str(P / 'assets/sound.wav'))
 print('LEN', LEN, '| palabras', len(words), '| zoom', len(zoom), '| b-roll', len(spans))
