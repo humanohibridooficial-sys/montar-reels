@@ -3,7 +3,8 @@
 import json, os, pathlib
 
 MOTOR = pathlib.Path(__file__).parent
-_c = json.load(open(MOTOR / 'config.json', encoding='utf-8'))
+# MOTOR_CONFIG (opcional): otro config.json, para probar una pieza con datos y render aparte sin tocar los de verdad
+_c = json.load(open(os.environ.get('MOTOR_CONFIG') or MOTOR / 'config.json', encoding='utf-8'))
 _r = lambda k: pathlib.Path(os.path.expandvars(os.path.expanduser(_c[k])))
 
 CONTENIDO = _r('carpeta_contenido')      # raíz del material: las rutas de b-roll y tomas de las fichas son relativas a ella

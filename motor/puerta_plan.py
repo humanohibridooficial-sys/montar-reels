@@ -28,6 +28,7 @@ def eventos():
     ev += [(x['in'], x['tipo']) for x in p.get('extras', [])]
     ev += [(t, x['tipo']) for x in p.get('extras', []) for t in x.get('items', [])]   # cada punto de una lista cuenta
     ev += [(w['start'], 'clave') for w in words['words'] if norm(w['word']) in p['claves']]
+    ev += [(x['in'], 'pack-' + x['tipo']) for x in p.get('pack', []) if x['tipo'] != 'overlay' or x['out'] - x['in'] < 3]   # un grano de fondo no es un cambio
     return sorted(ev)
 
 
@@ -78,6 +79,40 @@ for x in p.get('extras', []):
             fallos.append(f"{t:.1f} s: un punto de {x['tipo']} cae fuera de su tramo ({x['in']:.1f}-{x['out']:.1f} s); ¿falta un #2 en la cue?")
 for x in p.get('extras', []):
     if not 0.4 < x['out'] - x['in'] < 9: fallos.append(f"{x['in']:.1f} s: {x['tipo']} dura {x['out'] - x['in']:.1f} s (0,4-9)")
+
+# Pack de recursos 2.0 (11-11). Zona segura de Instagram: arriba la cabecera y abajo el pie y el caption; a la derecha,
+# la columna de botones (me gusta, comentar, compartir). Un elemento tampoco tapa la franja del subtítulo.
+ARRIBA, ABAJO, COLUMNA = 220, 1920 - 380, (900, 700, 1700)   # x desde la que empieza la columna, y de arriba y de abajo
+SUBS = p.get('subsTop', 1040)
+cortes = p.get('cortes', []) + [t for _, a, b, c in p['spans'] if c != 'card' for t in (a, b)]
+for x in p.get('pack', []):
+    tx = f"{x['in']:.1f} s: {x['tipo']} \"{x['nombre']}\""
+    if x['tipo'] == 'elemento':
+        x0, y0, x1, y1 = x['caja']
+        if x0 < 40 or x1 > 1040 or y0 < ARRIBA or y1 > ABAJO:
+            fallos.append(f'{tx} se sale de la zona segura (caja {x0},{y0}-{x1},{y1}; margen 40, arriba {ARRIBA}, abajo {ABAJO})')
+        if x1 > COLUMNA[0] and y1 > COLUMNA[1] and y0 < COLUMNA[2]:
+            fallos.append(f'{tx} cae en la columna de botones de Instagram (x > {COLUMNA[0]}, y {COLUMNA[1]}-{COLUMNA[2]})')
+        if y1 > SUBS and y0 < SUBS + 260 and x0 < 1004 and x1 > 76:
+            fallos.append(f'{tx} tapa la franja del subtítulo (y {SUBS}-{SUBS + 260})')
+        if not 0.4 < x['out'] - x['in'] < 9:
+            fallos.append(f"{tx} dura {x['out'] - x['in']:.1f} s (0,4-9)")
+    elif x['tipo'] == 'transicion':
+        if x['out'] - x['in'] > 1.2:
+            fallos.append(f"{tx} dura {x['out'] - x['in']:.1f} s; una transición pasa en 1,2 s como mucho")
+        if not any(abs(x['en'] - c) <= 0.3 for c in cortes):
+            fallos.append(f"{tx} no cae en un cambio de plano (corte o entrada/salida de b-roll a menos de 0,3 s)")
+    elif x['tipo'] == 'overlay':
+        if x['opacidad'] > 0.7:
+            fallos.append(f"{tx} a opacidad {x['opacidad']}; por encima de 0,7 lava el plano y los rótulos")
+    else:
+        fallos.append(f"{tx}: el tipo {x['tipo']!r} no existe (overlay, transicion, elemento)")
+    if x['in'] < 0 or x['out'] > LEN + 0.05:
+        fallos.append(f'{tx} se sale de la pieza (0-{LEN:.1f} s)')
+# B-roll generado con IA: tiene que ir marcado en la ficha ("ia": true), para que se sepa al publicar.
+for b in p.get('brollIA', []):
+    if not b['marcado']:
+        fallos.append(f"b-roll {b['id']}: es un clip generado con IA (biblioteca.json) y la ficha no lo marca con \"ia\": true")
 
 # Variedad: "no sota, caballo y rey" (10-10). Falla si gancho y juego de recursos calcan una de las 3 últimas.
 gancho = sorted({tipo for t, tipo in ev if t < 2.0 and tipo not in ('zoom', 'clave')})

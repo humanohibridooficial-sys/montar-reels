@@ -10,7 +10,7 @@
 import json, subprocess, re, sys, shutil, pathlib, html
 
 N = sys.argv[1]
-from rutas import CONTENIDO, TOMAS, FICHAS, PALABRAS, VOZ, RENDER, PLANTILLA, SCRIPTS, PY_SILUETA, PERFIL
+from rutas import CONTENIDO, TOMAS, FICHAS, PALABRAS, VOZ, RENDER, PLANTILLA, SCRIPTS, PY_SILUETA, PERFIL, REUTILIZABLES, DATOS
 from estilo import CSS, JS
 F = json.load(open(FICHAS / f'{N}.json', encoding='utf-8'))
 P = RENDER / f'p{N}'
@@ -76,6 +76,15 @@ if not (P / 'vendor').exists():
     shutil.copytree(PLANTILLA / 'vendor', P / 'vendor')
 (P / 'assets/broll').mkdir(parents=True, exist_ok=True)
 shutil.copytree(PLANTILLA / 'fonts', P / 'assets/fonts', dirs_exist_ok=True)
+# "lut" (ficha, opcional, 11-11): {nombre: un LUT .cube del pack, fuerza: 0-1}. Tiñe la toma y el b-roll, nunca los rótulos.
+LUT = F.get('lut')
+VF_LUT = ''
+if LUT:
+    import pack
+    shutil.copy(REUTILIZABLES / pack.buscar('lut', LUT['nombre'])['file'], P / 'assets/lut.cube')
+    _l = (P / 'assets/lut.cube').as_posix().replace(':', r'\:')
+    VF_LUT = (f",split[lo][ll];[ll]lut3d=file='{_l}',format=yuv420p[lt];"
+              f"[lo][lt]blend=all_mode=normal:all_opacity={float(LUT.get('fuerza', 0.6))}")
 
 def nuevo(t):
     acc = 0.0
@@ -97,7 +106,7 @@ sel = '+'.join(f'between(n,{round(a * FPS)},{round(b * FPS) - 1})' for a, b in K
 # "cierre" (ficha, opcional, 10-11 marca4): segundos sin voz tras la última palabra. La imagen se queda en su último
 # fotograma y el audio en silencio; el b-roll y los rótulos del cierre entran con cue numérica (> fin de la voz).
 CIERRE = float(F.get('cierre', 0))
-parts = f"[0:v]fps={FPS},select='{sel}',setpts=N/{FPS}/TB" + (f',tpad=stop_mode=clone:stop_duration={CIERRE}' if CIERRE else '') + '[v];' + ''.join(
+parts = f"[0:v]fps={FPS},select='{sel}',setpts=N/{FPS}/TB" + (f',tpad=stop_mode=clone:stop_duration={CIERRE}' if CIERRE else '') + VF_LUT + '[v];' + ''.join(
     f'[1:a]atrim={a}:{b},asetpts=PTS-STARTPTS,afade=t=in:d=0.015,afade=t=out:st={round(b - a - 0.015, 3)}:d=0.015[a{i}];'
     for i, (a, b) in enumerate(KEEP))
 cat = ''.join(f'[a{i}]' for i in range(len(KEEP))) + f'concat=n={len(KEEP)}:v=0:a=1' + (f',apad=pad_dur={CIERRE}' if CIERRE else '') + '[a]'
@@ -123,7 +132,7 @@ for b in B:
     hdr = 'zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,' \
         if trc in ('arib-std-b67', 'smpte2084') else ''
     run('ffmpeg', '-v', 'error', '-y', '-ss', str(b.get('ss', 0)), '-i', str(f), '-t', '8', '-an',
-        '-vf', hdr + 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30',
+        '-vf', hdr + 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30' + VF_LUT,
         '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709',
         '-c:v', 'libx264', '-crf', '18', '-pix_fmt', 'yuv420p', str(P / f"assets/broll/{b['id']}.mp4"))
 
@@ -321,6 +330,32 @@ for i, x in enumerate(F.get('extras', [])):
     else:
         raise KeyError(f'extra {i}: el tipo {tipo!r} no existe')
 
+# ---- 6. pack de recursos 2.0 (11-11): se pintan con capas.py sobre el render (ffmpeg), no en el HTML -----------------
+# pack [{tipo: overlay|transicion|elemento, nombre (trozo del nombre del fichero, ver "python pack.py listar <tipo>"),
+#   in/out (overlay y elemento) o en (transición: la cue del corte; se centra en su fotograma más luminoso),
+#   opacidad, modo (screen|overlay|suma; el del catálogo si no se dice), x, y (0-1, centro del elemento), ancho (px)}]
+PACKS = []
+for x in F.get('pack', []):
+    import pack
+    c = pack.buscar(x['tipo'], x['nombre'])
+    it = {'tipo': x['tipo'], 'nombre': c['nombre'], 'file': (REUTILIZABLES / c['file']).as_posix(), 'modo': x.get('modo', c.get('modo', 'screen')),
+          'opacidad': float(x.get('opacidad', 0.6 if x['tipo'] == 'overlay' else 1.0)), 'estatico': c.get('estatico', False)}
+    if x['tipo'] == 'transicion':
+        d = min(c['dur'], float(x.get('dur', 1.0)))
+        it['en'] = cue(x['en'])
+        it.update({'in': round(it['en'] - d / 2, 3), 'out': round(it['en'] + d / 2, 3),
+                   'desde': round(max(0.0, min(c.get('pico', d / 2) - d / 2, c['dur'] - d)), 3)})
+    else:
+        it.update({'in': cue(x['in']), 'out': cue(x['out']) if 'out' in x else round(cue(x['in']) + 2.0, 3)})
+    if x['tipo'] == 'elemento':
+        an = int(x.get('ancho', 300)); al = round(an * c['h'] / c['w'])
+        cx, cy = round(x.get('x', 0.5) * 1080), round(x.get('y', 0.3) * 1920)
+        it.update({'ancho': an, 'caja': [cx - an // 2, cy - al // 2, cx - an // 2 + an, cy - al // 2 + al]})
+    PACKS.append(it)
+# B-roll generado con IA (11-11): biblioteca.json lo marca "ia"; la ficha también tiene que decirlo ("ia": true en su b-roll).
+_bib = {b['file']: b for b in json.load(open(DATOS / 'biblioteca.json', encoding='utf-8'))} if (DATOS / 'biblioteca.json').exists() else {}
+BROLL_IA = [{'id': b['id'], 'marcado': bool(b.get('ia'))} for b in F.get('broll', []) if _bib.get(b['file'], {}).get('ia') or b.get('ia')]
+
 tiles = '\n'.join(
     f'  <div class="tile {c}" id="t-{k}"><video id="v-{k}" src="assets/broll/{k}.mp4" data-start="{t0}" data-duration="{round(t1 - t0, 3)}" '
     f'data-media-start="0" data-track-index="{2 + n}" muted playsinline></video></div>'
@@ -397,6 +432,7 @@ plan = {
     'tops': [[cue(t[0]), cue(t[1]), t[2], t[3], t[4]] for t in F.get('tops', [])],
     'extras': EXTRAS,
     'cortes': joins,   # empalmes de la toma: revisar_export.py busca clics y saltos en cada uno
+    'pack': PACKS, 'lut': LUT, 'brollIA': BROLL_IA, 'subsTop': SUBS,   # 11-11: para capas.py y la puerta del plan
 }
 JS = JS.replace('\\\\', '\\')   # en build.py el código va dentro de una cadena de Python: su doble barra es una sola en el HTML
 # Lo que es opcional en una ficha se protege; la música la pone mezcla.py.
@@ -413,7 +449,7 @@ for a_, b_ in [
     ("  tl.fromTo(tc, { opacity: 0, y: 20 }", "  if (PLAN.tachado) tl.fromTo(tc, { opacity: 0, y: 20 }"),
     ("  const ventanas = [[PLAN.tachado[0], PLAN.tachado[2]], [PLAN.num[0], PLAN.num[1]], [p0, p3]];",
      "  const ventanas = [PLAN.tachado && [PLAN.tachado[0], PLAN.tachado[2]], PLAN.num, PN.length && [PN[0], PN[PN.length - 1]],\n"
-     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo', 'pildora'].includes(x.tipo)).map((x) => [x.in, x.out])].filter(Boolean);"),
+     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo', 'pildora', 'tuit', 'marcador'].includes(x.tipo)).map((x) => [x.in, x.out])].filter(Boolean);"),
     ("  OM.music({ style: 'cinematic', drop: PLAN.num[0], ending: 'button' });\n", ""),
 ]:
     assert a_ in JS, a_[:60]
