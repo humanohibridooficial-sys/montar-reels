@@ -75,3 +75,4 @@ de IA sin marcarlo.
 ## Bitácora
 
 - 11-11: spec, inventario y código en la rama.
+- 11-11: hecho en la rama. Prueba marca4rx (datos y render aparte): pasa la puerta, capas, mezcla y revisión del fichero (-16,7 LUFS, 13 empalmes). Control positivo: la puerta tumba los cuatro fallos metidos a propósito. Pendiente: clave de Coverr (por email), sesión de Higgsfield, y decidir con Luismi la opacidad por defecto de las transiciones (LightLeak18 a 1,0 lava el plano en su pico).
