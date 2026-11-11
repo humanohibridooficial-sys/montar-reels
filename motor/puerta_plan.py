@@ -57,7 +57,7 @@ for x in p.get('extras', []):
 # Un rótulo que dice una palabra de la voz entra con ella (revisor 30-10: cuatro entraban 0,4-1,2 s antes).
 habladas = [(norm(w['word']), w['start']) for w in words['words']]
 for x in p.get('extras', []):
-    if x['tipo'] == 'tarjetas' and x.get('lado') == 'der':
+    if x['tipo'] == 'tarjetas' and x.get('lado') == 'der' and 'tarjetas' not in p:   # plan.json de antes del 11-11, sin caja
         fallos.append(f"{x['in']:.1f} s: tarjetas a la derecha, en la columna de botones de Instagram")
     if x['tipo'] == 'logo' and x['out'] - x['in'] < 0.8:
         fallos.append(f"{x['in']:.1f} s: el {x.get('texto', 'logo')} solo dura {x['out'] - x['in']:.1f} s; menos de 0,8 s no se lee")
@@ -109,6 +109,18 @@ for x in p.get('pack', []):
         fallos.append(f"{tx}: el tipo {x['tipo']!r} no existe (overlay, transicion, elemento)")
     if x['in'] < 0 or x['out'] > LEN + 0.05:
         fallos.append(f'{tx} se sale de la pieza (0-{LEN:.1f} s)')
+# Columna de tarjetas (11-11, 63r): la caja entera (todas las tarjetas, con su borde) dentro de la zona segura.
+# Abajo, 1248 (límite fijado al arreglar la 63r). La 63r con las medidas de siempre (3 de 190x338) llegaba a 1424.
+TARJETAS_ABAJO = 1248
+for x in p.get('tarjetas', []):
+    x0, y0, x1, y1 = x['caja']
+    tx = f"{x['in']:.1f} s: columna de tarjetas (caja {x0},{y0}-{x1},{y1})"
+    if y1 > TARJETAS_ABAJO:
+        fallos.append(f'{tx} baja de y {TARJETAS_ABAJO}; achica alto/separacion o sube "y"')
+    if y0 < ARRIBA:
+        fallos.append(f'{tx} sube por encima de y {ARRIBA}, bajo la cabecera de Instagram')
+    if x1 > COLUMNA[0] and y1 > COLUMNA[1] and y0 < COLUMNA[2]:
+        fallos.append(f'{tx} cae en la columna de botones de Instagram (x > {COLUMNA[0]}, y {COLUMNA[1]}-{COLUMNA[2]})')
 # B-roll generado con IA: tiene que ir marcado en la ficha ("ia": true), para que se sepa al publicar.
 for b in p.get('brollIA', []):
     if not b['marcado']:
