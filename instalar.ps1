@@ -167,6 +167,7 @@ if (-not (Test-Path $CFGM)) {
         carpeta_render        = & $b (Join-Path $HOME "reels-render")
         carpeta_salida        = & $b (Join-Path $REELS "2 PARA SUBIR")
         om                    = & $b (Join-Path $REPO "motor\om")
+        fran                  = $false   # el canal de Fran es licencia de Luismi: aquí no se busca b-roll en él
         python_df             = & $b $PYDF
         python_fw             = & $b $PYFW
     }

@@ -183,7 +183,10 @@ def buscar(q, es=None, n=4, con_youtube=False):
         print('== 3 RECURSOS (nombres de fichero)'); broll.biblioteca(es)
     ya = _usados()
     cands = []
-    for f in (fran, pexels, pixabay, coverr) + ((youtube,) if con_youtube else ()):
+    # El canal de Fran es licencia de Luismi, no de quien se instala el editor: los instaladores ponen "fran": false
+    import rutas
+    con_fran = rutas._c.get('fran', True)
+    for f in ((fran,) if con_fran else ()) + (pexels, pixabay, coverr) + ((youtube,) if con_youtube else ()):
         try:
             cs = f(es or q, n) if f is fran else f(q, n)   # los títulos de Fran están en español
         except Exception as e:

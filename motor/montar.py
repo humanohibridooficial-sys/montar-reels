@@ -393,11 +393,13 @@ if PN:
     PANEL_HTML = ('  <div id="panel">' + ''.join(f'<div class="hd"><div class="h1">{it[1]}</div><div class="h2">{it[2]}</div></div>' for it in PN['items'])
                   + '<div class="bl">' + ''.join(f'<div class="b"><i></i>{it[3]}</div>' for it in PN['items']) + '</div></div>')
 TC, NU = F.get('tachado'), F.get('num')
-# Tarjeta de "Seguir" con el perfil real (Luismi 30-10); sin motor-datos/perfil/ sale la de siempre.
-PF = {'usuario': 'nutretufutbol', 'nombre': '@nutretufutbol'}
-if (PERFIL / 'perfil.json').exists():
-    PF.update(json.load(open(PERFIL / 'perfil.json', encoding='utf-8')))
-AVATAR = 'FF'
+# Tarjeta de "Seguir" con el perfil real (Luismi 30-10).
+# 12-11 (compartir): sin perfil.json, un compañero sacaba la tarjeta de @nutretufutbol. Ahora para y pide el suyo.
+if not (PERFIL / 'perfil.json').exists():
+    sys.exit(f'Falta tu perfil para la tarjeta de "Seguir": crea {PERFIL / "perfil.json"} con '
+             '{"usuario": "tu_usuario_de_instagram", "nombre": "tu nombre o tu frase"} y, si quieres, foto.jpg al lado')
+PF = json.load(open(PERFIL / 'perfil.json', encoding='utf-8'))
+AVATAR = PF['usuario'][:1].upper()
 if (PERFIL / 'foto.jpg').exists():
     shutil.copy(PERFIL / 'foto.jpg', P / 'assets/perfil.jpg'); AVATAR = '<img src="assets/perfil.jpg">'
 FOLLOW_HTML = (f'  <div id="follow"><div class="av">{AVATAR}</div><div class="tx"><div class="nm">{e(PF["usuario"])}</div><div class="hn">{e(PF["nombre"])}</div></div>'
