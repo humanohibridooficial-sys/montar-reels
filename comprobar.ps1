@@ -46,10 +46,11 @@ if (Hay $cfgF) {
     if ($cfg) {
         $cap = [Environment]::ExpandEnvironmentVariables($(if ($cfg.carpeta_capcut) { $cfg.carpeta_capcut } else { "%LOCALAPPDATA%\CapCut\User Data\Projects\com.lveditor.draft" }))
         $pla = if ($cfg.plantilla_capcut) { $cfg.plantilla_capcut } else { "PLANTILLA-REELS" }
-        if (Hay $cap) { Bien "carpeta de proyectos de CapCut" } else { Mal "carpeta de proyectos de CapCut ($cap)" "instala CapCut y ábrelo una vez; si tus proyectos están en otro sitio, cámbialo en config.json (carpeta_capcut)" }
+        # CapCut es opcional desde el 12-11: el motor saca el vídeo terminado sin él
+        if (Hay $cap) { Bien "carpeta de proyectos de CapCut" } else { Ojo "sin CapCut (no hace falta: el motor saca el vídeo terminado)" "" }
         $pp = Join-Path $cap $pla
         if ((Hay (Join-Path $pp "draft_content.json")) -or (Hay (Join-Path $pp "draft_info.json"))) { Bien "plantilla de CapCut '$pla'" }
-        else { Mal "plantilla de CapCut '$pla'" "abre CapCut, crea un proyecto vacío, llámalo $pla y cierra CapCut" }
+        elseif (Hay $cap) { Ojo "plantilla de CapCut '$pla' (solo si quieres el proyecto de CapCut)" "abre CapCut, crea un proyecto vacío, llámalo $pla y cierra CapCut" }
     }
 } else { Mal "config.json" "lanza .\instalar.ps1 (paso 6) o copia config.ejemplo.json a config.json" }
 $apps = Join-Path $env:LOCALAPPDATA "CapCut\Apps"
@@ -59,15 +60,39 @@ if (Hay $apps) {
         if ([int]($ver.Name.Split('.')[0]) -ge 10) { Ojo "CapCut $($ver.Name): la versión 10 o superior puede rechazar los proyectos" "usa CapCut 9.x y desactiva las actualizaciones automáticas" }
         else { Bien "CapCut $($ver.Name)" }
     }
-} else { Ojo "no encuentro CapCut instalado en $apps" "instala CapCut 9.x de su web" }
+}
+
+# 4b. El motor (el que saca el vídeo terminado)
+$cfgM = Join-Path $REPO "motor\config.json"
+if (Hay $cfgM) {
+    $m = $null
+    try { $m = Get-Content -Raw -Encoding UTF8 $cfgM | ConvertFrom-Json; Bien "motor\config.json" } catch { Mal "motor\config.json no se puede leer" "bórralo y vuelve a lanzar 1 INSTALAR.bat" }
+    if ($m) {
+        if (Hay $m.python_df) {
+            & $m.python_df -c "import df.enhance" 2>$null
+            if ($LASTEXITCODE -eq 0) { Bien "limpieza de voz (DeepFilterNet)" } else { Mal "la limpieza de voz no carga" "vuelve a lanzar 1 INSTALAR.bat" }
+        } else { Mal "limpieza de voz ($($m.python_df))" "vuelve a lanzar 1 INSTALAR.bat" }
+        if (Hay $m.python_fw) {
+            & $m.python_fw -c "import faster_whisper" 2>$null
+            if ($LASTEXITCODE -eq 0) { Bien "transcripción (faster-whisper)" } else { Mal "la transcripción no carga" "vuelve a lanzar 1 INSTALAR.bat" }
+        } else { Mal "transcripción ($($m.python_fw))" "vuelve a lanzar 1 INSTALAR.bat" }
+        if (Hay (Join-Path $REPO "vendor\huashu-motion\cli\om.js")) { Bien "render (huashu-motion)" } else { Mal "render (vendor\huashu-motion)" "vuelve a lanzar 1 INSTALAR.bat" }
+        if (Hay $m.carpeta_tomas) { Bien "carpeta de tus tomas: $($m.carpeta_tomas)" } else { Mal "carpeta de tomas $($m.carpeta_tomas)" "vuelve a lanzar 1 INSTALAR.bat" }
+        $nsfx = @(Get-ChildItem -Path $m.carpeta_reutilizables -Filter "SFX-*.wav" -ErrorAction SilentlyContinue).Count
+        if ($nsfx -gt 0) { Bien "$nsfx efectos de sonido" } else { Ojo "no hay efectos de sonido (el vídeo sale igual, sin efectos)" "vuelve a lanzar 1 INSTALAR.bat con internet" }
+    }
+} else { Mal "motor\config.json" "lanza 1 INSTALAR.bat" }
+$chrome = @("$env:ProgramFiles\Google\Chrome\Application\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe", "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe") | Where-Object { Test-Path $_ }
+if ($chrome) { Bien "Chrome (el motor dibuja con él)" } else { Mal "Google Chrome" "instálalo desde google.com/chrome o vuelve a lanzar 1 INSTALAR.bat" }
+if (Get-Command node -ErrorAction SilentlyContinue) { Bien "Node.js" } else { Mal "Node.js" "vuelve a lanzar 1 INSTALAR.bat y abre una ventana nueva" }
 foreach ($f in @("recursos.md", "estilo.md")) {
     if (Hay (Join-Path $REPO "mi-estilo\$f")) { Bien "mi-estilo\$f" } else { Mal "mi-estilo\$f" "lanza .\instalar.ps1 (paso 6): copia el de ejemplo" }
 }
 
 # 5. Lo que usa Claude Code
-if (Hay (Join-Path $HOME ".claude\skills\montar-reels\SKILL.md")) { Bien "skill montar-reels" } else { Mal "skill montar-reels" "lanza .\instalar.ps1 (paso 7)" }
+if (Hay (Join-Path $HOME ".claude\skills\montar-reels\SKILL.md")) { Bien "skill montar-reels" } else { Mal "skill montar-reels" "lanza .\instalar.ps1 (paso 8)" }
 foreach ($a in @("director-montaje", "revisor-montaje")) {
-    if (Hay (Join-Path $HOME ".claude\agents\$a.md")) { Bien "agente $a" } else { Mal "agente $a" "lanza .\instalar.ps1 (paso 7)" }
+    if (Hay (Join-Path $HOME ".claude\agents\$a.md")) { Bien "agente $a" } else { Mal "agente $a" "lanza .\instalar.ps1 (paso 8)" }
 }
 
 # 6. Control positivo: un borrador de CapCut en memoria con lo que usan los recursos (máscara, texto, capa)
@@ -79,5 +104,5 @@ if ((Hay $PY) -and (Hay (Join-Path $REPO "vendor\VectCutAPI\pyJianYingDraft"))) 
 }
 
 Write-Host ""
-if ($fallos -eq 0) { Write-Host "Todo listo ($avisos avisos). Abre Claude Code y dile: 'edita este reel' con la ruta de tu vídeo." -ForegroundColor Green }
+if ($fallos -eq 0) { Write-Host "Todo listo ($avisos avisos). Pon tu vídeo en la carpeta de tomas, abre 2 EDITAR.bat y dile a Claude: 'edita este reel'." -ForegroundColor Green }
 else { Write-Host "Faltan $fallos cosas (y $avisos avisos). Arréglalas siguiendo las flechas y vuelve a lanzar .\comprobar.ps1." -ForegroundColor Red; exit 1 }

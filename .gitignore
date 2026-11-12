@@ -28,3 +28,4 @@ plantillas/*/renders/
 plantillas/*/snapshots/
 # Motor de render directo: GSAP y om.js van con la plantilla (con su licencia)
 !motor/plantilla/vendor/
+.venv-*/

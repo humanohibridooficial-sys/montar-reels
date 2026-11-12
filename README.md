@@ -17,23 +17,19 @@ falla, `.\comprobar.ps1` te dice qué falta y cómo arreglarlo.
 
 - Windows 10 u 11.
 - Una suscripción de Claude con **Claude Code** instalado (instrucciones en https://code.claude.com/docs).
-- CapCut de escritorio, solo si quieres el proyecto editable. Sin CapCut también sale el vídeo final con subtítulos.
+- 20 GB libres en el disco.
+- CapCut **no** hace falta: el motor saca el vídeo terminado. Solo si quieres el proyecto editable en CapCut.
 
-## Instalación (una vez)
+## Instalación (una vez, sin escribir comandos)
 
-1. Descarga este repositorio: botón verde **Code → Download ZIP** y descomprímelo, o
-   `git clone https://github.com/humanohibridooficial-sys/montar-reels.git`.
-2. Abre **PowerShell** en esa carpeta (en el Explorador: clic derecho en la carpeta → "Abrir en Terminal").
-3. Lanza:
-   ```powershell
-   Set-ExecutionPolicy -Scope Process Bypass
-   .\instalar.ps1
-   ```
-   El instalador explica cada paso. Instala Node.js, Git, Python 3.12 y FFmpeg con winget; crea un entorno de Python
-   propio en `.venv`; descarga VectCutAPI, los modelos de MediaPipe y las fuentes; crea tu `config.json`; y copia la
-   skill `montar-reels` a Claude Code. Si lo vuelves a lanzar, salta lo que ya está.
-4. **Paso a mano en CapCut**: abre CapCut, crea un proyecto vacío, llámalo exactamente `PLANTILLA-REELS` y cierra CapCut.
-   Todos los reels se montan copiando ese proyecto.
+1. Descarga este repositorio: botón verde **Code → Download ZIP**, clic derecho en el zip → **Extraer todo**.
+2. Doble clic en **`1 INSTALAR.bat`**. Si Windows avisa, **Más información → Ejecutar de todas formas**.
+   Instala con winget Node.js, Git, Python 3.11 y 3.12, FFmpeg, Chrome y Claude Code; crea `.venv`, `.venv-df`
+   (limpieza de voz) y `.venv-fw` (transcripción) con versiones fijadas; baja huashu-motion 0.3.1, los modelos, las
+   fuentes y los efectos y la música de Mixkit; crea `config.json`, `motor/config.json` y las carpetas en
+   `Vídeos\Reels`; y copia la skill y los agentes a Claude Code. Si lo vuelves a lanzar, salta lo que ya está.
+3. Doble clic en **`2 EDITAR.bat`** para abrir Claude Code en esta carpeta.
+4. (Solo si quieres CapCut) abre CapCut 9, crea un proyecto vacío llamado `PLANTILLA-REELS` y ciérralo.
 5. (Opcional) Si quieres que busque B-roll en Pexels, pide una clave gratis en la web de Pexels (apartado "API") y ponla en
    el fichero `.env` de esta carpeta: `PEXELS_API_KEY=tu_clave`. Ese fichero no se sube nunca a GitHub.
 
