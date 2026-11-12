@@ -52,4 +52,10 @@ Lo que se instala hoy un compañero es el camino viejo de CapCut, no el motor:
 
 ## Bitácora
 
-- 12-11: spec y rama `feat/compartir-para-novatos`.
+- 12-11: spec y rama `feat/compartir-para-novatos` (PR #81).
+- 12-11: Mac, rama `feat/editor-en-mac`. Luismi: "si hazlo para mac tambien". `instalar.sh`/`comprobar.sh` con
+  Homebrew y doble clic en `.command`. Solo Apple M1+ y macOS 14+: medido en PyPI que torch 2.5.1, DeepFilterLib
+  0.5.6, mediapipe 1.1.0, ctranslate2 4.8.3 y av 19.0.1 tienen rueda `macosx arm64`, y onnxruntime 1.30 y av piden
+  macOS 14. `rutas.py` elige `bin/python` fuera de Windows. `montar.sh` usa el Python del editor si el `python` del
+  sistema no tiene numpy y PIL (eso fallaba también en un Windows recién instalado; en el PC de Luismi no cambia
+  nada, su `python` las tiene). Sin probar en ningún Mac.

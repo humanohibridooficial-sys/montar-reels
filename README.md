@@ -18,6 +18,8 @@ falla, `.\comprobar.ps1` te dice qué falta y cómo arreglarlo.
 - Windows 10 u 11.
 - Una suscripción de Claude con **Claude Code** instalado (instrucciones en https://code.claude.com/docs).
 - 20 GB libres en el disco.
+- **O un Mac** con chip Apple (M1 o posterior) y macOS 14 o posterior: los mismos pasos con `1 INSTALAR.command` y
+  `2 EDITAR.command` (instala con Homebrew; sin CapCut). Detalle en `docs/PASO-A-PASO.md`, apartado "En Mac".
 - CapCut **no** hace falta: el motor saca el vídeo terminado. Solo si quieres el proyecto editable en CapCut.
 
 ## Instalación (una vez, sin escribir comandos)
