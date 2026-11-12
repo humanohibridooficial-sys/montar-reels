@@ -9,6 +9,12 @@ P = RENDER / f'p{N}'
 F = json.load(open(FICHAS / f'{N}.json', encoding='utf-8'))
 LIB = REUTILIZABLES
 MUSICA = LIB / 'MUSICA' / F.get('musica', 'PX-the_mountain-football-556097.mp3')
+# 12-11 (compartir): en otro PC puede no estar la pista de la ficha. Va la primera de MUSICA/ y, si no hay ninguna,
+# el reel sale sin música. Con la pista presente, todo igual que antes.
+if not MUSICA.exists():
+    otras = sorted((LIB / 'MUSICA').glob('*.mp3')) if (LIB / 'MUSICA').is_dir() else []
+    print(f'aviso: no está la música {MUSICA.name}:', f'uso {otras[0].name}' if otras else 'el reel va sin música')
+    MUSICA = otras[0] if otras else None
 MUSICA_DESDE = F.get('musicaDesde', 0.0)
 FONDO_DB = F.get('fondoDb', -15)  # 29-10 Luismi: todo sonaba muy alto
 SFX_BAJA = F.get('sfxBaja', 10)  # 30-10 Luismi: "música sí o sí, efectos de sonido solo como matiz" (antes 4; sin tic en cada reencuadre ni titular)
@@ -93,6 +99,11 @@ def _sin_tapar(f, inicio, g, mover):
     if voz < VOZ_HAY:
         return (f, inicio, g)
     return (f, inicio, round(float(min(g, g + (voz - MARGEN) - (nivel + g - SFX_BAJA))), 1))
+# 12-11 (compartir): un efecto que no está en este PC se salta con aviso, en vez de romper la mezcla
+faltan = sorted({f for f in [e[0] for e in E] + [x[1] for x in NUEVOS] if not (LIB / f).exists()})
+if faltan:
+    print('aviso: faltan efectos, se saltan:', ', '.join(faltan))
+    E = [e for e in E if e[0] not in faltan]; NUEVOS = [x for x in NUEVOS if x[1] not in faltan]
 for t, f, d, g in NUEVOS:   # ya van en orden de importancia
     if all(abs(t - x[1]) >= 0.25 for x in E):
         E.append(_sin_tapar(f, t + d, g, True))
@@ -101,15 +112,17 @@ FIJOS = {'SFX-P-subida.wav', 'SFX-pop.wav', 'SFX-tic.wav', 'SFX-P-tic.wav'}
 E = [_sin_tapar(f, t, g, f in MOVIBLES) if f in MOVIBLES | FIJOS else (f, t, g) for f, t, g in E]
 E = sorted(E, key=lambda e: e[1])
 
-ins = ['-i', sys.argv[1], '-i', str(P / 'assets/voice.wav'), '-ss', str(MUSICA_DESDE), '-i', str(MUSICA)]
+ins = ['-i', sys.argv[1], '-i', str(P / 'assets/voice.wav'),
+       *(['-ss', str(MUSICA_DESDE), '-i', str(MUSICA)] if MUSICA else ['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo'])]
 for f, _, _ in E:
     ins += ['-i', str(LIB / f)]
 byn = plan['byn'] or [-1, -1]
 fc = [
     # música: normalizada, EQ que le quita medios donde vive la voz, ahogada en el blanco y negro, fundido al final
-    f'[2:a]atrim=0:{LEN},asetpts=PTS-STARTPTS,loudnorm=I=-14:TP=-2,volume={FONDO_DB}dB,'
-    f'equalizer=f=1200:t=o:w=1.4:g=-5,equalizer=f=3000:t=o:w=1.2:g=-3,'
-    f"lowpass=f=700:enable='between(t,{byn[0]},{byn[1]})',afade=t=out:st={LEN - 0.8}:d=0.8[mus]",
+    (f'[2:a]atrim=0:{LEN},asetpts=PTS-STARTPTS,loudnorm=I=-14:TP=-2,volume={FONDO_DB}dB,'
+     f'equalizer=f=1200:t=o:w=1.4:g=-5,equalizer=f=3000:t=o:w=1.2:g=-3,'
+     f"lowpass=f=700:enable='between(t,{byn[0]},{byn[1]})',afade=t=out:st={LEN - 0.8}:d=0.8[mus]") if MUSICA else
+    f'[2:a]atrim=0:{LEN},asetpts=PTS-STARTPTS[mus]',   # sin música: silencio, para que el resto del grafo no cambie
     '[1:a]asplit=2[voz][sc]',
     '[mus][sc]sidechaincompress=threshold=0.04:ratio=3:attack=20:release=350:makeup=1[musd]',
 ]

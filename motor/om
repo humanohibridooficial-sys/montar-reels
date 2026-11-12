@@ -1,0 +1,4 @@
+#!/bin/sh
+# Lanza el "om" de huashu-motion 0.3.1 que el instalador deja en vendor/ (en npm no está esa versión).
+DIR="$(cd "$(dirname "$0")" && pwd -P)"
+exec node "$DIR/../vendor/huashu-motion/cli/om.js" "$@"

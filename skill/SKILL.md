@@ -1,14 +1,43 @@
 ---
 name: montar-reels
-description: Edita reels verticales 9:16 a partir de tomas grabadas con el móvil (limpiar audio e imagen, transcribir, cortar silencios y repeticiones, subtitular, montar en CapCut y revisar volumen y zona segura) y aprende el estilo de edición del usuario a partir de sus reels terminados y de reels de referencia (cuenta fantasma). Úsala cuando el usuario diga "edita este reel", "monta el reel", "corta esta toma", "ponle subtítulos", "revisa el volumen", "quita de X a Y", "aprende de mis reels", "aprende cómo edito", "analiza esta cuenta", "cuenta fantasma", "quiero editar como este reel" o pase un vídeo .mp4 para editar.
+description: Edita reels verticales 9:16 a partir de tomas grabadas con el móvil (limpiar la voz, transcribir, cortar silencios y repeticiones, subtítulos, rótulos, b-roll, música y efectos, y sacar el vídeo terminado con el motor, sin CapCut; CapCut queda como opción) y aprende el estilo de edición del usuario a partir de sus reels terminados y de reels de referencia (cuenta fantasma). Úsala cuando el usuario diga "edita este reel", "monta el reel", "corta esta toma", "ponle subtítulos", "revisa el volumen", "quita de X a Y", "aprende de mis reels", "aprende cómo edito", "analiza esta cuenta", "cuenta fantasma", "quiero editar como este reel" o pase un vídeo .mp4 para editar.
 ---
 
 # Montar reels
 
-> **Desde el 30-10 el camino es el motor** (`{{REPO}}\motor`): `python motor/preparar.py <n> <toma>`, el agente
-> `director-montaje` escribe la ficha y la pasa por `motor/puerta_plan.py`, `sh motor/montar.sh <n>` saca el mp4 y
-> el agente `revisor-montaje` lo juzga. Ver "El camino de una pieza" en el README. Lo que sigue describe el camino
-> de CapCut, archivado.
+## Quien te habla puede no saber NADA de ordenadores
+
+Háblale sin palabras técnicas (nada de "venv", "ficha", "render", "JSON"). Los comandos los lanzas tú, nunca le pidas
+que escriba uno. Si te pasa una ruta rara o arrastra un vídeo, cópialo tú a su carpeta de tomas. Cuando algo falle,
+lanza tú `{{REPO}}\comprobar.ps1`, lee lo que falta y arréglalo, o dile en una frase qué tiene que hacer él (por
+ejemplo "haz doble clic en 1 INSTALAR.bat").
+
+## El camino principal: el motor (vídeo terminado, sin CapCut)
+
+Todo desde `{{REPO}}`, con el Python de `{{REPO}}\.venv\Scripts\python.exe`. Las carpetas salen de
+`{{REPO}}\motor\config.json` (sus vídeos van en `Vídeos\Reels`): no escribas rutas a mano.
+
+1. **La toma tiene que estar en la carpeta de tomas** (`carpeta_tomas` de `motor\config.json`). Si no está, cópiala
+   allí. Ponle un nombre corto a la pieza (`<n>`: un número o una palabra sin espacios).
+2. **Pregunta por el guion** si lo tiene: con guion se corta mucho mejor. Guárdalo al lado de la toma como
+   `<toma>.guion.txt`, una frase por línea.
+3. **Preparar**: `python motor/preparar.py <n> "<toma.mp4>"`. Limpia la voz, saca las palabras con sus tiempos y un
+   borrador del plan. La primera vez descarga los modelos (varios GB) y tarda.
+4. **Plan**: lanza el agente `director-montaje` con `<n>`. Decide el tono, qué se corta y qué recurso va en cada
+   frase, y no termina hasta que `python motor/puerta_plan.py <n>` dice OK.
+5. **Montar**: `sh motor/montar.sh <n>`. Unos 5 minutos por pieza y mucha memoria: **una pieza cada vez**. Si la
+   revisión del fichero falla, no entrega el vídeo.
+6. **Revisión**: el agente `revisor-montaje` mira el vídeo terminado. Si dice que no se puede enseñar, vuelve al
+   paso 4 con sus fallos (como mucho 3 vueltas). No le enseñes nada al usuario antes de que el revisor lo apruebe.
+7. **Portada y texto**: `python motor/portada.py <n> "<linea1>" "<linea2>"` y un caption con sus palabras de la
+   toma. Déjalo todo junto en `2 PARA SUBIR`, porque un vídeo sin portada ni texto no se puede publicar.
+8. **Enséñaselo** con la ruta de la carpeta y espera su OK antes de pasar a la siguiente pieza.
+
+Si faltan efectos de sonido o la música de la ficha, la mezcla avisa y sigue: es normal en un PC nuevo. Lo que el
+usuario corrija ("más rápido", "sin música", "esa palabra en dorado") se apunta en `mi-estilo/estilo.md` para la
+siguiente pieza.
+
+## El camino viejo: proyecto de CapCut (solo si lo pide)
 
 Sistema de edición en `{{REPO}}`. Todos los comandos se lanzan desde `{{REPO}}\scripts` con el Python del
 entorno: `{{REPO}}\.venv\Scripts\python.exe`. Las rutas (trabajo, CapCut, fuentes, colores) salen de
