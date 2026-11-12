@@ -143,10 +143,13 @@ if (-not (Test-Path $PYFW)) { & py -3.12 -m venv .venv-fw; Ok "creado .venv-fw" 
 if ($LASTEXITCODE -ne 0) { Write-Host "Falló la instalación de la transcripción. Mira el error de arriba." -ForegroundColor Red; exit 1 }
 Ok "transcripción (faster-whisper)"
 $HM = Join-Path $REPO "vendor\huashu-motion"
-if (-not (Test-Path (Join-Path $HM "cli\om.js"))) {
-    git clone --quiet --depth 1 --branch v0.3.1 https://github.com/alchaincyf/huashu-motion.git $HM
-}
-Ok "render (huashu-motion 0.3.1, la versión probada)"
+# Fijado al commit de la etiqueta v0.3.1 (una etiqueta se puede mover; un commit no), y comprobado en cada vuelta
+$HMCOMMIT = "52467f99c602b76ba86d511d37acdfe93fa1e16e"
+if (-not (Test-Path (Join-Path $HM ".git"))) { git clone --quiet https://github.com/alchaincyf/huashu-motion.git $HM }
+git -C $HM fetch --quiet origin
+git -C $HM checkout --quiet $HMCOMMIT
+if ((git -C $HM rev-parse HEAD) -ne $HMCOMMIT) { Write-Host "huashu-motion no está en la versión probada. Borra vendor\huashu-motion y vuelve a lanzar." -ForegroundColor Red; exit 1 }
+Ok "render (huashu-motion 0.3.1, la versión probada, $($HMCOMMIT.Substring(0,7)))"
 # Tus carpetas de vídeo, con la misma forma que las de los reels de ejemplo
 $REELS = Join-Path ([Environment]::GetFolderPath("MyVideos")) "Reels"
 $RECURSOS = Join-Path $REELS "3 RECURSOS"
