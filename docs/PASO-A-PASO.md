@@ -1,7 +1,9 @@
 # Paso a paso: el editor de reels en tu ordenador
 
-Para cualquier persona con **Windows 10 u 11**, aunque no hayas tocado nunca un ordenador más allá del navegador.
-No vas a escribir ningún comando: todo es doble clic y hablarle a Claude en español.
+Para cualquier persona con **Windows 10 u 11** o con **Mac** (chip Apple M1 o posterior, macOS 14 o posterior),
+aunque no hayas tocado nunca un ordenador más allá del navegador. No vas a escribir ningún comando: todo es doble
+clic y hablarle a Claude en español. Si tienes Mac, sigue los mismos pasos con los cambios de
+[**En Mac**](#en-mac), al final.
 
 Tiempo la primera vez: **unos 45 minutos**, casi todo esperando descargas. Necesitas **20 GB libres** en el disco
 (el montaje de cada vídeo ocupa mucho mientras se hace y luego se borra).
@@ -70,3 +72,25 @@ en redes y anuncios. Tus vídeos no salen de tu ordenador.
 
 CapCut **no** hace falta. Si alguien quiere el proyecto editable en CapCut, puede pedírselo a Claude, pero
 necesita CapCut 9 y una plantilla vacía llamada `PLANTILLA-REELS`.
+
+## En Mac
+
+Funciona en Mac con chip Apple (**M1, M2, M3 o M4**) y **macOS 14 Sonoma o posterior**. Para saberlo: menú Apple
+(arriba a la izquierda) > **Acerca de este Mac**. Si pone "Intel", no funciona: la limpieza de voz no tiene versión
+para esos Mac.
+
+Los pasos son los mismos, con estos cambios:
+
+1. **Descargar**: al bajar el ZIP, el Mac lo descomprime solo en Descargas. Mueve la carpeta al Escritorio.
+2. **Instalar**: doble clic en **`1 INSTALAR.command`** (no en el `.bat`).
+   - La primera vez el Mac dice que no puede abrirlo porque "no se ha podido verificar el desarrollador". Ve a
+     **Ajustes del Sistema > Privacidad y seguridad**, baja hasta el final y pulsa **Abrir igualmente**. En Mac más
+     antiguos vale con clic derecho en el fichero > **Abrir** > **Abrir**.
+   - Te pedirá **la contraseña de tu Mac** para instalar Homebrew (el instalador de programas). Al escribirla no se
+     ve nada en la pantalla: es normal. Escríbela y pulsa Enter.
+   - Puede salir una ventana para instalar las "herramientas de línea de comandos": pulsa **Instalar**.
+3. **Entrar**: doble clic en **`2 EDITAR.command`**.
+4. **Tu primer reel**: la carpeta está en **Películas > Reels > 1 TOMAS EN BRUTO** (en Mac, la carpeta de vídeos se
+   llama Películas). Lo terminado sale en **Películas > Reels > 2 PARA SUBIR**.
+
+En Mac no existe la opción de CapCut: solo el vídeo terminado.

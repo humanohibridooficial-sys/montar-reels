@@ -9,13 +9,16 @@ description: Edita reels verticales 9:16 a partir de tomas grabadas con el móvi
 
 Háblale sin palabras técnicas (nada de "venv", "ficha", "render", "JSON"). Los comandos los lanzas tú, nunca le pidas
 que escriba uno. Si te pasa una ruta rara o arrastra un vídeo, cópialo tú a su carpeta de tomas. Cuando algo falle,
-lanza tú `{{REPO}}\comprobar.ps1`, lee lo que falta y arréglalo, o dile en una frase qué tiene que hacer él (por
-ejemplo "haz doble clic en 1 INSTALAR.bat").
+lanza tú la comprobación (`{{REPO}}\comprobar.ps1` en Windows, `bash {{REPO}}/comprobar.sh` en Mac), lee lo que
+falta y arréglalo, o dile en una frase qué tiene que hacer él (por ejemplo "haz doble clic en 1 INSTALAR.bat", o
+`1 INSTALAR.command` en Mac).
 
 ## El camino principal: el motor (vídeo terminado, sin CapCut)
 
-Todo desde `{{REPO}}`, con el Python de `{{REPO}}\.venv\Scripts\python.exe`. Las carpetas salen de
-`{{REPO}}\motor\config.json` (sus vídeos van en `Vídeos\Reels`): no escribas rutas a mano.
+Todo desde `{{REPO}}`, con el Python del editor: `{{REPO}}\.venv\Scripts\python.exe` en Windows y
+`{{REPO}}/.venv/bin/python` en Mac (en Mac no hay `python` suelto: usa siempre ese). Las carpetas salen de
+`motor/config.json` (sus vídeos van en `Vídeos\Reels` en Windows y en `Películas/Reels` en Mac): no escribas rutas
+a mano. En Mac no hay CapCut ni el camino viejo de abajo: solo el motor.
 
 1. **La toma tiene que estar en la carpeta de tomas** (`carpeta_tomas` de `motor\config.json`). Si no está, cópiala
    allí. Ponle un nombre corto a la pieza (`<n>`: un número o una palabra sin espacios).

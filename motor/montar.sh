@@ -5,6 +5,12 @@
 #                                      FORZAR=1 renderiza aunque la puerta del plan falle)
 # Solo llega a la carpeta de salida lo que pasa la revisión del fichero; lo demás se queda en el render con su qc.json.
 cd "$(dirname "$0")"
+# Si el "python" del sistema no tiene las librerías del motor (un Mac, o un PC recién instalado), usa el del editor
+if ! python -c "import numpy, PIL" > /dev/null 2>&1; then
+  for c in "../.venv/Scripts/python.exe" "../.venv/bin/python"; do
+    if [ -x "$c" ]; then PYEDITOR="$(cd "$(dirname "$c")" && pwd)/$(basename "$c")"; python() { "$PYEDITOR" "$@"; }; break; fi
+  done
+fi
 cfg() { PYTHONIOENCODING=utf-8 python -c "import rutas; print(rutas.$1)"; }
 RENDER="$(cfg RENDER)"; OM="$(cfg OM)"; DEST="${SALIDA:-$(cfg SALIDA)}"
 mkdir -p "$RENDER" "$DEST"

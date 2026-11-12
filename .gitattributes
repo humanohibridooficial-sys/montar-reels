@@ -1,5 +1,6 @@
 # Los scripts de sh tienen que llevar saltos de línea de Linux: con los de Windows, sh no los arranca
 *.sh text eol=lf
 motor/om text eol=lf
+*.command text eol=lf
 # Los .bat, con los de Windows
 *.bat text eol=crlf
