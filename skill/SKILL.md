@@ -20,6 +20,10 @@ Todo desde `{{REPO}}`, con el Python del editor: `{{REPO}}\.venv\Scripts\python.
 `motor/config.json` (sus vídeos van en `Vídeos\Reels` en Windows y en `Películas/Reels` en Mac): no escribas rutas
 a mano. En Mac no hay CapCut ni el camino viejo de abajo: solo el motor.
 
+0. **La primera vez, su perfil.** Si no existe `motor-datos/perfil/perfil.json` (en `carpeta_datos`), pregúntale
+   su usuario de Instagram y cómo quiere que se lea debajo (su nombre o una frase corta), y escríbelo así:
+   `{"usuario": "su_usuario", "nombre": "su frase"}`. Pídele una foto de perfil y guárdala al lado como `foto.jpg`.
+   Sin eso el montaje para: la tarjeta de "Seguir" del final lleva SU perfil, nunca uno de ejemplo.
 1. **La toma tiene que estar en la carpeta de tomas** (`carpeta_tomas` de `motor\config.json`). Si no está, cópiala
    allí. Ponle un nombre corto a la pieza (`<n>`: un número o una palabra sin espacios).
 2. **Pregunta por el guion** si lo tiene: con guion se corta mucho mejor. Guárdalo al lado de la toma como
@@ -35,6 +39,15 @@ a mano. En Mac no hay CapCut ni el camino viejo de abajo: solo el motor.
 7. **Portada y texto**: `python motor/portada.py <n> "<linea1>" "<linea2>"` y un caption con sus palabras de la
    toma. Déjalo todo junto en `2 PARA SUBIR`, porque un vídeo sin portada ni texto no se puede publicar.
 8. **Enséñaselo** con la ruta de la carpeta y espera su OK antes de pasar a la siguiente pieza.
+
+**B-roll**: `python motor/buscar_broll.py buscar "lo que se ve, en inglés" --es "palabras en español"` busca a la
+vez en su biblioteca, Pexels, Pixabay y Coverr (las que tengan clave en `.env`) y deja una hoja con candidatos;
+`buscar_broll.py bajar <consulta> <fuente:id>` baja el elegido a `3 RECURSOS/b-roll-<fuente>/` con su licencia.
+Sin clave de Pexels, ayúdale a sacarla (gratis, en pexels.com/api) y pégala tú en `.env`. YouTube solo con
+`--youtube` y avisándole de que hay que citar al autor. Generar con IA gasta créditos de pago: solo si lo pide.
+**Pack de recursos** (overlays, transiciones, elementos, LUTs): solo si tiene uno en `3 RECURSOS/PACK DE RECURSOS 2.0`
+con sus carpetas `01_ANIMACIONES`, `03_OVERLAYS`, `06_TRANSICIONES`, `07_PNGs` y `09_LUTs` (`.cube`); entonces
+lanza `python motor/pack.py inventario`. Sin pack, el director no pide recursos del pack.
 
 Si faltan efectos de sonido o la música de la ficha, la mezcla avisa y sigue: es normal en un PC nuevo. Lo que el
 usuario corrija ("más rápido", "sin música", "esa palabra en dorado") se apunta en `mi-estilo/estilo.md` para la

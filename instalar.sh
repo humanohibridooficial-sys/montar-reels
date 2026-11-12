@@ -99,7 +99,7 @@ import json, sys, pathlib
 repo, reels = sys.argv[1], sys.argv[2]
 c = {'carpeta_contenido': reels, 'carpeta_tomas': f'{reels}/1 TOMAS EN BRUTO', 'carpeta_reutilizables': f'{reels}/3 RECURSOS',
      'carpeta_datos': f'{reels}/motor-datos', 'carpeta_render': str(pathlib.Path.home() / 'reels-render'),
-     'carpeta_salida': f'{reels}/2 PARA SUBIR', 'om': f'{repo}/motor/om',
+     'carpeta_salida': f'{reels}/2 PARA SUBIR', 'om': f'{repo}/motor/om', 'fran': False,   # licencia de Luismi, no tuya
      'python_df': f'{repo}/.venv-df/bin/python', 'python_fw': f'{repo}/.venv-fw/bin/python'}
 json.dump(c, open(f'{repo}/motor/config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
 EOF

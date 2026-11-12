@@ -53,6 +53,7 @@ Lo que se instala hoy un compañero es el camino viejo de CapCut, no el motor:
 ## Bitácora
 
 - 12-11: spec y rama `feat/compartir-para-novatos` (PR #81).
+- 12-11: #81 y #82 mergeadas. Rama `feat/guia-recursos`: sin `perfil.json` el montaje para (antes salía la tarjeta de @nutretufutbol); el buscador de b-roll no usa el canal de Fran con `"fran": false` (lo ponen los instaladores; en el PC de Luismi sigue igual); el director usa la marca del perfil, no FF360; guía de carpetas, b-roll, LUTs, sonido y programas. Medido: `montar.py 74x` da index.html y plan.json idénticos a main con el perfil de Luismi, y sin perfil para con el aviso.
 - 12-11: Mac, rama `feat/editor-en-mac`. Luismi: "si hazlo para mac tambien". `instalar.sh`/`comprobar.sh` con
   Homebrew y doble clic en `.command`. Solo Apple M1+ y macOS 14+: medido en PyPI que torch 2.5.1, DeepFilterLib
   0.5.6, mediapipe 1.1.0, ctranslate2 4.8.3 y av 19.0.1 tienen rueda `macosx arm64`, y onnxruntime 1.30 y av piden

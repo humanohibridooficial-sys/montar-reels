@@ -58,6 +58,97 @@ Tiempo la primera vez: **unos 45 minutos**, casi todo esperando descargas. Neces
 - Dile **"quiero editar como esta cuenta"** y pégale enlaces de reels que te gusten. Los mira en tu ordenador para
   aprender el ritmo y el estilo; no publica nada ni entra en tu Instagram.
 
+## La primera vez: tu perfil
+
+Antes del primer vídeo, Claude te pide **tu usuario de Instagram**, una frase corta para debajo y **una foto de
+perfil**. Salen en la tarjeta de "Seguir" del final de cada reel. Sin eso no monta, para que nunca salga un perfil
+que no es el tuyo.
+
+## Cómo ordenar las carpetas
+
+Todo vive en **Vídeos > Reels** (en Mac, **Películas > Reels**). El instalador crea esto y el editor lo mantiene:
+
+| Carpeta | Qué va dentro | Quién la llena |
+|---|---|---|
+| `1 TOMAS EN BRUTO` | Los vídeos tal como salen del móvil. **Una sola copia** de cada uno, con un nombre corto (`01-proteina.mp4`). Si tienes guion, al lado y con el mismo nombre: `01-proteina.guion.txt` | Tú |
+| `2 PARA SUBIR` | **Una carpeta por vídeo**: `<número> - <tema>`, con `REEL`, `PORTADA` y `CAPTION`. Si pides pruebas de gancho, también `TRIAL A` y `TRIAL B`: el mismo montaje con otro arranque | El editor |
+| `3 RECURSOS` | `MUSICA/`, los efectos `SFX-…wav`, el b-roll en `b-roll-<sitio>/` (cada uno con su `LICENCIA.txt`) y, si compras uno, tu pack de recursos | El editor y tú |
+| `motor-datos` | Lo que dices en cada toma, los planes de montaje y tu perfil. **No lo toques** | El editor |
+
+Fuera de esa carpeta, en tu usuario, hay una `reels-render`: es el taller. Cada vídeo ocupa ahí 13-17 GB mientras se
+monta. Cuando tengas el vídeo en `2 PARA SUBIR`, Claude puede vaciarla si se lo pides.
+
+Reglas que ahorran líos: no muevas ni renombres nada dentro de `motor-datos` ni mientras un vídeo se está montando,
+y no guardes dos copias de la misma toma.
+
+## De dónde sale el b-roll (los planos de recurso)
+
+Claude lo busca solo cuando hace falta. Si quieres uno concreto, díselo: *"pon un plano de un jugador atándose las
+botas cuando digo 'antes del partido'"*. Te enseña varios candidatos y elige contigo.
+
+Busca a la vez en:
+
+- **Tu biblioteca**: lo que ya tengas en `3 RECURSOS`. Si tienes clips tuyos (entrenando, en el campo, tu material),
+  déjalos ahí: son lo mejor, porque nadie más los tiene.
+- **Pexels**, **Pixabay** y **Coverr**: vídeos gratis que se pueden usar en anuncios. Pexels y Pixabay sin citar a
+  nadie; Coverr, con su clave gratuita, pide citarle a él y al autor. Hace falta una clave gratis de cada uno. Pídele a Claude *"ayúdame a sacar la clave de Pexels"* y te lleva paso a paso; la
+  pega él en el fichero `.env`, que no sale de tu ordenador. Pexels es la importante; Pixabay y Coverr dan más
+  variedad (la de Coverr se pide por email).
+- **YouTube con licencia Creative Commons**, solo si lo pides: obliga a **citar al autor en el texto** de la
+  publicación.
+- **Generado con IA**, solo si lo pides y como último recurso: **cuesta dinero** (créditos de un servicio de pago) y
+  el vídeo sale marcado como hecho con IA.
+
+Webs como Mixkit o Videezy también son gratis, pero no dejan descargar con programas: si te gusta un clip de ahí,
+bájalo tú y déjalo en `3 RECURSOS/b-roll-mixkit/`.
+
+Lo que el buscador descarta siempre: **marcas y logos** (Nike, escudos de clubes…) y **niños pequeños**. Así todo lo
+que monta se puede usar también en anuncios.
+
+## El color (LUTs) y el pack de recursos
+
+Un **LUT** es un filtro de color (fichero `.cube`) que da a todos tus vídeos el mismo tono. El editor no trae ninguno:
+vienen en los **packs de recursos** que se venden para editores (overlays, transiciones, elementos animados y LUTs).
+
+Si compras uno, déjalo en `3 RECURSOS/PACK DE RECURSOS 2.0/` con estas carpetas dentro: `01_ANIMACIONES`,
+`03_OVERLAYS`, `06_TRANSICIONES`, `07_PNGs` y `09_LUTs`. Dile a Claude *"tengo un pack nuevo"*: lo cataloga y
+desde ahí puede pedirte *"un LUT cálido"* o *"una transición en el cambio de tema"*. Sin pack, el vídeo sale igual
+de completo, sin esos extras.
+
+Antes de comprar uno, mira su licencia: tiene que permitir **uso comercial y anuncios**. Muchos packs traen música o
+efectos de terceros que **no** se pueden usar en anuncios. Si lo dice, apártalos.
+
+## El sonido
+
+- **Tu voz**: el editor quita el ruido de fondo solo. No le pongas tú compresor ni reductor de ruido: suben el ruido
+  que queda. Lo que más ayuda es grabar con el móvil cerca, en un sitio sin eco y sin viento.
+- **Volumen**: todos los vídeos salen al mismo, el que usa Instagram (−16 LUFS). No hace falta tocarlo.
+- **Música**: siempre de fondo, bastante más baja que tu voz, y se aparta sola cuando hablas. Trae 9 pistas libres
+  de Mixkit; si quieres más, bájalas de **Mixkit** o **Pixabay Music** y déjalas en `3 RECURSOS/MUSICA`. Pídela por
+  ambiente: *"música más emotiva"*, *"más energía"*, *"sin música"*.
+- ⛔ **Nunca himnos ni cánticos famosos** (la Champions, el "po-po-po"…): tienen derechos y **Meta bloquea el anuncio**.
+- **Efectos de sonido**: uno por cada cosa que pasa en pantalla (entra un plano, sale una lista, aparece el botón de
+  Seguir). Si te parecen muchos o pocos, díselo: *"menos efectos"*, *"que suene un golpe en la palabra clave"*.
+
+## Programas para cortar: qué usa y qué no
+
+- **El motor del editor** (lo que usa por defecto): corta, subtitula, pone recursos, música y portada, y saca el
+  vídeo terminado. Gratis y en tu ordenador. Es el que mejor quedó al compararlo con otras herramientas.
+- **CapCut** (solo Windows, versión 9): si quieres retocar a mano, Claude puede montarlo como proyecto de CapCut.
+  La exportación final la haces tú desde CapCut.
+- **Cualquier otro editor**: el vídeo de `2 PARA SUBIR` es un mp4 normal. Puedes abrirlo en CapCut del móvil, en
+  DaVinci Resolve (gratis) o en el que uses, y retocar lo que quieras.
+- **Apps de pago que montan solas** (Descript, Submagic, Opus Clip y similares): se descartaron. Dan su estilo, no
+  el tuyo, y no aprenden de lo que corriges.
+
+## Grabar para que el montaje salga mejor
+
+- Vertical, con luz de cara y el móvil a la altura de los ojos.
+- Si quieres textos o planos encima de ti, deja aire: que tu cabeza quede hacia la mitad de la pantalla, no arriba
+  del todo.
+- Una idea por vídeo. Si te equivocas, repite la frase entera: el editor te propone quedarse con la última buena.
+- Al acabar, quédate un segundo quieto antes de ir a parar el móvil: así el corte no pilla tu mano.
+
 ## Si algo falla
 
 Díselo a Claude con tus palabras: *"no me funciona"*, *"me sale un error rojo"*. Él lanza la comprobación, ve qué

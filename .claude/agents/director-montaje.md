@@ -34,7 +34,7 @@ archivado (30-10): no escribas specs de `scripts/montar_reel.py`.
 3. **La función de cada frase** (gancho, idea, lista, dato, objeción, transición, cierre) y, para cada una, la
    FORMA: distinta de las de los últimos reels, sobre todo el gancho. Dos tipos:
    - **Los que explican la frase**: todos los que hagan falta para que se entienda con el sonido quitado.
-   - **Los de adorno** (destello, barrido, congelado, FF360 del cierre): como mucho dos y con motivo.
+   - **Los de adorno** (destello, barrido, congelado, la marca del cierre): como mucho dos y con motivo.
    Una sola palabra dorada en pantalla a la vez.
 4. **Que quepa en ESTA toma**: `python {{REPO}}/scripts/medir_toma.py <toma>` (con el Python de `.venv`) dice
    dónde cabe cada cosa. Si la barbilla queda por debajo del 60 %, pocos textos y cortos, y dilo remitiendo a
@@ -80,7 +80,7 @@ Recursos de base (opcionales): `broll` [{id, file, ss, in, out, modo: ''|'split'
 | `mapa` | cadena causa-efecto | `palabras` [[cue, palabra]] |
 | `tarjetas` | enseñar ejemplos en clips | `lado` izq, `clips` [[cue, file, ss]] |
 | `barrido` | entrar en un bloque nuevo | solo `in` |
-| `logo` | FF360 en el cierre (≥ 0,8 s) | `texto` |
+| `logo` | La marca de quien edita en el cierre (≥ 0,8 s): su nombre o el de su cuenta, sacado de `motor-datos/perfil/perfil.json`, nunca FF360 si no es su marca | `texto` |
 
 ## Antes de entregar: la puerta
 `python {{REPO}}/motor/montar.py <n>` y después `python {{REPO}}/motor/puerta_plan.py <n>`. La puerta falla si:
