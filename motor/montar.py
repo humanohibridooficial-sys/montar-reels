@@ -203,6 +203,13 @@ FOLLOW_TOP = F.get('followTop', 300 if _cab > 300 + 132 + 30 else SUBS)
 # entonces van donde el subtítulo y el subtítulo se oculta mientras están. 'topsTop' en la ficha lo fuerza.
 TOPS_TOP = F.get('topsTop', 300 if _cab > 480 + 30 else SUBS)
 CSS = CSS.replace('top: 1040px; height: 260px', f'top: {SUBS}px; height: 260px').replace('#follow { position: absolute; left: 50%; top: 300px;', f'#follow {{ position: absolute; left: 50%; top: {FOLLOW_TOP}px;').replace('#tops { position: absolute; left: 6%; right: 6%; top: 300px;', f'#tops {{ position: absolute; left: 6%; right: 6%; top: {TOPS_TOP}px;').replace('transform-origin: 50% 42%', f"transform-origin: {F.get('origin', '50% 40%')}")
+# Tarjeta de Seguir a un lado (revisor 48x, 14-11: centrada tocaba la barbilla): "followIzq": [izq, ancho] en px, solo
+# con followImg. La tarjeta escala a 0,85 desde su centro, así que lo que se ve va de izq + 0,075 * ancho a izq + 0,925 * ancho.
+if F.get('followIzq'):
+    _fx, _fw = F['followIzq']
+    _a = '#follow.ig { display: block; width: 760px; margin-left: -380px;'
+    assert _a in CSS, _a
+    CSS = CSS.replace(_a, f'#follow.ig {{ display: block; width: {int(_fw)}px; margin-left: 0; left: {int(_fx)}px;')
 # Subtítulos grandes (Luismi 04-11, reel 86: "mejora subtítulos"): con "subsGrandes": true, más tamaño y contorno.
 if F.get('subsGrandes'):
     CSS = (CSS.replace('#subs .l1 { font: 800 54px/1.15 Inter', '#subs .l1 { -webkit-text-stroke: 1.5px #070D16; paint-order: stroke fill; font: 900 62px/1.12 Inter')
@@ -332,7 +339,8 @@ for i, x in enumerate(F.get('extras', [])):
                      + ''.join(f'<circle class="jg" cx="{round(c[1] * 600)}" cy="{round(c[2] * 400)}" r="16"/>' for c in js) + '</svg></div></div>')
     elif tipo == 'mapa':   # palabras en zigzag por encima de la cabeza y una línea discontinua que las va uniendo
         # 30-10: a los lados de la cara, la línea la cruzaba; arriba (y 250-470) va por encima de la cabeza (22-33 % de alto)
-        pos = [(250 if k % 2 == 0 else 830, 310 + k * round(190 / max(1, len(subs) - 1))) for k in range(len(subs))]
+        # "y" (opcional, 15-11 revisor 73): centro de la primera palabra; a 310 su caja asomaba ~18 px en el 15 % de arriba.
+        pos = [(250 if k % 2 == 0 else 830, int(x.get('y', 310)) + k * round(190 / max(1, len(subs) - 1))) for k in range(len(subs))]
         largos = [((pos[k + 1][0] - pos[k][0]) ** 2 + (pos[k + 1][1] - pos[k][1]) ** 2) ** 0.5 for k in range(len(pos) - 1)]
         tot = sum(largos) or 1
         fr = [round(1 - sum(largos[:k]) / tot, 4) for k in range(len(pos))]   # dashoffset al decir la palabra k
@@ -445,6 +453,11 @@ for n, w in enumerate(words[1:], 1):
         last = round(last + 2.6, 3); zoom.append([last, ESC[k % len(ESC)]]); k += 1
     if (nueva and w['start'] - last >= 1.8) or w['start'] - last > 2.6 or (cut is not None and F.get('punch') and t - last >= 0.8):
         zoom.append([t, ESC[k % len(ESC)]]); k += 1; last = t
+# "planoQuieto" (ficha, 15-11 revisor 64): [[cue, cue]] tramos sin reencuadres (un titular encima de la cabeza): el plano
+# se queda a 1,0 y los cambios de dentro se quitan; al acabar vuelve la escala que tocaba.
+for a_, b_ in [(cue(a), cue(b)) for a, b in F.get('planoQuieto', [])]:
+    sigue = [z for z in zoom if z[0] <= b_][-1][1]
+    zoom = sorted([z for z in zoom if not a_ <= z[0] <= b_] + [[a_, 1.0], [b_, sigue]])
 fol = cue(F['follow'])
 plan = {
     'spans': spans, 'panel': panel, 'zoom': zoom,
