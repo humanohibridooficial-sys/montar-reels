@@ -156,7 +156,8 @@ JS = '''
     }
     // 05-11 (revisor 84): la entrada iba en el else y un titular en el sitio del subtítulo con t0 > 0 no salía nunca
     // (ocultaba el subtítulo y no entraba nada). El del fotograma 0 con topsEnSubs ya está visible de base.
-    if (!PLAN.topsEnSubs || t0 > 0) tl.fromTo(el, { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: 0.22, ease: 'back.out(1.8)', immediateRender: false }, t0);
+    // 15-11 (revisor 67/73): el del fotograma 0 ya es visible de base; con el fundido de entrada en t=0 el fotograma 1 salía al 40 %.
+    if (t0 > 0) tl.fromTo(el, { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: 0.22, ease: 'back.out(1.8)', immediateRender: false }, t0);
     tl.set(el, { opacity: 0 }, t1);
   });
   // Pantalla clara: cabecera que cambia con cada punto y lista que se va completando.
@@ -218,7 +219,9 @@ JS = '''
     const t1 = Math.min(nb ? nb[0].start : LEN, bk[bk.length - 1].end + 0.6, corte);
     // 30-10 Luismi: el subtítulo "se mueve como ondulándose": cada bloque saltaba (y 16 y rebote). Ahora la línea blanca
     // solo aparece; el único golpe es el de la palabra dorada.
-    tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.06, ease: 'none', immediateRender: false }, t0).set(el, { opacity: 0 }, t1);
+    // 15-11: el bloque que arranca en el fotograma 0 sale entero, sin fundido (el fotograma 1 salía a medias).
+    if (t0 < 0.02) el.style.opacity = 1; else tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.06, ease: 'none', immediateRender: false }, t0);
+    tl.set(el, { opacity: 0 }, t1);
     if (ki >= 0) tl.fromTo(el.querySelector('.l2'), { scale: 0.88 }, { scale: 1, duration: 0.14, ease: 'power2.out', immediateRender: false }, t0);
   });
   // Recursos nuevos (30-10): cada uno entra con su palabra y sale en su "out".
