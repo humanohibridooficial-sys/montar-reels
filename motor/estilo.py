@@ -103,6 +103,31 @@ CSS = '''
   .piz svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 20px 30px #000a); }
   .piz .pc { fill: #0E1F3A; stroke: #fff; stroke-width: 5; } .piz .pl { fill: none; stroke: #ffffffb0; stroke-width: 4; }
   .piz .jg { fill: #E0B83C; stroke: #070D16; stroke-width: 4; transform-box: fill-box; transform-origin: center; }
+  /* Pizarra táctica (16-11, maqueta pizarra-cronometro): sobre el plano de partido congelado; px del lienzo 1080x1920 */
+  .ptac { position: absolute; inset: 0; z-index: 7; opacity: 0; pointer-events: none; }
+  .ptac .pv { position: absolute; inset: 0; background: #05080D; opacity: 0; }
+  .ptac svg { position: absolute; inset: 0; width: 1080px; height: 1920px; overflow: visible; }
+  .ptac .pc1 { fill: none; stroke: #E0B83C; stroke-width: 9; stroke-linecap: round; filter: drop-shadow(0 3px 8px #0009); }
+  .ptac .pf { fill: none; stroke: #fff; stroke-width: 8; stroke-dasharray: 22 16; stroke-linecap: round; }
+  .ptac .pmk { fill: none; stroke: #fff; stroke-width: 40; }
+  .ptac .pp { fill: #fff; opacity: 0; }
+  .ptac .pz { fill: #FF50502E; stroke: #FF5A5A; stroke-width: 6; stroke-dasharray: 18 12; opacity: 0; }
+  .ptac .pe { position: absolute; box-sizing: border-box; text-align: center; white-space: nowrap; opacity: 0;
+    font: 800 40px/48px Inter, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .ptac .pe.a { color: #E0B83C; text-shadow: 0 3px 12px #000b; }
+  .ptac .pe.b { font-size: 36px; line-height: 42px; padding: 8px 18px; background: #FF5A5A; color: #05080D; border-radius: 8px; }
+  /* Cronómetro de partido (16-11): marca propia FF360, nunca logos ni nombres de competiciones reales */
+  .crn { position: absolute; z-index: 7; opacity: 0; pointer-events: none; }
+  .crn .crb { display: flex; width: max-content; height: 74px; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px #0008; }
+  .crn .crb > div { display: flex; align-items: center; justify-content: center; box-sizing: border-box; white-space: nowrap; }
+  .crn .crm { background: #070D16; font: 400 34px/1 Anton, sans-serif; color: #fff; } .crn .crm i { color: #2E6BFF; font-style: normal; }
+  .crn .crp { background: #1B2638; font: 700 28px/1 Inter, sans-serif; color: #DDE5EE; }
+  .crn .crr { background: #E0B83C; color: #070D16; font: 800 46px/1 Inter, sans-serif; font-variant-numeric: tabular-nums; }
+  .crn .crl { position: absolute; left: 0; top: 88px; height: 10px; background: #FFFFFF2E; border-radius: 5px; overflow: hidden; }
+  .crn .crl i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #2E6BFF, #E0B83C 66%, #FF3B3B); }
+  .crn .cra { position: absolute; left: 0; top: 110px; height: 48px; box-sizing: border-box; display: grid; place-items: center; white-space: nowrap;
+    font: 800 34px/1 Inter, sans-serif; letter-spacing: 1px; text-transform: uppercase; background: #FF3B3B; color: #fff; border-radius: 8px;
+    opacity: 0; transform-origin: 0 50%; }
   .mapa { position: absolute; inset: 0; z-index: 7; opacity: 0; pointer-events: none; }
   .mapa svg { position: absolute; inset: 0; width: 1080px; height: 1920px; }
   .mapa .ml { fill: none; stroke: #E0B83C; stroke-width: 9; stroke-dasharray: 22 16; stroke-linecap: round; }
@@ -274,6 +299,36 @@ JS = '''
         tl.set(w, { opacity: 1 }, x.items[k]);
         if (k) tl.set(pw[k - 1], { opacity: 0 }, x.items[k]).fromTo(el, { scale: 1.12 }, { scale: 1, duration: 0.18, ease: 'power2.out', immediateRender: false }, x.items[k]);
       });
+      sale(el);
+    } else if (x.tipo === 'pizarra' && x.tactica) {   // se congela con destello, se oscurece, se rodea al jugador, su carrera y la zona
+      // Tiempos de la maqueta (2,8 s hasta la última etiqueta); si el tramo es más corto, se aprietan.
+      const img = $id('xi-' + i), k = Math.min(1, (t1 - t0 - 0.3) / 2.8), q = (s) => t0 + s * k;
+      const pf = el.querySelector('.pf'), ea = el.querySelector('.pe.a'), eb = el.querySelector('.pe.b'), c = '50% 50%';
+      tl.set(img, { opacity: 1 }, t0).set(el, { opacity: 1 }, t0)
+        .fromTo(el.querySelector('.flash'), { opacity: 0.7 }, { opacity: 0, duration: 0.35, ease: 'power2.out', immediateRender: false }, t0)
+        .fromTo(el.querySelector('.pv'), { opacity: 0 }, { opacity: 0.28, duration: 0.25, ease: 'none', immediateRender: false }, t0)
+        .fromTo(el.querySelector('.pc1'), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.5, ease: 'power2.out', immediateRender: false }, q(0.35))
+        .fromTo(el.querySelector('.pmk'), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.7 * k, ease: 'power1.inOut', immediateRender: false }, q(1.0))
+        .fromTo(pf, { strokeDashoffset: 0 }, { strokeDashoffset: -76 * (t1 - q(1.0)) / 1.2, duration: t1 - q(1.0), ease: 'none', immediateRender: false }, q(1.0))
+        .fromTo(el.querySelector('.pp'), { opacity: 0 }, { opacity: 1, duration: 0.2, immediateRender: false }, q(1.7))
+        .fromTo(el.querySelector('.pz'), { opacity: 0, scale: 0.6, transformOrigin: c }, { opacity: 1, scale: 1, transformOrigin: c, duration: 0.45, ease: 'back.out(2.2)', immediateRender: false }, q(2.1));
+      if (ea) tl.fromTo(ea, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out', immediateRender: false }, q(0.8));
+      if (eb) tl.fromTo(eb, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out', immediateRender: false }, q(2.5));
+      sale(el); sale(img);   // en su "out" se quita todo y el plano sigue
+    } else if (x.tipo === 'crono') {   // entra desde la izquierda, corre de "desde" a "hasta" y en "para" se queda en rojo latiendo
+      const cb = el.querySelector('.crb'), rl = el.querySelector('.crr'), br = el.querySelector('.crl'), bi = br.querySelector('i'), av = el.querySelector('.cra');
+      const t2 = t0 + 0.5, dur = Math.max(0.05, x.para - t2);
+      const mmss = (s) => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+      tl.set(el, { opacity: 1 }, t0)
+        .fromTo(cb, { x: -x.salida }, { x: 0, duration: 0.45, ease: 'back.out(1.4)', immediateRender: false }, t0)
+        .fromTo(br, { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, t0);
+      // OM.clock escribe en cada render del timeline, también en los saltos del render fotograma a fotograma.
+      OM.clock(tl, (u) => { const f = Math.min(1, u / dur); rl.textContent = mmss(Math.round(x.desde + f * (x.hasta - x.desde))); bi.style.width = (f * 66) + '%'; }, dur, t2);
+      tl.set(rl, { backgroundColor: '#FF3B3B', color: '#fff' }, x.para)
+        .fromTo(rl, { filter: 'brightness(1)' }, { filter: 'brightness(1.35)', duration: 0.35, ease: 'sine.inOut', yoyo: true,
+          repeat: Math.max(1, 2 * Math.floor((t1 - x.para) / 0.7) - 1), immediateRender: false }, x.para);
+      if (av) tl.fromTo(av, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(2)', immediateRender: false }, x.para);
+      tl.to(el, { opacity: 0, duration: 0.25 }, t1 - 0.25);
       sale(el);
     } else if (x.tipo === 'pizarra') {   // se levanta en perspectiva, salen los jugadores y vuelve a tumbarse
       const p3 = el.querySelector('.pz3');

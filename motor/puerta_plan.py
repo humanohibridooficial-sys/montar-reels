@@ -50,7 +50,7 @@ if p['tachado'] and not p['tachado'][0] < p['tachado'][1] < p['tachado'][2]: fal
 if p['panel'] and p['panel'] != sorted(p['panel']): fallos.append('panel desordenado')
 # Dos cosas en la franja de arriba a la vez se pisan: el titular, el tuit y el contador comparten sitio.
 for x in p.get('extras', []):
-    if x['tipo'] in ('tuit', 'contador', 'pizarra', 'mapa', 'marcador'):
+    if x['tipo'] in ('tuit', 'contador', 'pizarra', 'mapa', 'marcador', 'crono'):
         for t in p['tops']:
             if x['in'] < t[1] and t[0] < x['out']:
                 fallos.append(f"{max(x['in'], t[0]):.1f} s: el {x['tipo']} se pisa con el titular \"{t[2]}\"")
@@ -79,6 +79,32 @@ for x in p.get('extras', []):
             fallos.append(f"{t:.1f} s: un punto de {x['tipo']} cae fuera de su tramo ({x['in']:.1f}-{x['out']:.1f} s); ¿falta un #2 en la cue?")
 for x in p.get('extras', []):
     if not 0.4 < x['out'] - x['in'] < 9: fallos.append(f"{x['in']:.1f} s: {x['tipo']} dura {x['out'] - x['in']:.1f} s (0,4-9)")
+# Pizarra táctica y crono (16-11): cada cosa que dibujan (las etiquetas con su ancho estimado) dentro de su sitio.
+# Pizarra: zona segura orgánica, x 65-1015 y entre el 15 % de arriba (288) y el 35 % de abajo (1248).
+# Crono: arriba a la izquierda, x 40-600, y por encima de la cabeza (no baja de y 470).
+for x in p.get('extras', []):
+    if x['tipo'] == 'pizarra' and x.get('tactica'):
+        for nom, x0, y0, x1, y1 in x['cajas']:
+            if x0 < 65 or x1 > 1015 or y0 < 288 or y1 > 1248:
+                fallos.append(f"{x['in']:.1f} s: pizarra, {nom} ({x0},{y0}-{x1},{y1}) se sale de la zona segura (x 65-1015, y 288-1248)")
+        # Una etiqueta encima del círculo tapa al jugador que señala (16-11: con la zona baja, la roja subía sobre él).
+        circ = next(c for c in x['cajas'] if c[0] == 'círculo')
+        for nom, x0, y0, x1, y1 in [c for c in x['cajas'] if c[0].startswith('etiqueta')]:
+            if x0 < circ[3] and circ[1] < x1 and y0 < circ[4] and circ[2] < y1:
+                fallos.append(f"{x['in']:.1f} s: pizarra, {nom} pisa el círculo del jugador; separa jugador y zona o sube la zona")
+        fondo, a, b = x['fondo']
+        if not (a - 0.05 <= x['in'] and x['out'] <= b + 0.05):
+            fallos.append(f"{x['in']:.1f} s: pizarra sobre el b-roll {fondo} ({a:.1f}-{b:.1f} s): el b-roll se va antes que ella y se lleva la imagen congelada")
+        if x['out'] - x['in'] < 1.5:
+            fallos.append(f"{x['in']:.1f} s: pizarra de {x['out'] - x['in']:.1f} s; con menos de 1,5 s no da tiempo a dibujarla")
+    elif x['tipo'] == 'crono':
+        for nom, x0, y0, x1, y1 in x['cajas']:
+            if x0 < 40 or x1 > 600 or y0 < 288 or y1 > 470:
+                fallos.append(f"{x['in']:.1f} s: crono, {nom} ({x0},{y0}-{x1},{y1}) se sale de su sitio (x 40-600, y 288-470, por encima de la cabeza)")
+        if not x['in'] + 1.0 <= x['para'] <= x['out'] - 0.5:
+            fallos.append(f"{x['in']:.1f} s: el crono se para en {x['para']:.1f} s; tiene que correr 1 s como mínimo y quedarse parado 0,5 s antes de su out ({x['out']:.1f} s)")
+        if x['hasta'] <= x['desde']:
+            fallos.append(f"{x['in']:.1f} s: el crono va hacia atrás (desde {x['desde']} s hasta {x['hasta']} s)")
 
 # Pack de recursos 2.0 (11-11). Zona segura de Instagram: arriba la cabecera y abajo el pie y el caption; a la derecha,
 # la columna de botones (me gusta, comentar, compartir). Un elemento tampoco tapa la franja del subtítulo.
