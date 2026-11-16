@@ -5,6 +5,7 @@
 #   broll [{id, file, ss, in: cue, out: cue, modo: ''|'split'}], tops [[cue, cue, linea1, linea2, cursiva]] ("\n" o "|" parte la línea),
 #   panel {items: [[cue, h1, h2, bala, broll_id]], fin: cue}, byn [cue, cue], tachado {texto, in, raya, out},
 #   num {texto, in, out}, leaks [cue], claves [...], serif [...], follow cue,
+#   Un extra con "conSubs": true no esconde el subtítulo (16-11, revisor 28x: el marcador a y 290 deja sitio al subtítulo debajo).
 #   extras [{tipo, in: cue, out: cue, ...}] (recursos del 30-10, ver el apartado 5).  Una cue es "palabra", "palabra#2"
 #   (la segunda vez que sale en el montaje), "palabra#2>" (su final) o un número (segundo del montaje).
 import json, subprocess, re, sys, shutil, pathlib, html
@@ -275,7 +276,7 @@ for i, x in enumerate(F.get('extras', [])):
     t1 = cue(x['out']) if 'out' in x else round(t0 + 0.4, 3)
     tipo = x['tipo']
     subs = [[cue(c[0])] + list(c[1:]) for c in x.get('items') or x.get('palabras') or x.get('clips') or x.get('jugadores') or []]
-    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color', 'texto', 'lado')}, 'in': t0, 'out': t1,
+    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color', 'texto', 'lado', 'conSubs')}, 'in': t0, 'out': t1,
                    'items': [c[0] for c in subs]})
     pista = f'data-start="{t0}" data-duration="{round(t1 - t0, 3)}" data-media-start="0" data-track-index="{40 + i}" muted playsinline'
     if tipo == 'tinte':
@@ -492,7 +493,7 @@ for a_, b_ in [
     ("  tl.fromTo(tc, { opacity: 0, y: 20 }", "  if (PLAN.tachado) tl.fromTo(tc, { opacity: 0, y: 20 }"),
     ("  const ventanas = [[PLAN.tachado[0], PLAN.tachado[2]], [PLAN.num[0], PLAN.num[1]], [p0, p3]];",
      "  const ventanas = [PLAN.tachado && [PLAN.tachado[0], PLAN.tachado[2]], PLAN.num, PN.length && [PN[0], PN[PN.length - 1]],\n"
-     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo', 'pildora', 'tuit', 'marcador'].includes(x.tipo)).map((x) => [x.in, x.out])].filter(Boolean);"),
+     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo', 'pildora', 'tuit', 'marcador'].includes(x.tipo) && !x.conSubs).map((x) => [x.in, x.out])].filter(Boolean);"),
     ("  OM.music({ style: 'cinematic', drop: PLAN.num[0], ending: 'button' });\n", ""),
 ]:
     assert a_ in JS, a_[:60]
