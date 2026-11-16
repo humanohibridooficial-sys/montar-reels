@@ -340,8 +340,9 @@ for i, x in enumerate(F.get('extras', [])):
                      + ''.join(f'<circle class="jg" cx="{round(c[1] * 600)}" cy="{round(c[2] * 400)}" r="16"/>' for c in js) + '</svg></div></div>')
     elif tipo == 'mapa':   # palabras en zigzag por encima de la cabeza y una línea discontinua que las va uniendo
         # 30-10: a los lados de la cara, la línea la cruzaba; arriba (y 250-470) va por encima de la cabeza (22-33 % de alto)
+        # "xs" (opcional, 16-11 revisor 28x): centro x de cada palabra; con 250/830 una de 14 letras se salía por la derecha.
         # "y" (opcional, 15-11 revisor 73): centro de la primera palabra; a 310 su caja asomaba ~18 px en el 15 % de arriba.
-        pos = [(250 if k % 2 == 0 else 830, int(x.get('y', 310)) + k * round(190 / max(1, len(subs) - 1))) for k in range(len(subs))]
+        pos = [(int(x['xs'][k]) if x.get('xs') else (250 if k % 2 == 0 else 830), int(x.get('y', 310)) + k * round(190 / max(1, len(subs) - 1))) for k in range(len(subs))]
         largos = [((pos[k + 1][0] - pos[k][0]) ** 2 + (pos[k + 1][1] - pos[k][1]) ** 2) ** 0.5 for k in range(len(pos) - 1)]
         tot = sum(largos) or 1
         fr = [round(1 - sum(largos[:k]) / tot, 4) for k in range(len(pos))]   # dashoffset al decir la palabra k
