@@ -77,6 +77,8 @@ Recursos de base (opcionales): `broll` [{id, file, ss, in, out, modo: ''|'split'
 | `lista` | enumerar sobre el propio plano | `titulo`, `items` [[cue, texto]] |
 | `pildora` | conceptos que cambian | `palabras` [[cue, palabra]] |
 | `pizarra` | algo táctico, sobre la cabeza | `jugadores` [[cue, x, y]] opcional |
+| `pizarra` con `zona` (táctica) | lo que tu hijo no llega a hacer en el campo, sobre un plano de partido donde se distinga un jugador: congela, rodea al jugador, dibuja su carrera y marca la zona (≥ 1,5 s, dentro de su b-roll) | `jugador` [x, y], `zona` [x, y, rx, ry] en px del lienzo 1080x1920, `etiquetaJugador`, `etiquetaZona`, `curva` opcional |
+| `crono` | el minuto 60, 70 o 90: reloj de partido con la marca FF360 que corre y se para en rojo | `desde` "60:00", `hasta` "70:00", `para` (cue), `aviso` opcional |
 | `mapa` | cadena causa-efecto | `palabras` [[cue, palabra]] |
 | `tarjetas` | enseñar ejemplos en clips | `lado` izq, `clips` [[cue, file, ss]] |
 | `barrido` | entrar en un bloque nuevo | solo `in` |
@@ -88,6 +90,8 @@ Recursos de base (opcionales): `broll` [{id, file, ss, in, out, modo: ''|'split'
 - un rótulo entra a destiempo de su palabra o un punto cae fuera de su recurso;
 - dos cosas se pisan arriba, hay tarjetas en la columna de botones de Instagram o el congelado o el logo tienen
   mala duración;
+- la pizarra táctica se sale de x 65-1015 / y 288-1248, una etiqueta pisa al jugador o su b-roll se va antes que ella;
+  el crono se sale de x 40-600 / y 288-470 o no le da tiempo a correr;
 - la pieza calca a una de las 3 últimas.
 
 No entregues hasta que diga OK. Si algo no tiene arreglo, dilo.

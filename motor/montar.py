@@ -5,6 +5,8 @@
 #   broll [{id, file, ss, in: cue, out: cue, modo: ''|'split'}], tops [[cue, cue, linea1, linea2, cursiva]] ("\n" o "|" parte la línea),
 #   panel {items: [[cue, h1, h2, bala, broll_id]], fin: cue}, byn [cue, cue], tachado {texto, in, raya, out},
 #   num {texto, in, out}, leaks [cue], claves [...], serif [...], follow cue,
+#   16-11: pizarra táctica {jugador [x, y], zona [x, y, rx, ry] en px, etiquetaJugador, etiquetaZona, curva} sobre un plano de
+#   partido (congela, rodea al jugador y dibuja su carrera hasta la zona) y crono {desde "60:00", hasta "70:00", para: cue, aviso}.
 #   Un extra con "conSubs": true no esconde el subtítulo (16-11, revisor 28x: el marcador a y 290 deja sitio al subtítulo debajo).
 #   extras [{tipo, in: cue, out: cue, ...}] (recursos del 30-10, ver el apartado 5).  Una cue es "palabra", "palabra#2"
 #   (la segunda vez que sale en el montaje), "palabra#2>" (su final) o un número (segundo del montaje).
@@ -269,8 +271,18 @@ if PN:
 # Segunda tanda (30-10): lista {titulo, items [[cue, texto con **clave**]]} · pildora {palabras [[cue, palabra]]} ·
 # pizarra {jugadores [[cue, x, y]] (0-1 del campo)} · mapa {palabras [[cue, palabra]]} · tarjetas {lado izq|der,
 # clips [[cue, file, ss]], y opcional ancho, alto, separacion, y, x en px} · barrido {in; out opcional} · logo {texto}.
+# 16-11 (maqueta pizarra-cronometro aprobada): pizarra con "zona" es la PIZARRA TÁCTICA sobre un b-roll de partido, en px
+# del lienzo 1080x1920: {jugador [x, y], radio (66), zona [x, y, rx, ry], etiquetaJugador, etiquetaZona, curva (-1..1, 0,25)}.
+# Úsala cuando se habla de lo que el jugador no llega a hacer en el campo y hay un plano de partido donde se distinga
+# a uno. Congela el plano que se ve en su "in" (el b-roll de debajo o, sin b-roll, la toma) y lo suelta en su "out".
+# Sin "zona" sigue siendo la pizarra de siempre (campo sobre la cabeza, "jugadores").
+# crono {desde "60:00", hasta "70:00", para: cue, aviso opcional, parte ("2ª PARTE"), x (70), y (300)}: reloj de partido
+# tipo tele con la marca FF360 (nunca logos ni nombres de competiciones reales). Corre de "desde" a "hasta" entre su "in"
+# y "para"; ahí se pone en rojo y salta el aviso. Úsalo cuando se habla del minuto 60, 70 o 90.
 e = html.escape
 EXTRAS, XHTML, XTALK, TCAJAS = [], [], [], []
+TILE_IMG = {}   # imagen congelada dentro de la capa de un b-roll (pizarra táctica): así hereda su encuadre
+ancho = lambda texto, px, f: round(len(str(texto)) * px * f)   # ancho estimado de un texto en px (f: em medio por letra)
 for i, x in enumerate(F.get('extras', [])):
     t0 = cue(x['in'])
     t1 = cue(x['out']) if 'out' in x else round(t0 + 0.4, 3)
@@ -330,6 +342,70 @@ for i, x in enumerate(F.get('extras', [])):
                      f'<span class="v1">{e(final)}</span></div></div></div>')
     elif tipo == 'pildora':   # una palabra en la píldora, y cambia con cada una que dice
         XHTML.append(f'<div class="pil" id="x-{i}">' + ''.join(f'<span class="pw">{e(c[1])}</span>' for c in subs) + '</div>')
+    elif tipo == 'pizarra' and 'zona' in x:   # pizarra táctica (16-11): congela el plano de partido y dibuja encima
+        jx, jy = x['jugador']; zx, zy, rx, ry = x['zona']; r = x.get('radio', 66)
+        dx, dy = zx - jx, zy - jy; dl = (dx * dx + dy * dy) ** 0.5 or 1; dx, dy = dx / dl, dy / dl
+        sx, sy = jx + dx * r, jy + dy * r                       # sale del borde del círculo
+        tx, ty = zx - dx * 16, zy - dy * 16                    # la punta llega casi al centro de la zona (maqueta)
+        nx, ny = (-dy, dx) if dx >= 0 else (dy, -dx)           # perpendicular hacia abajo: se curva como en la maqueta
+        cv = x.get('curva', 0.25) * ((tx - sx) ** 2 + (ty - sy) ** 2) ** 0.5
+        qx, qy = (sx + tx) / 2 + nx * cv, (sy + ty) / 2 + ny * cv
+        ux, uy = tx - qx, ty - qy; ul = (ux * ux + uy * uy) ** 0.5 or 1; ux, uy = ux / ul, uy / ul
+        ex, ey = tx - ux * 24, ty - uy * 24                    # la línea acaba donde empieza la punta
+        d = f'M{sx:.0f} {sy:.0f} Q{qx:.0f} {qy:.0f} {ex:.0f} {ey:.0f}'
+        punta = f'{tx:.0f},{ty:.0f} {ex - uy * 19:.0f},{ey + ux * 19:.0f} {ex + uy * 19:.0f},{ey - ux * 19:.0f}'
+        # Cajas en px de cada cosa que se dibuja, para que la puerta las mida contra la zona segura.
+        cajas = [['círculo', jx - r - 5, jy - r - 5, jx + r + 5, jy + r + 5], ['zona', zx - rx - 3, zy - ry - 3, zx + rx + 3, zy + ry + 3],
+                 ['flecha', min(sx, qx, tx) - 20, min(sy, qy, ty) - 20, max(sx, qx, tx) + 20, max(sy, qy, ty) + 20]]
+        etq = ''
+        if x.get('etiquetaJugador'):   # dorada, encima del círculo (debajo si arriba no cabe)
+            w_, h_ = ancho(x['etiquetaJugador'], 40, 0.74) + 8, 48
+            y_ = jy - r - 18 - h_ if jy - r - 18 - h_ >= 288 else jy + r + 14
+            x_ = min(max(jx - w_ // 2, 65), 1015 - w_)
+            cajas.append([f'etiqueta "{x["etiquetaJugador"]}"', x_, y_, x_ + w_, y_ + h_])
+            etq += f'<div class="pe a" style="left:{x_:.0f}px;top:{y_:.0f}px;width:{w_}px">{e(x["etiquetaJugador"])}</div>'
+        if x.get('etiquetaZona'):   # caja roja, debajo de la zona (encima si debajo baja de y 1248)
+            w_, h_ = ancho(x['etiquetaZona'], 36, 0.74) + 36, 58
+            y_ = zy + ry + 12 if zy + ry + 12 + h_ <= 1248 else zy - ry - 12 - h_
+            x_ = min(max(zx - w_ // 2, 65), 1015 - w_)
+            cajas.append([f'etiqueta "{x["etiquetaZona"]}"', x_, y_, x_ + w_, y_ + h_])
+            etq += f'<div class="pe b" style="left:{x_:.0f}px;top:{y_:.0f}px;width:{w_}px">{e(x["etiquetaZona"])}</div>'
+        # Fondo: el b-roll que se ve en su "in" (el último de la lista va encima); sin b-roll, la toma.
+        bajo = [sp for sp in spans if sp[3] != 'card' and sp[1] <= t0 < sp[2]]
+        img = f'<img class="frz" id="xi-{i}" src="assets/x-{i}.jpg">'
+        if bajo:
+            k_, a_, b_, _ = bajo[-1]
+            run('ffmpeg', '-v', 'error', '-y', '-ss', str(round(t0 - a_, 3)), '-i', str(P / f'assets/broll/{k_}.mp4'),
+                '-frames:v', '1', '-q:v', '2', str(P / f'assets/x-{i}.jpg'))
+            TILE_IMG[k_] = TILE_IMG.get(k_, '') + img
+        else:
+            run('ffmpeg', '-v', 'error', '-y', '-ss', str(t0), '-i', str(P / 'assets/talk.mp4'), '-frames:v', '1', '-q:v', '2', str(P / f'assets/x-{i}.jpg'))
+            XTALK.append(img)
+        EXTRAS[-1].update(tactica=True, tapaSubs=True, cajas=[[c[0]] + [round(v) for v in c[1:]] for c in cajas],
+                          fondo=list(bajo[-1][:3]) if bajo else ['toma', 0, LEN])
+        XHTML.append(f'<div class="ptac" id="x-{i}"><div class="pv"></div><svg viewBox="0 0 1080 1920"><defs><mask id="pm-{i}">'
+                     f'<path d="{d}" class="pmk" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/></mask></defs>'
+                     f'<ellipse class="pz" cx="{zx}" cy="{zy}" rx="{rx}" ry="{ry}"/>'
+                     f'<circle class="pc1" cx="{jx}" cy="{jy}" r="{r}" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/>'
+                     f'<path class="pf" d="{d}" mask="url(#pm-{i})"/><polygon class="pp" points="{punta}"/></svg>{etq}'
+                     f'<div class="flash"></div></div>')
+    elif tipo == 'crono':   # reloj de partido tipo tele (16-11): entra desde la izquierda, corre y se para en rojo
+        seg = lambda m: int(str(m).split(':')[0]) * 60 + int(str(m).split(':')[1])
+        X, Y = int(x.get('x', 70)), int(x.get('y', 300))
+        parte = x.get('parte', '2ª PARTE')
+        wm, wp, wr = ancho('FF360', 34, 0.55) + 36, ancho(parte, 28, 0.7) + 32, 190   # marca, parte y reloj (ancho fijo)
+        wb = wm + wp + wr
+        cajas = [['marcador', X, Y, X + wb, Y + 74], ['barra', X, Y + 88, X + wb, Y + 98]]
+        av = ''
+        if x.get('aviso'):
+            wa = ancho(x['aviso'], 34, 0.74) + 32
+            cajas.append([f'aviso "{x["aviso"]}"', X, Y + 110, X + wa, Y + 158])
+            av = f'<div class="cra" style="width:{wa}px">{e(x["aviso"])}</div>'
+        EXTRAS[-1].update(desde=seg(x['desde']), hasta=seg(x['hasta']), para=cue(x['para']), cajas=cajas, salida=X + wb + 60)
+        XHTML.append(f'<div class="crn" id="x-{i}" style="left:{X}px;top:{Y}px"><div class="crb">'
+                     f'<div class="crm" style="width:{wm}px">FF<i>360</i></div><div class="crp" style="width:{wp}px">{e(parte)}</div>'
+                     f'<div class="crr" style="width:{wr}px">{e(str(x["desde"]))}</div></div>'
+                     f'<div class="crl" style="width:{wb}px"><i></i></div>{av}</div>')
     elif tipo == 'pizarra':   # campo que se levanta sobre la cabeza; los jugadores salen uno a uno
         js = subs or [[round(t0 + 0.6 + k * 0.25, 3), px, py] for k, (px, py) in enumerate([(.2, .5), (.42, .28), (.42, .72), (.66, .4), (.82, .62)])]
         x_ = EXTRAS[-1]; x_['items'] = [c[0] for c in js]
@@ -396,7 +472,7 @@ BROLL_IA = [{'id': b['id'], 'marcado': bool(b.get('ia'))} for b in F.get('broll'
 
 tiles = '\n'.join(
     f'  <div class="tile {c}" id="t-{k}"><video id="v-{k}" src="assets/broll/{k}.mp4" data-start="{t0}" data-duration="{round(t1 - t0, 3)}" '
-    f'data-media-start="0" data-track-index="{2 + n}" muted playsinline></video></div>'
+    f'data-media-start="0" data-track-index="{2 + n}" muted playsinline></video>{TILE_IMG.get(k, "")}</div>'
     for n, (k, t0, t1, c) in enumerate(spans))
 PANEL_HTML = ''
 if PN:
@@ -494,7 +570,7 @@ for a_, b_ in [
     ("  tl.fromTo(tc, { opacity: 0, y: 20 }", "  if (PLAN.tachado) tl.fromTo(tc, { opacity: 0, y: 20 }"),
     ("  const ventanas = [[PLAN.tachado[0], PLAN.tachado[2]], [PLAN.num[0], PLAN.num[1]], [p0, p3]];",
      "  const ventanas = [PLAN.tachado && [PLAN.tachado[0], PLAN.tachado[2]], PLAN.num, PN.length && [PN[0], PN[PN.length - 1]],\n"
-     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo', 'pildora', 'tuit', 'marcador'].includes(x.tipo) && !x.conSubs).map((x) => [x.in, x.out])].filter(Boolean);"),
+     "    ...PLAN.extras.filter((x) => (['cortinilla', 'lista', 'mapa', 'logo', 'pildora', 'tuit', 'marcador'].includes(x.tipo) || x.tapaSubs) && !x.conSubs).map((x) => [x.in, x.out])].filter(Boolean);"),
     ("  OM.music({ style: 'cinematic', drop: PLAN.num[0], ending: 'button' });\n", ""),
 ]:
     assert a_ in JS, a_[:60]
