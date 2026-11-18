@@ -549,7 +549,9 @@ if any(x['tipo'] == 'partida' for x in EXTRAS):   # 17-11: la pantalla partida (
                         "      const tl0 = el.querySelector('.ptl');\n"
                         "      if (t0 < 0.02) {   // un set en 0 no pinta el fotograma 0: se deja puesto de base (CSS translate)\n"
                         "        el.style.opacity = 1; tw.style.translate = `${x.dx}px ${x.dy}px`;\n"
-                        "        tl.set(tw, { translate: '0px 0px' }, t1);\n"
+                        "        // 18-11: GSAP, al poner el zoom (scale) en 0, absorbe este translate en su x/y y lo deja en 'none':\n"
+                        "        // devolverlo con { translate } no hacía nada y el plano se quedaba subido toda la pieza. Se devuelve x/y.\n"
+                        "        tl.set(tw, { x: 0, y: 0, translate: 'none' }, t1);\n"
                         "      } else tl.set(el, { opacity: 1 }, t0).set(tw, { x: x.dx, y: x.dy }, t0).set(tw, { x: 0, y: 0 }, t1);\n"
                         "      if (tl0 && t0 >= 0.02) tl.fromTo(tl0, { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.25, ease: 'back.out(2)', immediateRender: false }, t0);\n"
                         "      sale(el);\n" + _b, 1)
