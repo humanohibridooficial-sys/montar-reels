@@ -55,6 +55,10 @@ E += [(SFX_EXTRA[x['tipo']][0], x['in'] + SFX_EXTRA[x['tipo']][1], SFX_EXTRA[x['
 E += [(SFX_PUNTO[x['tipo']][0], t, SFX_PUNTO[x['tipo']][1]) for x in plan.get('extras', []) if x['tipo'] in SFX_PUNTO for t in x.get('items', [])]
 # 11-11: las transiciones del pack suenan con un whoosh que llega a tope en el corte; los overlays y elementos, callados
 E += [('SFX-whoosh.wav', x['en'] - 0.15, -8) for x in plan.get('pack', []) if x['tipo'] == 'transicion']
+# 17-11 marca6: los efectos propios de la ficha ("sfx") sustituyen al automático que caiga a menos de 0,25 s (uno por evento)
+_PROPIOS = [(f, t, g) for t, f, g in plan.get('sfxFicha', [])]
+if _PROPIOS:
+    E = [e for e in E if all(abs(e[1] - t) >= 0.25 for _, t, _ in _PROPIOS)] + _PROPIOS
 E = sorted(E, key=lambda e: e[1])
 # un tic que coincide con otro efecto sobra: suena doble
 E = [e for i, e in enumerate(E) if not (e[0] == 'SFX-P-tic.wav' and any(abs(e[1] - x[1]) < 0.25 for j, x in enumerate(E) if j != i and (x[0] != 'SFX-P-tic.wav' or j < i)))]
@@ -117,11 +121,13 @@ ins = ['-i', sys.argv[1], '-i', str(P / 'assets/voice.wav'),
 for f, _, _ in E:
     ins += ['-i', str(LIB / f)]
 byn = plan['byn'] or [-1, -1]
+caida = plan.get('musicaCaida')   # 17-11 marca6: [t0, t1, dB], la música baja en ese tramo (sin la clave, nada cambia)
+CAIDA = f"volume={caida[2]}dB:enable='between(t,{caida[0]},{caida[1]})'," if caida else ''
 fc = [
     # música: normalizada, EQ que le quita medios donde vive la voz, ahogada en el blanco y negro, fundido al final
     (f'[2:a]atrim=0:{LEN},asetpts=PTS-STARTPTS,loudnorm=I=-14:TP=-2,volume={FONDO_DB}dB,'
      f'equalizer=f=1200:t=o:w=1.4:g=-5,equalizer=f=3000:t=o:w=1.2:g=-3,'
-     f"lowpass=f=700:enable='between(t,{byn[0]},{byn[1]})',afade=t=out:st={LEN - 0.8}:d=0.8[mus]") if MUSICA else
+     f"lowpass=f=700:enable='between(t,{byn[0]},{byn[1]})',{CAIDA}afade=t=out:st={LEN - 0.8}:d=0.8[mus]") if MUSICA else
     f'[2:a]atrim=0:{LEN},asetpts=PTS-STARTPTS[mus]',   # sin música: silencio, para que el resto del grafo no cambie
     '[1:a]asplit=2[voz][sc]',
     '[mus][sc]sidechaincompress=threshold=0.04:ratio=3:attack=20:release=350:makeup=1[musd]',

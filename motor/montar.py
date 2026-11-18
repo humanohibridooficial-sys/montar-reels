@@ -126,6 +126,8 @@ run('ffmpeg', '-v', 'error', '-y', '-i', str(P / 'assets/talk.mp4'), '-vn',
 B = list(F.get('broll', [])) + [it for it in F.get('panel', {}).get('broll', [])]
 B += [{'id': f'x{i}-{k}', 'file': c[1], 'ss': c[2] if len(c) > 2 else 0}   # clips de la columna de tarjetas
       for i, x in enumerate(F.get('extras', [])) if x['tipo'] == 'tarjetas' for k, c in enumerate(x['clips'])]
+B += [{'id': f'x{i}-p', 'file': x['file'], 'ss': x.get('ss', 0)}   # clip de abajo de la pantalla partida (17-11)
+      for i, x in enumerate(F.get('extras', [])) if x['tipo'] == 'partida']
 for b in B:
     f = CONTENIDO / b['file']
     trc = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=color_transfer',
@@ -219,6 +221,10 @@ if F.get('subsGrandes'):
 # Cuerpo de la línea grande del titular (revisor 84, 05-11): con "topsT2": 72 cabe "NO ES MEJOR QUE TÚ" en una línea.
 if F.get('topsT2'):
     CSS = CSS.replace('#tops .t2 { font: 900 112px/1 Inter', f"#tops .t2 {{ font: 900 {int(F['topsT2'])}px/1 Inter")
+# "tachadoTop" (ficha, opcional, 17-11 marca6): top en px del tachado; por defecto 1060, que en tomas cerradas cae en la boca.
+if F.get('tachadoTop'):
+    CSS = CSS.replace('#tachado { position: absolute; left: 0; right: 0; top: 1060px;',
+                      f"#tachado {{ position: absolute; left: 0; right: 0; top: {int(F['tachadoTop'])}px;")
 # Dorado en caja marino (revisor marca3, 06-11): con algo dorado al fondo (el trofeo de Radio MARCA) el dorado no se despega.
 # Con "doradoEnCaja": true, la línea grande del titular y las claves del subtítulo van en caja marino, como el clip 2.
 if F.get('doradoEnCaja'):
@@ -251,7 +257,19 @@ if TCOL != TCOL_DEF:
                    ('.tcol .tc { width: 190px; height: 338px;', f".tcol .tc {{ width: {_px(TCOL['ancho'])}; height: {_px(TCOL['alto'])};")]:
         assert a_ in CSS, a_[:40]
         CSS = CSS.replace(a_, b_)
-s = s.replace('  #pack { position: absolute; inset: 0; pointer-events: none; }', CSS + '  #pack { position: absolute; inset: 0; pointer-events: none; }')
+# Pantalla partida (17-11): solo entra en el HTML de las fichas que la usan. El clip ocupa la mitad de abajo (1080x960,
+# recortado al centro) y el título va en caja en la junta (y 960), dorado + marino como la marca, dentro de x 160-920.
+if any(x['tipo'] == 'partida' for x in F.get('extras', [])):
+    CSS += ('  .prt { position: absolute; inset: 0; z-index: 6; opacity: 0; pointer-events: none; }\n'
+            '  .prt .pv { position: absolute; left: 0; top: 960px; width: 1080px; height: 960px; overflow: hidden; background: #070D16; }\n'
+            '  .prt .pv video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }\n'
+            '  .prt .ptl { position: absolute; left: 50%; top: 960px; transform: translate(-50%, -50%); width: 760px; display: flex;'
+            ' flex-direction: column; align-items: center; gap: 8px; filter: drop-shadow(0 14px 30px #0009); }\n'
+            '  .prt .ptl span { max-width: 760px; box-sizing: border-box; text-align: center; font: 900 60px/1.05 Inter, sans-serif;'
+            ' text-transform: uppercase; padding: 12px 24px 9px; border-radius: 10px; }\n'
+            '  .prt .ptl .a { background: #E0B83C; color: #0E1F3A; }\n'
+            '  .prt .ptl .b { background: #0E1F3A; color: #FFFFFF; box-shadow: inset 0 -4px 0 #2E6BFF; }\n')
+s = s.replace('  #pack { position: absolute; inset: 0; pointer-events: none; }', CSS +'  #pack { position: absolute; inset: 0; pointer-events: none; }')
 
 spans = [[b['id'], cue(b['in']), round(cue(b['out']) + 0.12, 3), b.get('modo', '')] for b in F.get('broll', [])]
 PN = F.get('panel')
@@ -329,7 +347,8 @@ for i, x in enumerate(F.get('extras', [])):
                      f'<div class="cl b"><div class="et">{e(de[0])}</div><div class="vl"><span class="v0">{e(de[1])}</span>'
                      f'<span class="v1">{e(final)}</span></div></div></div>')
     elif tipo == 'pildora':   # una palabra en la píldora, y cambia con cada una que dice
-        XHTML.append(f'<div class="pil" id="x-{i}">' + ''.join(f'<span class="pw">{e(c[1])}</span>' for c in subs) + '</div>')
+        # "y" (opcional, 17-11 revisor marca5): top en px; por defecto 1090 (estilo.py), como el "y" del marcador
+        XHTML.append(f'<div class="pil" id="x-{i}"' + (f' style="top:{int(x["y"])}px"' if 'y' in x else '') + '>' + ''.join(f'<span class="pw">{e(c[1])}</span>' for c in subs) + '</div>')
     elif tipo == 'pizarra':   # campo que se levanta sobre la cabeza; los jugadores salen uno a uno
         js = subs or [[round(t0 + 0.6 + k * 0.25, 3), px, py] for k, (px, py) in enumerate([(.2, .5), (.42, .28), (.42, .72), (.66, .4), (.82, .62)])]
         x_ = EXTRAS[-1]; x_['items'] = [c[0] for c in js]
@@ -361,6 +380,22 @@ for i, x in enumerate(F.get('extras', [])):
         XHTML.append(f'<div class="tcol {x.get("lado", "izq")}" id="x-{i}">' + ''.join(
             f'<div class="tc"><video src="assets/broll/x{i}-{k}.mp4" data-start="{c[0]}" data-duration="{round(t1 - c[0], 3)}" '
             f'data-media-start="0" data-track-index="{60 + i * 5 + k}" muted playsinline></video></div>' for k, c in enumerate(subs)) + '</div>')
+    elif tipo == 'partida':   # pantalla partida (17-11, la de @lucasmarilungo): tú arriba, el clip abajo, título en la junta
+        # La toma sube para que la cara quede centrada en la mitad de arriba (centro y 480): sale del encuadre medido
+        # (<toma>.encuadre.json, cara entre cabeza y barbilla); "dx"/"dy" en px lo fuerzan.
+        if 'dy' in x:
+            dy = int(x['dy'])
+        elif _enc.exists():
+            _en = json.load(open(_enc, encoding='utf-8'))
+            dy = round(480 - (_en['cabeza_arriba_pct'] + _en['barbilla_pct']) / 2 * 19.2)
+        else:
+            dy = -440
+        lin = [str(v) for v in (x.get('titulo') or [])][:2]
+        EXTRAS[-1].update(dx=int(x.get('dx', 0)), dy=dy, titulo=lin)   # el título va al plan: la puerta lo acepta como gancho
+        XHTML.append(f'<div class="prt" id="x-{i}"><div class="pv"><video src="assets/broll/x{i}-p.mp4" data-start="{t0}" '
+                     f'data-duration="{round(t1 - t0, 3)}" data-media-start="0" data-track-index="{90 + i}" muted playsinline></video></div>'
+                     + (f'<div class="ptl">' + ''.join(f'<span class="{"ab"[k]}">{e(l)}</span>' for k, l in enumerate(lin)) + '</div>' if lin else '')
+                     + '</div>')
     elif tipo == 'barrido':   # no lleva capa: anima el plano a cámara
         pass
     elif tipo == 'logo':   # el nombre del programa se revela con un borde de luz
@@ -479,6 +514,12 @@ plan = {
     'cortes': joins,   # empalmes de la toma: revisar_export.py busca clics y saltos en cada uno
     'pack': PACKS, 'lut': LUT, 'brollIA': BROLL_IA, 'subsTop': SUBS,   # 11-11: para capas.py y la puerta del plan
 }
+# 17-11 marca6 (opcionales, para mezcla.py; sin la clave el plan no cambia): "sfx" [[cue, fichero, dB]] efectos propios de
+# la pieza, que sustituyen al automático que caiga a menos de 0,25 s; "musicaCaida" [cue, cue, dB] baja la música en ese tramo.
+if F.get('sfx'):
+    plan['sfxFicha'] = [[cue(c), f_, db] for c, f_, db in F['sfx']]
+if F.get('musicaCaida'):
+    plan['musicaCaida'] = [cue(F['musicaCaida'][0]), cue(F['musicaCaida'][1]), F['musicaCaida'][2]]
 JS = JS.replace('\\\\', '\\')   # en build.py el código va dentro de una cadena de Python: su doble barra es una sola en el HTML
 # Lo que es opcional en una ficha se protege; la música la pone mezcla.py.
 for a_, b_ in [
@@ -499,6 +540,19 @@ for a_, b_ in [
 ]:
     assert a_ in JS, a_[:60]
     JS = JS.replace(a_, b_)
+if any(x['tipo'] == 'partida' for x in EXTRAS):   # 17-11: la pantalla partida (solo en las fichas que la usan)
+    JS = JS.replace("'tuit', 'marcador'].includes(x.tipo)", "'tuit', 'marcador', 'partida'].includes(x.tipo)")   # esconde el subtítulo
+    _b = "    } else if (x.tipo === 'barrido') {"
+    assert _b in JS, _b
+    # la toma sube y se mueve (dx, dy) para centrar la cara arriba; en t0 = 0 todo se ve desde el fotograma 0, sin fundido
+    JS = JS.replace(_b, "    } else if (x.tipo === 'partida') {\n"
+                        "      const tl0 = el.querySelector('.ptl');\n"
+                        "      if (t0 < 0.02) {   // un set en 0 no pinta el fotograma 0: se deja puesto de base (CSS translate)\n"
+                        "        el.style.opacity = 1; tw.style.translate = `${x.dx}px ${x.dy}px`;\n"
+                        "        tl.set(tw, { translate: '0px 0px' }, t1);\n"
+                        "      } else tl.set(el, { opacity: 1 }, t0).set(tw, { x: x.dx, y: x.dy }, t0).set(tw, { x: 0, y: 0 }, t1);\n"
+                        "      if (tl0 && t0 >= 0.02) tl.fromTo(tl0, { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.25, ease: 'back.out(2)', immediateRender: false }, t0);\n"
+                        "      sale(el);\n" + _b, 1)
 JS = re.sub(r"\n\s*OM\.sfx\([^\n]*", '', JS)   # los efectos van en mezcla.py
 JS = JS.replace('__PLAN__', json.dumps(plan, ensure_ascii=False))
 s = s.replace("  tl.set({}, {}, LEN);                                            // the film is as long as the talk",
