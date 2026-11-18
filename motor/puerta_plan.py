@@ -38,7 +38,8 @@ ts = [0.0] + [t for t, _ in ev] + [LEN]
 for a, b in zip(ts, ts[1:]):
     if b - a > HUECO:
         fallos.append(f'{a:.1f}-{b:.1f} s: {b - a:.1f} s sin ningún cambio en pantalla')
-if not any(t[0] == 0 for t in p['tops']):
+# 17-11: una pantalla partida desde el 0 con su título también es gancho (el título va en la junta, no arriba)
+if not any(t[0] == 0 for t in p['tops']) and not any(x['tipo'] == 'partida' and x['in'] == 0 and x.get('titulo') for x in p.get('extras', [])):
     fallos.append('0 s: el fotograma 0 no tiene titular de gancho')
 # Duraciones (lo que comprobaba revisar_plan.py)
 for k, a, b, c in p['spans']:
@@ -50,7 +51,7 @@ if p['tachado'] and not p['tachado'][0] < p['tachado'][1] < p['tachado'][2]: fal
 if p['panel'] and p['panel'] != sorted(p['panel']): fallos.append('panel desordenado')
 # Dos cosas en la franja de arriba a la vez se pisan: el titular, el tuit y el contador comparten sitio.
 for x in p.get('extras', []):
-    if x['tipo'] in ('tuit', 'contador', 'pizarra', 'mapa', 'marcador'):
+    if x['tipo'] in ('tuit', 'contador', 'pizarra', 'mapa', 'marcador', 'partida'):   # partida: el titular taparía la cara de arriba
         for t in p['tops']:
             if x['in'] < t[1] and t[0] < x['out']:
                 fallos.append(f"{max(x['in'], t[0]):.1f} s: el {x['tipo']} se pisa con el titular \"{t[2]}\"")
