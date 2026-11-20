@@ -15,6 +15,8 @@ if not MUSICA.exists():
     otras = sorted((LIB / 'MUSICA').glob('*.mp3')) if (LIB / 'MUSICA').is_dir() else []
     print(f'aviso: no está la música {MUSICA.name}:', f'uso {otras[0].name}' if otras else 'el reel va sin música')
     MUSICA = otras[0] if otras else None
+if F.get('sinMusica'):   # 20-11 Luismi (96 y 99): "quita la música, no se me oye": solo voz y efectos
+    MUSICA = None
 MUSICA_DESDE = F.get('musicaDesde', 0.0)
 FONDO_DB = F.get('fondoDb', -15)  # 29-10 Luismi: todo sonaba muy alto
 SFX_BAJA = F.get('sfxBaja', 10)  # 30-10 Luismi: "música sí o sí, efectos de sonido solo como matiz" (antes 4; sin tic en cada reencuadre ni titular)
