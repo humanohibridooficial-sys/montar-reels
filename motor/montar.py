@@ -556,10 +556,11 @@ for a_, b_ in [
      # de frase que caía fuera parpadeaba antes o repetía la clave después. Ahora el titular es una ventana más: sus
      # palabras no forman bloque y el bloque anterior se corta en su entrada.
      "    ...(PLAN.topsEnSubs ? PLAN.tops.map((t) => [t[0], t[1]]) : [])].filter(Boolean);"),
-    # 20-11 (revisor 99): un bloque que solo cabe menos de 0,45 s antes de una ventana es un destello: no se pinta.
+    # 20-11 (revisor 99): un bloque que una ventana CORTA y deja en menos de 0,45 s es un destello: no se pinta.
+    # Solo los cortados por una ventana: un bloque corto normal (una palabra suelta) se queda.
     ("    const t1 = Math.min(nb ? nb[0].start : LEN, bk[bk.length - 1].end + 0.6, corte);\n",
      "    const t1 = Math.min(nb ? nb[0].start : LEN, bk[bk.length - 1].end + 0.6, corte);\n"
-     "    if (t0 >= 0.02 && t1 - t0 < 0.45) { el.remove(); return; }\n"),
+     "    if (t0 >= 0.02 && t1 === corte && corte < LEN && t1 - t0 < 0.45) { el.remove(); return; }\n"),
     ("  OM.music({ style: 'cinematic', drop: PLAN.num[0], ending: 'button' });\n", ""),
 ]:
     assert a_ in JS, a_[:60]
