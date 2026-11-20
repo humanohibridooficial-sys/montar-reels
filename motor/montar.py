@@ -6,6 +6,7 @@
 #   panel {items: [[cue, h1, h2, bala, broll_id]], fin: cue}, byn [cue, cue], tachado {texto, in, raya, out},
 #   num {texto, in, out}, leaks [cue], claves [...], serif [...], follow cue,
 #   Un extra con "conSubs": true no esconde el subtítulo (16-11, revisor 28x: el marcador a y 290 deja sitio al subtítulo debajo).
+#   Y uno con "sinSubs": true lo esconde aunque su tipo no lo haga (20-11, revisor 94: la palabra "detras" a la altura del subtítulo).
 #   extras [{tipo, in: cue, out: cue, ...}] (recursos del 30-10, ver el apartado 5).  Una cue es "palabra", "palabra#2"
 #   (la segunda vez que sale en el montaje), "palabra#2>" (su final) o un número (segundo del montaje).
 import json, subprocess, re, sys, shutil, pathlib, html
@@ -225,6 +226,21 @@ if F.get('topsT2'):
 if F.get('tachadoTop'):
     CSS = CSS.replace('#tachado { position: absolute; left: 0; right: 0; top: 1060px;',
                       f"#tachado {{ position: absolute; left: 0; right: 0; top: {int(F['tachadoTop'])}px;")
+# "tachadoCaja" (ficha, opcional, 20-11 revisor 94: "Fritos" blanco sobre un plato blanco no se leía): la palabra va en
+# caja marino y la raya es más gruesa.
+if F.get('tachadoCaja'):
+    for a_, b_ in [('#tachado span { position: relative; font: 900 92px/1 Inter, sans-serif; color: #fff; text-shadow: 0 4px 18px #000b; }',
+                    '#tachado span { position: relative; font: 900 92px/1 Inter, sans-serif; color: #fff; background: #0E1F3A;'
+                    ' padding: 12px 30px 16px; border-radius: 14px; box-shadow: 0 8px 24px #0008; }'),
+                   ('height: 14px; border-radius: 7px; background: #E5322D;', 'height: 22px; border-radius: 11px; background: #E5322D;')]:
+        assert a_ in CSS, a_[:40]
+        CSS = CSS.replace(a_, b_)
+# "subsCaja" (ficha, opcional, 20-11 revisor 94: el subtítulo blanco se perdía sobre un cielo quemado): la línea blanca
+# pequeña va en una caja marino translúcida.
+if F.get('subsCaja'):
+    _a = '#subs .l1 {'
+    assert _a in CSS, _a
+    CSS = CSS.replace(_a, '#subs .l1 { display: inline-block; background: rgba(7,13,22,.66); padding: 6px 20px 9px; border-radius: 12px;', 1)
 # Dorado en caja marino (revisor marca3, 06-11): con algo dorado al fondo (el trofeo de Radio MARCA) el dorado no se despega.
 # Con "doradoEnCaja": true, la línea grande del titular y las claves del subtítulo van en caja marino, como el clip 2.
 if F.get('doradoEnCaja'):
@@ -294,7 +310,7 @@ for i, x in enumerate(F.get('extras', [])):
     t1 = cue(x['out']) if 'out' in x else round(t0 + 0.4, 3)
     tipo = x['tipo']
     subs = [[cue(c[0])] + list(c[1:]) for c in x.get('items') or x.get('palabras') or x.get('clips') or x.get('jugadores') or []]
-    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color', 'texto', 'lado', 'conSubs')}, 'in': t0, 'out': t1,
+    EXTRAS.append({**{k: v for k, v in x.items() if k in ('tipo', 'forma', 'color', 'texto', 'lado', 'conSubs', 'sinSubs')}, 'in': t0, 'out': t1,
                    'items': [c[0] for c in subs]})
     pista = f'data-start="{t0}" data-duration="{round(t1 - t0, 3)}" data-media-start="0" data-track-index="{40 + i}" muted playsinline'
     if tipo == 'tinte':
@@ -535,7 +551,16 @@ for a_, b_ in [
     ("  tl.fromTo(tc, { opacity: 0, y: 20 }", "  if (PLAN.tachado) tl.fromTo(tc, { opacity: 0, y: 20 }"),
     ("  const ventanas = [[PLAN.tachado[0], PLAN.tachado[2]], [PLAN.num[0], PLAN.num[1]], [p0, p3]];",
      "  const ventanas = [PLAN.tachado && [PLAN.tachado[0], PLAN.tachado[2]], PLAN.num, PN.length && [PN[0], PN[PN.length - 1]],\n"
-     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo', 'pildora', 'tuit', 'marcador'].includes(x.tipo) && !x.conSubs).map((x) => [x.in, x.out])].filter(Boolean);"),
+     "    ...PLAN.extras.filter((x) => ['cortinilla', 'lista', 'mapa', 'logo', 'pildora', 'tuit', 'marcador'].includes(x.tipo) && !x.conSubs || x.sinSubs).map((x) => [x.in, x.out]),\n"
+     # 20-11 (revisor 99): con topsEnSubs el subtítulo solo se ocultaba con un set mientras estaba el titular, y el trozo
+     # de frase que caía fuera parpadeaba antes o repetía la clave después. Ahora el titular es una ventana más: sus
+     # palabras no forman bloque y el bloque anterior se corta en su entrada.
+     "    ...(PLAN.topsEnSubs ? PLAN.tops.map((t) => [t[0], t[1]]) : [])].filter(Boolean);"),
+    # 20-11 (revisor 99): un bloque que una ventana CORTA y deja en menos de 0,45 s es un destello: no se pinta.
+    # Solo los cortados por una ventana: un bloque corto normal (una palabra suelta) se queda.
+    ("    const t1 = Math.min(nb ? nb[0].start : LEN, bk[bk.length - 1].end + 0.6, corte);\n",
+     "    const t1 = Math.min(nb ? nb[0].start : LEN, bk[bk.length - 1].end + 0.6, corte);\n"
+     "    if (t0 >= 0.02 && t1 === corte && corte < LEN && t1 - t0 < 0.45) { el.remove(); return; }\n"),
     ("  OM.music({ style: 'cinematic', drop: PLAN.num[0], ending: 'button' });\n", ""),
 ]:
     assert a_ in JS, a_[:60]
